@@ -1,8 +1,8 @@
 # Testing Locally
 
 1. Clone the repo
-2. From the root, run yarn && yarn start
-3. Visit localhost:3000
+2. From the root, run `yarn && yarn start`
+3. Visit <localhost:3000>
 
 # Running Tests
 
