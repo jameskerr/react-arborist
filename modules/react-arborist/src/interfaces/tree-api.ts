@@ -1,5 +1,5 @@
 import { EditResult } from "../types/handlers";
-import { Identity, IdObj } from "../types/utils";
+import { BoolFunc, Identity, IdObj } from "../types/utils";
 import { TreeProps } from "../types/tree-props";
 import { MutableRefObject } from "react";
 import { Align, FixedSizeList, ListOnItemsRenderedProps } from "react-window";
@@ -328,9 +328,13 @@ export class TreeApi<T> {
     const changeFocus = opts.focus !== false;
     const id = identify(node);
     if (changeFocus) this.dispatch(focus(id));
-    this.dispatch(selection.only(id));
-    this.dispatch(selection.anchor(id));
-    this.dispatch(selection.mostRecent(id));
+    if (this.get(id)?.isSelectable) {
+      this.setSelection({
+        ids: [id],
+        anchor: id,
+        mostRecent: id,
+      });
+    }
     this.scrollTo(id, opts.align);
     if (this.focusedNode && changeFocus) {
       safeRun(this.props.onFocus, this.focusedNode);
@@ -350,9 +354,11 @@ export class TreeApi<T> {
     if (!node) return;
     const changeFocus = opts.focus !== false;
     if (changeFocus) this.dispatch(focus(node.id));
-    this.dispatch(selection.add(node.id));
-    this.dispatch(selection.anchor(node.id));
-    this.dispatch(selection.mostRecent(node.id));
+    if (node.isSelectable) {
+      this.dispatch(selection.add(node.id));
+      this.dispatch(selection.anchor(node.id));
+      this.dispatch(selection.mostRecent(node.id));
+    }
     this.scrollTo(node, opts.align);
     if (this.focusedNode && changeFocus) {
       safeRun(this.props.onFocus, this.focusedNode);
@@ -363,11 +369,13 @@ export class TreeApi<T> {
   selectContiguous(identity: Identity) {
     if (!identity) return;
     const id = identify(identity);
-    const { anchor, mostRecent } = this.state.nodes.selection;
     this.dispatch(focus(id));
-    this.dispatch(selection.remove(this.nodesBetween(anchor, mostRecent)));
-    this.dispatch(selection.add(this.nodesBetween(anchor, identifyNull(id))));
-    this.dispatch(selection.mostRecent(id));
+    if (this.get(id)?.isSelectable) {
+      const {anchor, mostRecent} = this.state.nodes.selection;
+      this.dispatch(selection.remove(this.nodesBetween(anchor, mostRecent)));
+      this.dispatch(selection.add(this.nodesBetween(anchor, identifyNull(id)).filter(n => n.isSelectable)));
+      this.dispatch(selection.mostRecent(id));
+    }
     this.scrollTo(id);
     if (this.focusedNode) safeRun(this.props.onFocus, this.focusedNode);
     safeRun(this.props.onSelect, this.selectedNodes);
@@ -379,8 +387,12 @@ export class TreeApi<T> {
   }
 
   selectAll() {
+    const selectableIds = Object.keys(this.idToIndex)
+      .map(id => this.get(id)!)
+      .filter(n => !!n && n.isSelectable)
+      .map(node => node.id);
     this.setSelection({
-      ids: Object.keys(this.idToIndex),
+      ids: selectableIds,
       anchor: this.firstNode,
       mostRecent: this.lastNode,
     });
@@ -596,13 +608,22 @@ export class TreeApi<T> {
   }
 
   isEditable(data: T) {
-    const check = this.props.disableEdit || (() => false);
-    return !utils.access(data, check);
+    return this.isActionPossible(data, this.props.disableEdit);
   }
 
   isDraggable(data: T) {
-    const check = this.props.disableDrag || (() => false);
-    return !utils.access(data, check);
+    return this.isActionPossible(data, this.props.disableDrag);
+  }
+
+  isSelectable(data: T) {
+    return this.isActionPossible(data, this.props.disableSelect);
+  }
+
+  private isActionPossible(
+    data: T,
+    disabler: string | boolean | BoolFunc<T> | undefined = () => false,
+  ) {
+    return !utils.access(data, disabler);
   }
 
   isDragging(node: string | IdObj | null) {

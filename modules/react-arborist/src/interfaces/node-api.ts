@@ -59,6 +59,10 @@ export class NodeApi<T = any> {
     return this.tree.isEditable(this.data);
   }
 
+  get isSelectable() {
+    return this.tree.isSelectable(this.data);
+  }
+
   get isEditing() {
     return this.tree.editingId === this.id;
   }
