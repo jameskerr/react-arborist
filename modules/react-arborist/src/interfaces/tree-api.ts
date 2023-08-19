@@ -621,7 +621,7 @@ export class TreeApi<T> {
 
   private isActionPossible(
     data: T,
-    disabler: string | boolean | BoolFunc<T> | undefined = () => false,
+    disabler: string | boolean | BoolFunc<T> = () => false,
   ) {
     return !utils.access(data, disabler);
   }
