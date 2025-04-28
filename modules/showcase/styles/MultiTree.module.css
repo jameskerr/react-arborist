@@ -1,0 +1,119 @@
+.page {
+    background: rgba(0,0,0,0.4) url(/img/golden-gate-bridge.jpeg);
+    background-blend-mode: multiply;
+    background-size: cover;
+    min-height: 100vh;
+    color: white;
+    display:flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.top {
+    background: rgba(255, 255, 255, 0.7);
+    padding: 10px;
+    color: black;
+    border-radius: 10px;
+}
+
+.trees {
+    display: flex;
+}
+
+[role="treeitem"]:has(.node) {
+    color: white;
+    border-radius: 0 16px 16px 0;
+    cursor: pointer;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 65%);
+    font-weight: 400;
+    font-size: 14px;
+    user-select: none;border: 1px dashed transparent;
+}
+
+[role="treeitem"]:has(.node):focus-visible {
+    background-color: rgba(255,255,255,.2);
+    outline: none;
+}
+
+[role="treeitem"][aria-selected="true"]:has(.node):focus-visible {
+    background-color: rgba(255,255,255,.4);
+    outline: none;
+}
+
+[role="treeitem"]:has(.node):hover {
+    background-color: rgba(255,255,255,.2);
+}
+
+[role="treeitem"][aria-selected="true"]:has(.node) {
+    background-color: rgba(255,255,255,.3);
+    font-weight: 700;
+}
+
+[role="treeitem"]:has(.node:global(.willReceiveDrop)) {
+    background-color: rgba(255,255,255,.4);
+    border: 1px dashed white;
+}
+
+.node {
+    color: #efefef;
+}
+
+[role="treeitem"][aria-selected="true"] .node {
+    color: white;
+}
+
+.node {
+    display: flex;
+    align-items: center;
+    margin: 0 12px 0 2px;
+    height: 100%;
+    line-height: 20px;
+    white-space: nowrap;
+}
+
+
+
+/* Dropdown arrow */
+.node span:nth-child(1) {
+    width: 20px;
+    display: flex;
+    font-size: 20px;
+}
+
+/* Icon */
+.node span:nth-child(2) {
+    margin-right: 18px;
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+}
+
+/* Name */
+.node span:nth-child(3) {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dropCursor {
+    width: 90%;
+    height: 0px;
+    border-top: 2px dotted white;
+    position: absolute;
+}
+
+.mobileWarning {
+    background: var(--primaryColor);
+    color: white;
+    padding: 1em;
+    font-weight: bold;
+    text-align: center;
+    border-radius: 4px;
+    display: none;
+}
+
+@media screen and (max-width: 600px) {
+    .mobileWarning {
+        display: block;
+    }
+}

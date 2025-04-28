@@ -21,6 +21,7 @@ import { Cursor } from "../dnd/compute-drop";
 import { Store } from "redux";
 import { createList } from "../data/create-list";
 import { createIndex } from "../data/create-index";
+import { DropResult } from "../dnd/drop-hook";
 
 const { safeRun, identify, identifyNull } = utils;
 export class TreeApi<T> {
@@ -66,6 +67,10 @@ export class TreeApi<T> {
   }
 
   /* Tree Props */
+
+  get id() {
+    return this.props.id ?? 'tree' + crypto.randomUUID();
+  }
 
   get width() {
     return this.props.width ?? 300;
@@ -207,6 +212,7 @@ export class TreeApi<T> {
       parentId,
       index,
       parentNode: this.get(parentId),
+      treeId: this.props.id
     });
     if (data) {
       this.focus(data);
@@ -224,7 +230,7 @@ export class TreeApi<T> {
     const idents = Array.isArray(node) ? node : [node];
     const ids = idents.map(identify);
     const nodes = ids.map((id) => this.get(id)!).filter((n) => !!n);
-    await safeRun(this.props.onDelete, { nodes, ids });
+    await safeRun(this.props.onDelete, { ids, treeId: this.props.id });
   }
 
   edit(node: string | IdObj): Promise<EditResult> {
@@ -244,6 +250,7 @@ export class TreeApi<T> {
       id,
       name: value,
       node: this.get(id)!,
+      treeId: this.props.id
     });
     this.dispatch(edit(null));
     this.resolveEdit({ cancelled: false, value });
@@ -432,10 +439,13 @@ export class TreeApi<T> {
     return this.state.nodes.drag.destinationIndex;
   }
 
-  canDrop() {
+  canDrop(sourceTree: TreeApi<unknown>, dropResult: DropResult|null): boolean {
+
+    const index = sourceTree.state.dnd.index;
+    const dragNodes = sourceTree.dragNodes;
+
     if (this.isFiltered) return false;
-    const parentNode = this.get(this.state.dnd.parentId) ?? this.root;
-    const dragNodes = this.dragNodes;
+    const parentNode = dropResult ? (this.get(dropResult.parentId) ?? this.root) : this.root;
     const isDisabled = this.props.disableDrop;
 
     for (const drag of dragNodes) {
@@ -444,12 +454,22 @@ export class TreeApi<T> {
       if (drag.isInternal && utils.isDescendant(parentNode, drag)) return false;
     }
 
+    // Trees are different
+    if(sourceTree.props.id !== dropResult?.targetTree?.props.id) {
+      if(sourceTree.props.allowCrossTreeDrag === false) return false;
+      if(dropResult?.targetTree?.props.allowCrossTreeDrop === false) return false;
+    }
+
     // Allow the user to insert their own logic
     if (typeof isDisabled == "function") {
       return !isDisabled({
         parentNode,
         dragNodes: this.dragNodes,
-        index: this.state.dnd.index || 0,
+        index: index || 0,
+        sourceTree: sourceTree,
+        sourceTreeId: sourceTree.props.id,
+        drop: dropResult,
+        targetTreeId: dropResult?.targetTree?.props.id
       });
     } else if (typeof isDisabled == "string") {
       // @ts-ignore

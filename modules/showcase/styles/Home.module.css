@@ -48,6 +48,10 @@
   background-image: url(/img/cities-demo.png);
 }
 
+.demoCardImage:global(.multitree) {
+  background-image: url(/img/multitree-demo.png);
+}
+
 .demoCard b {
   background: hsl(5deg 65% 52%);
   color: white;

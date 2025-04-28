@@ -1,4 +1,5 @@
 import { Cursor } from "../dnd/compute-drop";
+import { TreeApi } from "../interfaces/tree-api";
 import { ActionTypes } from "../types/utils";
 import { initialState } from "./initial";
 
@@ -9,6 +10,8 @@ export type DndState = {
   dragIds: string[];
   parentId: null | string;
   index: number | null;
+  sourceTreeId: string;
+  lastTree: TreeApi<unknown>|null;
 };
 
 /* Actions */
@@ -25,6 +28,9 @@ export const actions = {
   hovering(parentId: string | null, index: number | null) {
     return { type: "DND_HOVERING" as const, parentId, index };
   },
+  setLastTree(tree: TreeApi<unknown>) {
+    return { type: "DND_SET_LAST_TREE" as const, tree };
+  }
 };
 
 /* Reducer */
@@ -41,6 +47,8 @@ export function reducer(
       return initialState()["dnd"];
     case "DND_HOVERING":
       return { ...state, parentId: action.parentId, index: action.index };
+    case "DND_SET_LAST_TREE":
+      return { ...state, lastTree: action.tree };
     default:
       return state;
   }

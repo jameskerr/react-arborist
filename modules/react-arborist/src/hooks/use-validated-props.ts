@@ -10,7 +10,7 @@ export function useValidatedProps<T>(props: TreeProps<T>): TreeProps<T> {
   }
   if (
     props.initialData &&
-    (props.onCreate || props.onDelete || props.onMove || props.onRename)
+    (props.onCreate || props.onDelete || props.onMove || props.onRename || props.onCrossTreeAdd || props.onCrossTreeDelete)
   ) {
     throw new Error(
       `React Arborist Tree => You passed the initialData prop along with a data handler.

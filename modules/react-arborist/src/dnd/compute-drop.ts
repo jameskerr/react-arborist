@@ -8,6 +8,7 @@ import {
   isOpenWithEmptyChildren,
 } from "../utils";
 import { DropResult } from "./drop-hook";
+import { TreeApi } from "../interfaces/tree-api";
 
 function measureHover(el: HTMLElement, offset: XYCoord) {
   const rect = el.getBoundingClientRect();
@@ -31,6 +32,7 @@ function getNodesAroundCursor(
   next: NodeApi | null,
   hover: HoverData
 ): [NodeApi | null, NodeApi | null] {
+
   if (!node) {
     // We're hovering over the empty part of the list, not over an item,
     // Put the cursor below the last item which is "prev"
@@ -60,6 +62,7 @@ type Args = {
   node: NodeApi | null;
   prevNode: NodeApi | null;
   nextNode: NodeApi | null;
+  targetTree: TreeApi<unknown> | null;
 };
 
 export type ComputedDrop = {
@@ -69,9 +72,10 @@ export type ComputedDrop = {
 
 function dropAt(
   parentId: string | undefined,
-  index: number | null
+  index: number | null,
+  targetTree: TreeApi<unknown> | null
 ): DropResult {
-  return { parentId: parentId || null, index };
+  return { parentId: parentId || null, index, targetTree };
 }
 
 function lineCursor(index: number, level: number) {
@@ -95,14 +99,14 @@ function highlightCursor(id: string) {
   };
 }
 
-function walkUpFrom(node: NodeApi, level: number) {
+function walkUpFrom(node: NodeApi, level: number, targetTree: TreeApi<unknown>|null) {
   let drop = node;
   while (drop.parent && drop.level > level) {
     drop = drop.parent;
   }
   const parentId = drop.parent?.id || null;
   const index = indexOf(drop) + 1;
-  return { parentId, index };
+  return { parentId, index, targetTree };
 }
 
 export type LineCursor = ReturnType<typeof lineCursor>;
@@ -115,15 +119,17 @@ export type Cursor = LineCursor | NoCursor | HighlightCursor;
  */
 export function computeDrop(args: Args): ComputedDrop {
   const hover = measureHover(args.element, args.offset);
+
   const indent = args.indent;
   const hoverLevel = Math.round(Math.max(0, hover.x - indent) / indent);
   const { node, nextNode, prevNode } = args;
   const [above, below] = getNodesAroundCursor(node, prevNode, nextNode, hover);
+  const targetTree = args.targetTree;
 
   /* Hovering over the middle of a folder */
   if (node && node.isInternal && hover.inMiddle) {
     return {
-      drop: dropAt(node.id, null),
+      drop: dropAt(node.id, null, targetTree),
       cursor: highlightCursor(node.id),
     };
   }
@@ -136,7 +142,7 @@ export function computeDrop(args: Args): ComputedDrop {
   /* There is no node above the cursor line */
   if (!above) {
     return {
-      drop: dropAt(below?.parent?.id, 0),
+      drop: dropAt(below?.parent?.id, 0, targetTree),
       cursor: lineCursor(0, 0),
     };
   }
@@ -145,7 +151,7 @@ export function computeDrop(args: Args): ComputedDrop {
   if (isItem(above)) {
     const level = bound(hoverLevel, below?.level || 0, above.level);
     return {
-      drop: walkUpFrom(above, level),
+      drop: walkUpFrom(above, level, targetTree),
       cursor: lineCursor(above.rowIndex! + 1, level),
     };
   }
@@ -154,7 +160,7 @@ export function computeDrop(args: Args): ComputedDrop {
   if (isClosed(above)) {
     const level = bound(hoverLevel, below?.level || 0, above.level);
     return {
-      drop: walkUpFrom(above, level),
+      drop: walkUpFrom(above, level, targetTree),
       cursor: lineCursor(above.rowIndex! + 1, level),
     };
   }
@@ -165,13 +171,13 @@ export function computeDrop(args: Args): ComputedDrop {
     if (level > above.level) {
       /* Will be the first child of the empty folder */
       return {
-        drop: dropAt(above.id, 0),
+        drop: dropAt(above.id, 0, targetTree),
         cursor: lineCursor(above.rowIndex! + 1, level),
       };
     } else {
       /* Will be a sibling or grandsibling of the empty folder */
       return {
-        drop: walkUpFrom(above, level),
+        drop: walkUpFrom(above, level, targetTree),
         cursor: lineCursor(above.rowIndex! + 1, level),
       };
     }
@@ -179,7 +185,7 @@ export function computeDrop(args: Args): ComputedDrop {
 
   /* The node above the cursor is a an open folder with children */
   return {
-    drop: dropAt(above?.id, 0),
+    drop: dropAt(above?.id, 0, targetTree),
     cursor: lineCursor(above.rowIndex! + 1, above.level + 1),
   };
 }
