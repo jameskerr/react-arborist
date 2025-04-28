@@ -14,6 +14,7 @@ export function DefaultRow<T>({
       ref={innerRef}
       onFocus={(e) => e.stopPropagation()}
       onClick={node.handleClick}
+      onKeyUp={node.handleKeyUp}
     >
       {children}
     </div>

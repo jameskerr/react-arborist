@@ -257,6 +257,20 @@ const { ref, width, height } = useResizeObserver();
 </div>
 ```
 
+### Multiple trees
+
+You can have multiple trees in the same app and the ability to drag and drop between them.
+
+Ensure that each tree has a unique id.
+
+```jsx
+<Tree id="tree1" />
+<Tree id="tree2" />
+```
+
+Note that tree items are supposed to have unique ids. It is your responsibility when dragging items between trees that node ids are always unique. It is recommended to namespace your node ids to each tree to prevent duplicates when dragging.
+
+
 ## API Reference
 
 - Components
@@ -275,6 +289,14 @@ These are all the props you can pass to the Tree component.
 
 ```ts
 interface TreeProps<T> {
+
+  /* Unique id - required for multiple trees */
+  id?: string;
+
+  /* Cross-tree drag and drop support */
+  allowCrossTreeDrop?: boolean;
+  allowCrossTreeDrag?: boolean;
+
   /* Data Options */
   data?: readonly T[];
   initialData?: readonly T[];
@@ -284,6 +306,8 @@ interface TreeProps<T> {
   onMove?: handlers.MoveHandler<T>;
   onRename?: handlers.RenameHandler<T>;
   onDelete?: handlers.DeleteHandler<T>;
+  onCrossTreeAdd?: handlers.CrossTreeAddHandler<T>;
+  onCrossTreeDelete?: handlers.CrossTreeDeleteHandler<T>;
 
   /* Renderers*/
   children?: ElementType<renderers.NodeRendererProps<T>>;
@@ -310,14 +334,7 @@ interface TreeProps<T> {
   disableMultiSelection?: boolean;
   disableEdit?: string | boolean | BoolFunc<T>;
   disableDrag?: string | boolean | BoolFunc<T>;
-  disableDrop?:
-    | string
-    | boolean
-    | ((args: {
-        parentNode: NodeApi<T>;
-        dragNodes: NodeApi<T>[];
-        index: number;
-      }) => boolean);
+  disableDrop?: DisableDrop<T>;
 
   /* Event Handlers */
   onActivate?: (node: NodeApi<T>) => void;

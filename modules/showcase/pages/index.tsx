@@ -52,6 +52,18 @@ const Home: NextPage = () => {
               <Link href="/cities">View Demo</Link>
             </div>
           </Link>
+
+          <Link href="/multitree" legacyBehavior>
+            <div className={styles.demoCard}>
+              <div className={`${styles.demoCardImage} multitree`}></div>
+              <b>Multiple Trees</b>
+              <h2>Multiple Trees</h2>
+              <p>
+                In this demo, we have two trees and demonstrate the ability to drag nodes between them.
+              </p>
+              <Link href="/multitree">View Demo</Link>
+            </div>
+          </Link>          
         </div>
       </main>
     </div>

@@ -206,4 +206,10 @@ export class NodeApi<T = any> {
       this.activate();
     }
   };
+
+  handleKeyUp = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      this.activate();
+    }
+  };
 }

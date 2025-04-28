@@ -6,8 +6,13 @@ import { ListOnScrollProps } from "react-window";
 import { NodeApi } from "../interfaces/node-api";
 import { OpenMap } from "../state/open-slice";
 import { useDragDropManager } from "react-dnd";
+import { TreeApi } from "../interfaces/tree-api";
+import { DropResult } from "../dnd/drop-hook";
 
 export interface TreeProps<T> {
+  id?: string;
+  allowCrossTreeDrop?: boolean;
+  allowCrossTreeDrag?: boolean;
   /* Data Options */
   data?: readonly T[];
   initialData?: readonly T[];
@@ -17,6 +22,8 @@ export interface TreeProps<T> {
   onMove?: handlers.MoveHandler<T>;
   onRename?: handlers.RenameHandler<T>;
   onDelete?: handlers.DeleteHandler<T>;
+  onCrossTreeAdd?: handlers.CrossTreeAddHandler<T>;
+  onCrossTreeDelete?: handlers.CrossTreeDeleteHandler<T>;
 
   /* Renderers*/
   children?: ElementType<renderers.NodeRendererProps<T>>;
@@ -43,14 +50,7 @@ export interface TreeProps<T> {
   disableMultiSelection?: boolean;
   disableEdit?: string | boolean | BoolFunc<T>;
   disableDrag?: string | boolean | BoolFunc<T>;
-  disableDrop?:
-    | string
-    | boolean
-    | ((args: {
-        parentNode: NodeApi<T>;
-        dragNodes: NodeApi<T>[];
-        index: number;
-      }) => boolean);
+  disableDrop?: DisableDrop<T>;
 
   /* Event Handlers */
   onActivate?: (node: NodeApi<T>) => void;
@@ -78,3 +78,18 @@ export interface TreeProps<T> {
   onContextMenu?: MouseEventHandler;
   dndManager?: ReturnType<typeof useDragDropManager>;
 }
+
+export interface DisableDropArgs<T> {
+  parentNode: NodeApi<T>;
+  dragNodes: NodeApi<T>[];
+  index: number;
+  sourceTree: TreeApi<unknown>;
+  sourceTreeId?: string;
+  drop: DropResult | null;
+  targetTreeId?: string;
+}
+
+export type DisableDrop<T> =
+  | string
+  | boolean
+  | ((args: DisableDropArgs<T>) => boolean);

@@ -1,3 +1,4 @@
+import { TreeApi } from "../interfaces/tree-api";
 import { TreeProps } from "../types/tree-props";
 import { RootState } from "./root-reducer";
 
@@ -12,6 +13,7 @@ export const initialState = (props?: TreeProps<any>): RootState => ({
       selectedIds: [],
       destinationParentId: null,
       destinationIndex: null,
+      
     },
     selection: { ids: new Set(), anchor: null, mostRecent: null },
   },
@@ -21,5 +23,7 @@ export const initialState = (props?: TreeProps<any>): RootState => ({
     dragIds: [],
     parentId: null,
     index: -1,
+    sourceTreeId: "",
+    lastTree: null
   },
 });
