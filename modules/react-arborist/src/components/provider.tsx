@@ -87,7 +87,7 @@ export function TreeProvider<T>({
               {...(treeProps.dndManager
                 ? { manager: treeProps.dndManager }
                 : {
-                    backend: HTML5Backend,
+                    backend: treeProps.dndBackend || HTML5Backend,
                     options: {
                       rootElement: api.props.dndRootElement || undefined,
                     },
