@@ -245,15 +245,17 @@ function App() {
 
 ### Dynamic sizing
 
-You can add a ref to it with this package [ZeeCoder/use-resize-observer](https://github.com/ZeeCoder/use-resize-observer)
+You can add a ref to it with this package [Pmndrs/react-use-measure](https://github.com/pmndrs/react-use-measure)
  
-That hook will return the height and width of the parent whenever it changes. You then pass these numbers to the Tree.
+That hook will will measure the boundaries (for instance width, height, top, left) of a view you reference. Then you pass the width and the height to the Tree.
 
 ```js
-const { ref, width, height } = useResizeObserver();
+import useMeasure from "react-use-measure";
+
+const [ref, bounds] = useMeasure();
  
 <div className="parent" ref={ref}>
-  <Tree height={height} width={width} />
+  <Tree height={bounds.height} width={bounds.width} />
 </div>
 ```
 
