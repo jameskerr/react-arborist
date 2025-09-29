@@ -1,5 +1,6 @@
 /* The Public Api */
 export { Tree } from "./components/tree";
+export { DropContainer } from "./components/list-outer-element";
 export * from "./types/handlers";
 export * from "./types/renderers";
 export * from "./types/state";
