@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
-import { NodeApi, NodeRendererProps, Tree, TreeApi } from "react-arborist";
+import { NodeApi, NodeRendererProps, Tree, TreeApi } from "@jorgedanisc/react-arborist";
 import styles from "../styles/cities.module.css";
 import { cities } from "../data/cities";
 import { BsMapFill, BsMap, BsGeo, BsGeoFill } from "react-icons/bs";
@@ -44,7 +44,7 @@ export default function Cities() {
                 selection={active?.id}
                 className={styles.tree}
                 rowClassName={styles.row}
-                padding={15}
+                padding={{ top: 76, bottom: 32 }}
                 rowHeight={30}
                 indent={INDENT_STEP}
                 overscanCount={8}
@@ -82,6 +82,13 @@ export default function Cities() {
               }
             >
               Select San Francisco
+            </button>
+            <button
+              onClick={() =>
+                tree?.scrollTo("1840021543.")
+              }
+            >
+              Scroll to San Francisco
             </button>
           </section>
           <section>

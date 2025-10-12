@@ -52,9 +52,12 @@ export const RowContainer = React.memo(function RowContainer<T>({
       ...style,
       top:
         parseFloat(style.top as string) +
-        (tree.props.padding ?? tree.props.paddingTop ?? 0),
+        tree.paddingTop,
+        left:
+        parseFloat(style.left as string) +
+        tree.paddingLeft,
     }),
-    [style, tree.props.padding, tree.props.paddingTop]
+    [style, tree.paddingTop, tree.paddingLeft]
   );
   const rowAttrs: React.HTMLAttributes<any> = {
     role: "treeitem",

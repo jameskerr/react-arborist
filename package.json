@@ -1,15 +1,15 @@
 {
-  "name": "react-arborist-monorepo",
+  "name": "@jorgedanisc/react-arborist-monorepo",
   "workspaces": [
     "./modules/*"
   ],
   "scripts": {
     "build": "yarn workspaces foreach --all run build",
-    "build-lib": "yarn workspace react-arborist build",
+    "build-lib": "yarn workspace @jorgedanisc/react-arborist build",
     "test": "yarn workspaces foreach --all run test",
-    "watch": "yarn workspace react-arborist watch",
-    "bump": "yarn workspace react-arborist version",
-    "clean": "yarn workspace react-arborist clean",
+    "watch": "yarn workspace @jorgedanisc/react-arborist watch",
+    "bump": "yarn workspace @jorgedanisc/react-arborist version",
+    "clean": "yarn workspace @jorgedanisc/react-arborist clean",
     "showcase": "yarn workspace showcase start",
     "start": "run-s clean build-lib && run-p watch showcase",
     "publish": "sh bin/publish"

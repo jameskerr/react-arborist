@@ -1,5 +1,7 @@
 /* The Public Api */
 export { Tree } from "./components/tree";
+export { DropContainer } from "./components/list-outer-element";
+export { useDndManager } from "./hooks/use-dnd-manager";
 export * from "./types/handlers";
 export * from "./types/renderers";
 export * from "./types/state";

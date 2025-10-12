@@ -2,4 +2,4 @@
 
 yarn build
 cp README.md modules/react-arborist/README.md
-yarn workspace react-arborist npm publish $@
+yarn workspace @jorgedanisc/react-arborist npm publish $@

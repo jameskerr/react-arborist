@@ -2,10 +2,21 @@ import { BoolFunc } from "./utils";
 import * as handlers from "./handlers";
 import * as renderers from "./renderers";
 import { ElementType, MouseEventHandler } from "react";
-import { ListOnScrollProps } from "react-window";
+import { ListOnScrollProps, CommonProps as ReactWindowCommonProps } from "react-window";
 import { NodeApi } from "../interfaces/node-api";
 import { OpenMap } from "../state/open-slice";
 import { useDragDropManager } from "react-dnd";
+
+export type PaddingValue =
+  | number
+  | {
+      top?: number;
+      right?: number;
+      bottom?: number;
+      left?: number;
+      y?: number;
+      x?: number;
+    };
 
 export interface TreeProps<T> {
   /* Data Options */
@@ -31,9 +42,9 @@ export interface TreeProps<T> {
   width?: number | string;
   height?: number;
   indent?: number;
-  paddingTop?: number;
-  paddingBottom?: number;
-  padding?: number;
+  padding?: PaddingValue;
+  paddingTop?: number; // @deprecated - use padding instead
+  paddingBottom?: number; // @deprecated - use padding instead
 
   /* Config */
   childrenAccessor?: string | ((d: T) => readonly T[] | null);
@@ -44,13 +55,16 @@ export interface TreeProps<T> {
   disableEdit?: string | boolean | BoolFunc<T>;
   disableDrag?: string | boolean | BoolFunc<T>;
   disableDrop?:
-    | string
-    | boolean
-    | ((args: {
-        parentNode: NodeApi<T>;
-        dragNodes: NodeApi<T>[];
-        index: number;
-      }) => boolean);
+  | string
+  | boolean
+  | ((args: {
+    parentNode: NodeApi<T>;
+    dragNodes: NodeApi<T>[];
+    index: number;
+  }) => boolean);
+
+  /* Scrolling */
+  scrollToMargin?: number;
 
   /* Event Handlers */
   onActivate?: (node: NodeApi<T>) => void;
@@ -77,4 +91,7 @@ export interface TreeProps<T> {
   onClick?: MouseEventHandler;
   onContextMenu?: MouseEventHandler;
   dndManager?: ReturnType<typeof useDragDropManager>;
+
+  outerElementType?: ReactWindowCommonProps["outerElementType"];
+  innerElementType?: ReactWindowCommonProps["innerElementType"];
 }

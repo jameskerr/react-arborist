@@ -87,6 +87,52 @@ export class TreeApi<T> {
     return this.props.overscanCount ?? 1;
   }
 
+  get paddingTop() {
+    // Priority: paddingTop > padding.top > padding.y > padding (number) > 0
+    if (this.props.paddingTop !== undefined) return this.props.paddingTop;
+    if (this.props.padding && typeof this.props.padding === 'object') {
+      if (this.props.padding.top !== undefined) return this.props.padding.top;
+      if (this.props.padding.y !== undefined) return this.props.padding.y;
+    }
+    if (this.props.padding && typeof this.props.padding === 'number') return this.props.padding;
+    return 0;
+  }
+
+  get paddingBottom() {
+    // Priority: paddingBottom > padding.bottom > padding.y > padding (number) > 0
+    if (this.props.paddingBottom !== undefined) return this.props.paddingBottom;
+    if (this.props.padding && typeof this.props.padding === 'object') {
+      if (this.props.padding.bottom !== undefined) return this.props.padding.bottom;
+      if (this.props.padding.y !== undefined) return this.props.padding.y;
+    }
+    if (this.props.padding && typeof this.props.padding === 'number') return this.props.padding;
+    return 0;
+  }
+
+  get paddingLeft() {
+    // Priority: padding.left > padding.x > padding (number) > 0
+    if (this.props.padding && typeof this.props.padding === 'object') {
+      if (this.props.padding.left !== undefined) return this.props.padding.left;
+      if (this.props.padding.x !== undefined) return this.props.padding.x;
+    }
+    if (this.props.padding && typeof this.props.padding === 'number') return this.props.padding;
+    return 0;
+  }
+
+  get paddingRight() {
+    // Priority: padding.right > padding.x > padding (number) > 0
+    if (this.props.padding && typeof this.props.padding === 'object') {
+      if (this.props.padding.right !== undefined) return this.props.padding.right;
+      if (this.props.padding.x !== undefined) return this.props.padding.x;
+    }
+    if (this.props.padding && typeof this.props.padding === 'number') return this.props.padding;
+    return 0;
+  }
+
+  get scrollToMargin() {
+    return this.props.scrollToMargin ?? 0;
+  }
+
   get searchTerm() {
     return (this.props.searchTerm || "").trim();
   }
@@ -534,19 +580,91 @@ export class TreeApi<T> {
 
   /* Scrolling */
 
+  // Viewport height of the scroller (includes padding), fallback to prop height
+  private getViewportHeight() {
+    const el = this.listEl.current;
+    return el ? el.clientHeight : this.height;
+  }
+
+  // Total scrollable content height (including vertical paddings)
+  private getContentHeight() {
+    return this.paddingTop + this.visibleNodes.length * this.rowHeight + this.paddingBottom;
+  }
+
+  // Compute and apply scrollTop so that index is aligned correctly, honoring asymmetric paddings
+  private scrollToIndex(index: number, align: Align = "smart") {
+    const list = this.list.current;
+    const scroller = this.listEl.current;
+    if (!list || !scroller) return;
+
+    const itemSize = this.rowHeight;
+    const margin = this.scrollToMargin;
+    const viewport = this.getViewportHeight();
+
+    // Coordinates in scrollable content space (0 at very top, before paddingTop)
+    const itemTop = this.paddingTop + index * itemSize;
+    const itemBottom = itemTop + itemSize;
+
+    const current = scroller.scrollTop;
+
+    // Visible window in content space
+    const topBound = current + margin;
+    const bottomBound = current + viewport - margin;
+
+    // Helpers for targets
+    const scrollToStart = () => itemTop - margin;
+    const scrollToEnd = () => itemBottom - viewport + margin;
+    const scrollToCenter = () => itemTop - Math.round((viewport - itemSize) / 2);
+
+    let target = current;
+
+    switch (align) {
+      case "start":
+        target = scrollToStart();
+        break;
+      case "end":
+        target = scrollToEnd();
+        break;
+      case "center":
+        target = scrollToCenter();
+        break;
+      case "auto":
+      case "smart":
+      default: {
+        const fullyVisible = itemTop >= topBound && itemBottom <= bottomBound;
+        if (fullyVisible) {
+          target = current;
+        } else if (itemTop < topBound) {
+          target = scrollToStart();
+        } else {
+          target = scrollToEnd();
+        }
+        break;
+      }
+    }
+
+    // Clamp to scrollable range
+    const maxScrollTop = Math.max(0, this.getContentHeight() - viewport);
+    const clamped = Math.max(0, Math.min(Math.round(target), maxScrollTop));
+
+    list.scrollTo(clamped);
+  }
+
   scrollTo(identity: Identity, align: Align = "smart") {
     if (!identity) return;
     const id = identify(identity);
     this.openParents(id);
+
+    // Wait until: the node is indexed AND refs are ready (so measurements are reliable)
     return utils
-      .waitFor(() => id in this.idToIndex)
+      .waitFor(() => id in this.idToIndex && !!this.list.current && !!this.listEl.current)
       .then(() => {
         const index = this.idToIndex[id];
         if (index === undefined) return;
-        this.list.current?.scrollToItem(index, align);
+        this.scrollToIndex(index, align);
       })
       .catch(() => {
-        // Id: ${id} never appeared in the list.
+        // Id never appeared in the list.
       });
   }
 

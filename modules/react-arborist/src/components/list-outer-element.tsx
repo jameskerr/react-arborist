@@ -40,3 +40,6 @@ const DropContainer = () => {
     </div>
   );
 };
+
+// Export DropContainer so it can be used by custom outer elements
+export { DropContainer };

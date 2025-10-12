@@ -7,14 +7,15 @@ export const ListInnerElement = forwardRef<any, any>(function InnerElement(
   ref
 ) {
   const tree = useTreeApi();
-  const paddingTop = tree.props.padding ?? tree.props.paddingTop ?? 0;
-  const paddingBottom = tree.props.padding ?? tree.props.paddingBottom ?? 0;
+  const paddingTop = tree.paddingTop;
+  const paddingBottom = tree.paddingBottom;
   return (
     <div
       ref={ref}
       style={{
         ...style,
         height: `${parseFloat(style.height) + paddingTop + paddingBottom}px`,
+        width: `${parseFloat(style.width) + tree.paddingLeft + tree.paddingRight}px`,
       }}
       {...rest}
     />

@@ -8,8 +8,8 @@ export function Cursor() {
   const indent = tree.indent;
   const top =
     tree.rowHeight * cursor.index +
-    (tree.props.padding ?? tree.props.paddingTop ?? 0);
-  const left = indent * cursor.level;
+    tree.paddingTop;
+  const left = indent * cursor.level + tree.paddingLeft;
   const Cursor = tree.renderCursor;
   return <Cursor {...{ top, left, indent }} />;
 }

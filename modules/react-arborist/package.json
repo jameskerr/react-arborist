@@ -1,6 +1,9 @@
 {
-  "name": "react-arborist",
-  "version": "3.4.3",
+  "name": "@jorgedanisc/react-arborist",
+  "version": "3.5.6",
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "source": "src/index.ts",
   "main": "dist/main/index.js",
@@ -22,10 +25,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/brimdata/react-arborist.git"
+    "url": "https://github.com/jorgedanisc/react-arborist.git"
   },
   "homepage": "https://react-arborist.netlify.app",
-  "bugs": "https://github.com/brimdata/react-arborist/issues",
+  "bugs": "https://github.com/jorgedanisc/react-arborist/issues",
   "keywords": [
     "react",
     "arborist",

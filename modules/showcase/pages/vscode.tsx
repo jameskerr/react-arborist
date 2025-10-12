@@ -1,6 +1,6 @@
 import useResizeObserver from "use-resize-observer";
 import styles from "../styles/vscode.module.css";
-import { NodeRendererProps, Tree } from "react-arborist";
+import { NodeRendererProps, Tree } from "@jorgedanisc/react-arborist";
 import { SiTypescript } from "react-icons/si";
 import { MdFolder } from "react-icons/md";
 import clsx from "clsx";
