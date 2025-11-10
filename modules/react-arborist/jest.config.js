@@ -102,6 +102,29 @@ const config = {
 
   // A preset that is used as a base for Jest's configuration
   preset: "ts-jest",
+  
+  // Transform configuration for ts-jest and ESM modules
+  transform: {
+    "^.+\\.tsx?$": [
+      "ts-jest",
+      {
+        useESM: false,
+      },
+    ],
+    "^.+\\.(js|mjs)$": [
+      "babel-jest",
+      {
+        presets: [
+          [
+            "@babel/preset-env",
+            {
+              modules: "commonjs",
+            },
+          ],
+        ],
+      },
+    ],
+  },
 
   // Run tests from one or more projects
   // projects: undefined,
@@ -173,14 +196,10 @@ const config = {
   // This option allows use of a custom test runner
   // testRunner: "jest-circus/runner",
 
-  // A map from regular expressions to paths to transformers
-  // transform: undefined,
-
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
-  // transformIgnorePatterns: [
-  //   "/node_modules/",
-  //   "\\.pnp\\.[^\\/]+$"
-  // ],
+  transformIgnorePatterns: [
+    "node_modules/(?!(react-dnd|react-dnd-html5-backend|@react-dnd|dnd-core)/)",
+  ],
 
   // An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them
   // unmockedModulePathPatterns: undefined,

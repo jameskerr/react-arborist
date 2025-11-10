@@ -16,7 +16,7 @@ import {
 import { TreeApi } from "../interfaces/tree-api";
 import { initialState } from "../state/initial";
 import { Actions, rootReducer, RootState } from "../state/root-reducer";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import HTML5Backend from "react-dnd-html5-backend";
 import { DndProvider } from "react-dnd";
 import { TreeProps } from "../types/tree-props";
 import { createStore, Store } from "redux";
@@ -84,8 +84,12 @@ export function TreeProvider<T>({
         <NodesContext.Provider value={state.nodes}>
           <DndContext.Provider value={state.dnd}>
             <DndProvider
-              backend={HTML5Backend}
-              options={{ rootElement: api.props.dndRootElement || undefined }}
+              backend={HTML5Backend as any}
+              options={
+                treeProps.dndRootElement
+                  ? { rootElement: treeProps.dndRootElement }
+                  : undefined
+              }
               {...(treeProps.dndManager && { manager: treeProps.dndManager })}
             >
               {children}
