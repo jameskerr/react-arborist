@@ -173,6 +173,87 @@ export function getInsertIndex(tree: TreeApi<any>) {
   return 0;
 }
 
+export type TreeLineChars = {
+  last: string;
+  middle: string;
+  pipe: string;
+  blank: string;
+};
+
+const defaultTreeLineChars: TreeLineChars = {
+  last: "└ ",
+  middle: "├ ",
+  pipe: "│ ",
+  blank: "\u3000 ",
+};
+
+/**
+ * Generate a tree-line prefix string for a node.
+ *
+ * Returns characters like `├ `, `└ `, `│` that visually connect
+ * parent and child nodes, similar to the Unix `tree` command.
+ *
+ * **Styling note:** The prefix uses Box Drawing characters (`│`, `├`, `└`)
+ * which require a monospace font for correct alignment. Wrap the prefix
+ * in a `<span>` with `fontFamily: "monospace"` and use a consistent
+ * `fontSize` (e.g. 14–16px). Inherited `line-height` or `font-size`
+ * from parent elements can cause misalignment.
+ *
+ * @example Basic usage
+ * ```tsx
+ * function MyNode({ node, style }: NodeRendererProps<MyData>) {
+ *   return (
+ *     <div style={style}>
+ *       <span style={{ fontFamily: "monospace", fontSize: 14 }}>
+ *         {getTreeLinePrefix(node)}
+ *       </span>
+ *       {node.data.name}
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @example With folder/file icons
+ * ```tsx
+ * function MyNode({ node, style }: NodeRendererProps<MyData>) {
+ *   const icon = node.isLeaf ? "📄" : node.isOpen ? "📂" : "📁";
+ *   return (
+ *     <div style={style}>
+ *       <span style={{ fontFamily: "monospace", fontSize: 16 }}>
+ *         {getTreeLinePrefix(node)}
+ *       </span>
+ *       {icon} {node.data.name}
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @example Custom characters
+ * ```tsx
+ * // ASCII-only style
+ * getTreeLinePrefix(node, { last: "`- ", middle: "|- ", pipe: "|", blank: "  " })
+ * ```
+ */
+export function getTreeLinePrefix(
+  node: NodeApi<any>,
+  chars: Partial<TreeLineChars> = {}
+): string {
+  const c = { ...defaultTreeLineChars, ...chars };
+  if (node.level === 0) return "";
+
+  const isLast = node.nextSibling === null;
+  let prefix = isLast ? c.last : c.middle;
+
+  let ancestor = node.parent;
+  while (ancestor && ancestor.level > 0) {
+    const isAncestorLast = ancestor.nextSibling === null;
+    prefix = (isAncestorLast ? c.blank : c.pipe) + prefix;
+    ancestor = ancestor.parent;
+  }
+
+  return prefix;
+}
+
 export function getInsertParentId(tree: TreeApi<any>) {
   const focus = tree.focusedNode;
   if (!focus) return null;
