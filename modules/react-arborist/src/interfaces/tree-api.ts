@@ -345,15 +345,18 @@ export class TreeApi<T> {
     safeRun(this.props.onSelect, this.selectedNodes);
   }
 
-  selectMulti(identity: Identity) {
+  selectMulti(identity: Identity, opts: { align?: Align; focus?: boolean } = {}) {
     const node = this.get(identifyNull(identity));
     if (!node) return;
-    this.dispatch(focus(node.id));
+    const changeFocus = opts.focus !== false;
+    if (changeFocus) this.dispatch(focus(node.id));
     this.dispatch(selection.add(node.id));
     this.dispatch(selection.anchor(node.id));
     this.dispatch(selection.mostRecent(node.id));
-    this.scrollTo(node);
-    if (this.focusedNode) safeRun(this.props.onFocus, this.focusedNode);
+    this.scrollTo(node, opts.align);
+    if (this.focusedNode && changeFocus) {
+      safeRun(this.props.onFocus, this.focusedNode);
+    }
     safeRun(this.props.onSelect, this.selectedNodes);
   }
 
