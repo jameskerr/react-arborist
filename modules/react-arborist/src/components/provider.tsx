@@ -84,9 +84,14 @@ export function TreeProvider<T>({
         <NodesContext.Provider value={state.nodes}>
           <DndContext.Provider value={state.dnd}>
             <DndProvider
-              backend={HTML5Backend}
-              options={{ rootElement: api.props.dndRootElement || undefined }}
-              {...(treeProps.dndManager && { manager: treeProps.dndManager })}
+              {...(treeProps.dndManager
+                ? { manager: treeProps.dndManager }
+                : {
+                    backend: HTML5Backend,
+                    options: {
+                      rootElement: api.props.dndRootElement || undefined,
+                    },
+                  })}
             >
               {children}
             </DndProvider>
