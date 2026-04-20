@@ -268,6 +268,8 @@ const { ref, width, height } = useResizeObserver();
 - Interfaces
   - [Node API](#node-api-reference)
   - [Tree API](#tree-api-reference)
+- Utilities
+  - [getTreeLinePrefix](#gettreelineprefix)
 
 ## Tree Component Props
 
@@ -303,7 +305,7 @@ interface TreeProps<T> {
   padding?: number;
 
   /* Config */
-  childrenAccessor?: string | ((d: T) => T[] | null);
+  childrenAccessor?: string | ((d: T) => readonly T[] | null);
   idAccessor?: string | ((d: T) => string);
   openByDefault?: boolean;
   selectionFollowsFocus?: boolean;
@@ -343,7 +345,11 @@ interface TreeProps<T> {
   dndRootElement?: globalThis.Node | null;
   onClick?: MouseEventHandler;
   onContextMenu?: MouseEventHandler;
-  dndManager?: DragDropManager;
+  dndBackend?: Extract<
+    DndProviderProps<unknown, unknown>,
+    { backend: unknown }
+  >["backend"];
+  dndManager?: ReturnType<typeof useDragDropManager>;
 }
 ```
 
@@ -648,17 +654,17 @@ _tree_.**isSelected**(_id_) : _boolean_
 
 Returns true if the node with _id_ is selected.
 
-_tree_.**select**(_id_)
+_tree_.**select**(_id_, _[opts]_)
 
-Select only the node with _id_.
+Select only the node with _id_. Accepts an optional options object: `{ align?: "auto" | "smart" | "center" | "end" | "start"; focus?: boolean }`. `align` is forwarded to the scroll behavior; passing `focus: false` suppresses the focus change and the `onFocus` callback.
 
 _tree_.**deselect**(_id_)
 
 Deselect the node with _id_.
 
-_tree_.**selectMulti**(_id_)
+_tree_.**selectMulti**(_id_, _[opts]_)
 
-Add to the selection the node with _id_.
+Add to the selection the node with _id_. Accepts the same options object as `select`.
 
 _tree_.**selectContiguous**(_id_)
 
@@ -739,6 +745,43 @@ Returns all the props that were passed to the _\<Tree\>_ component.
 _tree_.**root** : _NodeApi_
 
 Returns the root _NodeApi_ instance. Its children are the Node representations of the _data_ prop array.
+
+## Utilities
+
+### getTreeLinePrefix
+
+Generates a tree-line prefix string (using Unix `tree`-style box-drawing characters like `├`, `└`, `│`) for a given node. Useful when you want ASCII/Unicode connector lines in a custom node renderer.
+
+```ts
+function getTreeLinePrefix(
+  node: NodeApi<any>,
+  chars?: Partial<TreeLineChars>
+): string;
+
+type TreeLineChars = {
+  last: string;   // default: "└ "
+  middle: string; // default: "├ "
+  pipe: string;   // default: "│ "
+  blank: string;  // default: "\u3000 "
+};
+```
+
+Wrap the prefix in a monospace span so the connectors line up:
+
+```tsx
+import { Tree, getTreeLinePrefix } from "react-arborist";
+
+function Node({ node, style }) {
+  return (
+    <div style={style}>
+      <span style={{ fontFamily: "monospace" }}>{getTreeLinePrefix(node)}</span>
+      {node.data.name}
+    </div>
+  );
+}
+```
+
+Pass a partial `chars` object to override any of the default characters (e.g. for an ASCII-only style).
 
 ## Author
 
