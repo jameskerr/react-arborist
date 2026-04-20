@@ -1,3 +1,15 @@
+# Version 3.5.0
+
+**Features**
+
+- `getTreeLinePrefix` utility for rendering tree connector lines (#324)
+- `dndBackend` prop on `Tree` for supplying a custom react-dnd backend (#326, originally #316)
+- `selectMulti` now accepts an options argument (`{ align, focus }`) for consistency with `select` (#266)
+
+**Fixes**
+
+- `dndManager` prop no longer triggers unnecessary re-renders; `backend`/`options` are only passed to `DndProvider` when no custom manager is supplied (#237)
+
 # Version 3.0.0
 
 **Breaking Changes**
