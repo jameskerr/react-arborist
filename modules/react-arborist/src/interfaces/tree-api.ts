@@ -371,8 +371,10 @@ export class TreeApi<T> {
     const id = identify(identity);
     this.dispatch(focus(id));
     if (this.get(id)?.isSelectable) {
-      const {anchor, mostRecent} = this.state.nodes.selection;
-      const selectableNodes = this.filterSelectableNodes(this.nodesBetween(anchor, identifyNull(id)))
+      const { anchor, mostRecent } = this.state.nodes.selection;
+      const selectableNodes = this.filterSelectableNodes(
+        this.nodesBetween(anchor, identifyNull(id)),
+      );
       this.dispatch(selection.remove(this.nodesBetween(anchor, mostRecent)));
       this.dispatch(selection.add(selectableNodes));
       this.dispatch(selection.mostRecent(id));
@@ -401,8 +403,8 @@ export class TreeApi<T> {
 
   private filterSelectableNodes(nodes: (IdObj | string)[]) {
     return nodes
-      .map(n => this.get(identify(n)))
-      .filter(n => !!n && n.isSelectable) as NodeApi<T>[];
+      .map((n) => this.get(identify(n)))
+      .filter((n): n is NodeApi<T> => !!n && n.isSelectable);
   }
 
   setSelection(args: {
