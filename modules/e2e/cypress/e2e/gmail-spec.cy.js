@@ -149,6 +149,11 @@ describe("Testing the Gmail Demo", () => {
     cy.focused().should("have.attr", "aria-selected", "true");
     cy.get("@item").contains("Categories").click();
     cy.focused().should("have.attr", "aria-selected", "false");
+    // Existing selection on Inbox is preserved when clicking an unselectable node
+    cy.get("@item")
+      .contains("Inbox")
+      .parents("[role=treeitem]")
+      .should("have.attr", "aria-selected", "true");
   });
 
   it("select all does not select categories or spam", () => {

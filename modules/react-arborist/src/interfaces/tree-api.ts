@@ -339,7 +339,6 @@ export class TreeApi<T> {
     if (this.focusedNode && changeFocus) {
       safeRun(this.props.onFocus, this.focusedNode);
     }
-    safeRun(this.props.onSelect, this.selectedNodes);
   }
 
   deselect(node: Identity) {
@@ -390,11 +389,13 @@ export class TreeApi<T> {
   }
 
   selectAll() {
-    const allSelectableNodes = this.filterSelectableNodes(Object.keys(this.idToIndex));
+    const allSelectableNodes = this.filterSelectableNodes(
+      Object.keys(this.idToIndex),
+    );
     this.setSelection({
       ids: allSelectableNodes,
-      anchor: this.firstNode,
-      mostRecent: this.lastNode,
+      anchor: allSelectableNodes[0] ?? null,
+      mostRecent: allSelectableNodes[allSelectableNodes.length - 1] ?? null,
     });
     this.dispatch(focus(this.lastNode?.id));
     if (this.focusedNode) safeRun(this.props.onFocus, this.focusedNode);
