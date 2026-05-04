@@ -1,5 +1,5 @@
 import { EditResult } from "../types/handlers";
-import { Identity, IdObj } from "../types/utils";
+import { BoolFunc, Identity, IdObj } from "../types/utils";
 import { TreeProps } from "../types/tree-props";
 import { MutableRefObject } from "react";
 import { Align, FixedSizeList, ListOnItemsRenderedProps } from "react-window";
@@ -169,7 +169,7 @@ export class TreeApi<T> {
     return this.visibleNodes.slice(start, end + 1);
   }
 
-  indexOf(id: string | null | IdObj) {
+  indexOf(id: Identity) {
     const key = utils.identifyNull(id);
     if (!key) return null;
     return this.idToIndex[key];
@@ -219,7 +219,7 @@ export class TreeApi<T> {
     }
   }
 
-  async delete(node: string | IdObj | null | string[] | IdObj[]) {
+  async delete(node: Identity | string[] | IdObj[]) {
     if (!node) return;
     const idents = Array.isArray(node) ? node : [node];
     const ids = idents.map(identify);
@@ -256,7 +256,7 @@ export class TreeApi<T> {
     setTimeout(() => this.onFocus()); // Return focus to element;
   }
 
-  activate(id: string | IdObj | null) {
+  activate(id: Identity) {
     const node = this.get(identifyNull(id));
     if (!node) return;
     safeRun(this.props.onActivate, node);
@@ -328,14 +328,17 @@ export class TreeApi<T> {
     const changeFocus = opts.focus !== false;
     const id = identify(node);
     if (changeFocus) this.dispatch(focus(id));
-    this.dispatch(selection.only(id));
-    this.dispatch(selection.anchor(id));
-    this.dispatch(selection.mostRecent(id));
+    if (this.get(id)?.isSelectable) {
+      this.setSelection({
+        ids: [id],
+        anchor: id,
+        mostRecent: id,
+      });
+    }
     this.scrollTo(id, opts.align);
     if (this.focusedNode && changeFocus) {
       safeRun(this.props.onFocus, this.focusedNode);
     }
-    safeRun(this.props.onSelect, this.selectedNodes);
   }
 
   deselect(node: Identity) {
@@ -350,9 +353,11 @@ export class TreeApi<T> {
     if (!node) return;
     const changeFocus = opts.focus !== false;
     if (changeFocus) this.dispatch(focus(node.id));
-    this.dispatch(selection.add(node.id));
-    this.dispatch(selection.anchor(node.id));
-    this.dispatch(selection.mostRecent(node.id));
+    if (node.isSelectable) {
+      this.dispatch(selection.add(node.id));
+      this.dispatch(selection.anchor(node.id));
+      this.dispatch(selection.mostRecent(node.id));
+    }
     this.scrollTo(node, opts.align);
     if (this.focusedNode && changeFocus) {
       safeRun(this.props.onFocus, this.focusedNode);
@@ -363,11 +368,16 @@ export class TreeApi<T> {
   selectContiguous(identity: Identity) {
     if (!identity) return;
     const id = identify(identity);
-    const { anchor, mostRecent } = this.state.nodes.selection;
     this.dispatch(focus(id));
-    this.dispatch(selection.remove(this.nodesBetween(anchor, mostRecent)));
-    this.dispatch(selection.add(this.nodesBetween(anchor, identifyNull(id))));
-    this.dispatch(selection.mostRecent(id));
+    if (this.get(id)?.isSelectable) {
+      const { anchor, mostRecent } = this.state.nodes.selection;
+      const selectableNodes = this.filterSelectableNodes(
+        this.nodesBetween(anchor, identifyNull(id)),
+      );
+      this.dispatch(selection.remove(this.nodesBetween(anchor, mostRecent)));
+      this.dispatch(selection.add(selectableNodes));
+      this.dispatch(selection.mostRecent(id));
+    }
     this.scrollTo(id);
     if (this.focusedNode) safeRun(this.props.onFocus, this.focusedNode);
     safeRun(this.props.onSelect, this.selectedNodes);
@@ -379,20 +389,29 @@ export class TreeApi<T> {
   }
 
   selectAll() {
+    const allSelectableNodes = this.filterSelectableNodes(
+      Object.keys(this.idToIndex),
+    );
     this.setSelection({
-      ids: Object.keys(this.idToIndex),
-      anchor: this.firstNode,
-      mostRecent: this.lastNode,
+      ids: allSelectableNodes,
+      anchor: allSelectableNodes[0] ?? null,
+      mostRecent: allSelectableNodes[allSelectableNodes.length - 1] ?? null,
     });
     this.dispatch(focus(this.lastNode?.id));
     if (this.focusedNode) safeRun(this.props.onFocus, this.focusedNode);
     safeRun(this.props.onSelect, this.selectedNodes);
   }
 
+  private filterSelectableNodes(nodes: (IdObj | string)[]) {
+    return nodes
+      .map((n) => this.get(identify(n)))
+      .filter((n): n is NodeApi<T> => !!n && n.isSelectable);
+  }
+
   setSelection(args: {
     ids: (IdObj | string)[] | null;
-    anchor: IdObj | string | null;
-    mostRecent: IdObj | string | null;
+    anchor: Identity;
+    mostRecent: Identity;
   }) {
     const ids = new Set(args.ids?.map(identify));
     const anchor = identifyNull(args.anchor);
@@ -596,16 +615,25 @@ export class TreeApi<T> {
   }
 
   isEditable(data: T) {
-    const check = this.props.disableEdit || (() => false);
-    return !utils.access(data, check);
+    return this.isActionPossible(data, this.props.disableEdit);
   }
 
   isDraggable(data: T) {
-    const check = this.props.disableDrag || (() => false);
-    return !utils.access(data, check);
+    return this.isActionPossible(data, this.props.disableDrag);
   }
 
-  isDragging(node: string | IdObj | null) {
+  isSelectable(data: T) {
+    return this.isActionPossible(data, this.props.disableSelect);
+  }
+
+  private isActionPossible(
+    data: T,
+    disabler: string | boolean | BoolFunc<T> = () => false,
+  ) {
+    return !utils.access(data, disabler);
+  }
+
+  isDragging(node: Identity) {
     const id = identifyNull(node);
     if (!id) return false;
     return this.state.nodes.drag.id === id;
@@ -619,7 +647,7 @@ export class TreeApi<T> {
     return this.matchFn(node);
   }
 
-  willReceiveDrop(node: string | IdObj | null) {
+  willReceiveDrop(node: Identity) {
     const id = identifyNull(node);
     if (!id) return false;
     const { destinationParentId, destinationIndex } = this.state.nodes.drag;

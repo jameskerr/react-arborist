@@ -47,6 +47,7 @@ export default function GmailSidebar() {
                   renderCursor={Cursor}
                   searchTerm={term}
                   paddingBottom={32}
+                  disableSelect={(data) => ["Categories", "Spam"].includes(data.name)}
                   disableEdit={(data) => data.readOnly}
                   disableDrop={({ parentNode, dragNodes }) => {
                     if (
@@ -78,7 +79,7 @@ export default function GmailSidebar() {
           <p>The tree is fully functional. Try the following:</p>
           <ul>
             <li>Drag the items around</li>
-            <li>Try to drag Inbox into Categories (not allowed)</li>
+            <li>Try to drag Inbox into {"'"}Categories{"'"} (not allowed)</li>
             <li>Move focus with the arrow keys</li>
             <li>Toggle folders (press spacebar)</li>
             <li>
@@ -89,6 +90,7 @@ export default function GmailSidebar() {
             <li>Create a new folder (press shift+A)</li>
             <li>Delete items (press delete)</li>
             <li>Select multiple items with shift or meta</li>
+            <li>{"'"}Categories{"'"} and {"'"}Spam{"'"} cannot be selected</li>
             <li>
               Filter the tree by typing in this text box:{" "}
               <input
