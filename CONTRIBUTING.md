@@ -12,24 +12,24 @@ To test individual modules, cd into them and run `yarn test`. For example, runni
 
 # Publishing a Release
 
-### Release Branch
+Releases are driven by `bin/release.mjs`, invoked via `yarn release`. The script bumps the version, runs tests, and pushes a `v*` tag. The tag push triggers `.github/workflows/publish.yml`, which publishes to npm via Trusted Publishing (OIDC) — no token needed.
 
-1. Checkout main locally
-2. Increment the version number in modules/react-arborist/package.json
-3. Create a branch called release/v0.0.0
-4. Open a PR to main
-5. Test, review, and merge, delete branch
+1. On `main`, with a clean working tree, update `CHANGELOG.md` with a new section for the upcoming version. Commit and push.
+2. Run `yarn release <patch|minor|major|X.Y.Z>` from the repo root. The script will:
+   - Verify you're on `main`, the working tree is clean, and you're in sync with the remote
+   - Run tests and build
+   - Bump `modules/react-arborist/package.json`, commit it, and tag `vX.Y.Z`
+   - Push the commit and tag to `origin`
+   - Open a GitHub Release draft in your browser (via `gh`)
+3. Edit the release draft, paste in the changelog entry, and publish.
+4. Watch `gh run watch` — the publish workflow will build and `npm publish` via OIDC. Confirm the new version on https://www.npmjs.com/package/react-arborist.
 
-### Create Github Release
+Flags:
 
-1. Create a release based on main
-2. Assign a new tag to be created with v0.0.0
-3. Title the release "Version 0.0.0"
-4. Write release notes
-5. Publish
-6. Check that it successfully published to npmjs
-
-The Github actions workflow will publish to npm.
+- `--preview` — dry-run; the script still reads git state and builds, but no commit, tag, push, or release draft is created.
+- `--any-branch` — skip both the `main` branch check and the remote sync check (useful for testing on a branch that isn't pushed).
+- `--no-tests` — skip `yarn test`.
+- `--yes` — skip the interactive confirmation.
 
 # Publish the Demo Site
 

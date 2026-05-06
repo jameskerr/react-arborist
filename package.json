@@ -12,7 +12,8 @@
     "clean": "yarn workspace react-arborist clean",
     "showcase": "yarn workspace showcase start",
     "start": "run-s clean build-lib && run-p watch showcase",
-    "publish": "sh bin/publish"
+    "publish": "sh bin/publish",
+    "release": "node bin/release.mjs"
   },
   "private": true,
   "packageManager": "yarn@4.0.2",
