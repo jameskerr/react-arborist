@@ -65,15 +65,21 @@ if (out("git status --porcelain")) {
 }
 console.log("  clean");
 
+let remoteName = "origin";
 if (flags.anyBranch) {
   console.log("\n→ Skipping remote sync check (--any-branch)");
 } else {
-  step("Fetching origin");
-  execSync("git fetch origin", { cwd: rootDir, stdio: "inherit" });
+  try {
+    remoteName = out(`git config --get branch.${branch}.remote`);
+  } catch {
+    fail(`Branch ${branch} has no upstream tracking remote configured.`);
+  }
+  step(`Fetching ${remoteName}`);
+  execSync(`git fetch ${remoteName}`, { cwd: rootDir, stdio: "inherit" });
   const local = out(`git rev-parse ${branch}`);
-  const remote = out(`git rev-parse origin/${branch}`);
+  const remote = out(`git rev-parse ${remoteName}/${branch}`);
   if (local !== remote) {
-    fail(`Local ${branch} (${local.slice(0, 7)}) differs from origin/${branch} (${remote.slice(0, 7)}).`);
+    fail(`Local ${branch} (${local.slice(0, 7)}) differs from ${remoteName}/${branch} (${remote.slice(0, 7)}).`);
   }
   console.log("  in sync");
 }
@@ -121,8 +127,8 @@ run(`git commit -am ${tag}`);
 step(`Tagging ${tag}`);
 run(`git tag ${tag}`);
 
-step("Pushing commit + tag");
-run(`git push origin ${branch} --follow-tags`);
+step(`Pushing commit + tag to ${remoteName}`);
+run(`git push ${remoteName} ${branch} --follow-tags`);
 
 step("Opening GitHub release draft");
 run(`gh release create ${tag} --draft --title ${tag} --notes "" --web`);
