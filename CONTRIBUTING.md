@@ -26,8 +26,8 @@ Releases are driven by `bin/release.mjs`, invoked via `yarn release`. The script
 
 Flags:
 
-- `--preview` — dry-run; no files are written, no git/network operations.
-- `--any-branch` — skip the `main` branch check (useful for testing).
+- `--preview` — dry-run; the script still reads git state and builds, but no commit, tag, push, or release draft is created.
+- `--any-branch` — skip both the `main` branch check and the remote sync check (useful for testing on a branch that isn't pushed).
 - `--no-tests` — skip `yarn test`.
 - `--yes` — skip the interactive confirmation.
 
