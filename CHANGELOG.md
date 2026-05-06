@@ -1,3 +1,9 @@
+# Version 3.6.0
+
+**Features**
+
+- `disableSelect` prop on `Tree` for marking nodes as unselectable, mirroring `disableEdit` and `disableDrop` (#331)
+
 # Version 3.5.0
 
 **Features**
