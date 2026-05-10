@@ -3,11 +3,13 @@ import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const pkgPath = path.join(rootDir, "modules/react-arborist/package.json");
+const changelogPath = path.join(rootDir, "CHANGELOG.md");
 
 const args = process.argv.slice(2);
 const flags = {
@@ -46,6 +48,14 @@ function bump(current, kind) {
   if (kind === "minor") return `${maj}.${min + 1}.0`;
   if (kind === "major") return `${maj + 1}.0.0`;
   fail(`Invalid version: "${kind}". Use patch, minor, major, or X.Y.Z.`);
+}
+
+function readChangelogSection(version) {
+  const content = readFileSync(changelogPath, "utf8");
+  const escaped = version.replace(/\./g, "\\.");
+  const re = new RegExp(`^# Version ${escaped}\\s*\\n([\\s\\S]*?)(?=^# Version |\\Z)`, "m");
+  const match = content.match(re);
+  return match ? match[1].trim() : null;
 }
 
 if (!versionArg) {
@@ -103,6 +113,12 @@ if (out(`git tag -l ${tag}`)) {
   fail(`Tag ${tag} already exists.`);
 }
 
+const releaseNotes = readChangelogSection(newVersion);
+if (!releaseNotes) {
+  fail(`No "# Version ${newVersion}" section found in CHANGELOG.md. Add one before releasing.`);
+}
+console.log(`\nRelease notes (from CHANGELOG.md):\n${releaseNotes}\n`);
+
 if (!flags.preview && !flags.yes) {
   const rl = createInterface({ input, output });
   const answer = await rl.question(`Continue? (y/N) `);
@@ -125,12 +141,22 @@ step("Committing");
 run(`git commit -am ${tag}`);
 
 step(`Tagging ${tag}`);
-run(`git tag ${tag}`);
+run(`git tag -a ${tag} -m ${tag}`);
 
 step(`Pushing commit + tag to ${remoteName}`);
-run(`git push ${remoteName} ${branch} --follow-tags`);
+run(`git push ${remoteName} ${branch} ${tag}`);
 
-step("Opening GitHub release draft");
-run(`gh release create ${tag} --draft --title ${tag} --notes "" --web`);
+step("Creating GitHub release");
+const remoteUrl = out(`git config --get remote.${remoteName}.url`);
+const repoMatch = remoteUrl.match(/[:/]([^/:]+)\/([^/]+?)(?:\.git)?$/);
+if (!repoMatch) fail(`Could not parse owner/repo from remote URL: ${remoteUrl}`);
+const repo = `${repoMatch[1]}/${repoMatch[2]}`;
+const notesPath = path.join(os.tmpdir(), `release-notes-${tag}.md`);
+if (flags.preview) {
+  console.log(`  [preview] write notes to ${notesPath}`);
+} else {
+  writeFileSync(notesPath, releaseNotes + "\n");
+}
+run(`gh release create ${tag} --repo ${repo} --title ${tag} --notes-file ${notesPath}`);
 
 console.log(`\nReleased ${tag}. Watch the publish workflow with: gh run watch`);
