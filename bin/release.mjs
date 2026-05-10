@@ -86,7 +86,7 @@ if (flags.anyBranch) {
 
 if (!flags.skipTests) {
   step("Running tests");
-  run("yarn test");
+  run("yarn workspace react-arborist test");
 }
 
 step("Building library");
