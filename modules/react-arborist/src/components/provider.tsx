@@ -57,7 +57,15 @@ export function TreeProvider<T>({
   useMemo(() => {
     updateCount.current += 1;
     api.update(treeProps);
-  }, [...Object.values(treeProps), state.nodes.open]);
+  }, [...Object.values(treeProps)]);
+
+  /* Rebuild visible nodes when open state changes, without clobbering
+     props set imperatively via api.update(). Bumping updateCount keeps
+     DataUpdates consumers (e.g. DefaultContainer) in sync. */
+  useMemo(() => {
+    updateCount.current += 1;
+    api.update(api.props);
+  }, [state.nodes.open]);
 
   /* Expose the tree api */
   useImperativeHandle(imperativeHandle, () => api);
