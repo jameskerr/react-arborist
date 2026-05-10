@@ -28,7 +28,7 @@ Flags:
 
 - `--preview` — dry-run; the script still reads git state and builds, but no commit, tag, push, or release is created.
 - `--any-branch` — skip both the `main` branch check and the remote sync check (useful for testing on a branch that isn't pushed).
-- `--no-tests` — skip `yarn test`.
+- `--no-tests` — skip the unit test step (`yarn workspace react-arborist test`).
 - `--yes` — skip the interactive confirmation.
 
 # Publish the Demo Site
