@@ -8561,6 +8561,9 @@ __metadata:
     ts-jest: "npm:^29.1.1"
     typescript: "npm:^5.6.0"
     use-sync-external-store: "npm:^1.2.0"
+  peerDependencies:
+    react: ">= 16.14"
+    react-dom: ">= 16.14"
   languageName: unknown
   linkType: soft
 
