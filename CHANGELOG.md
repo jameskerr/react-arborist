@@ -1,3 +1,9 @@
+# Version 3.6.1
+
+**Fixes**
+
+- Imperative `tree.update()` props no longer get reverted when a node is toggled (#337, originally #229)
+
 # Version 3.6.0
 
 **Features**
