@@ -2,7 +2,7 @@ import { BoolFunc } from "./utils";
 import * as handlers from "./handlers";
 import * as renderers from "./renderers";
 import { ElementType, MouseEventHandler } from "react";
-import { ListOnScrollProps } from "react-window";
+import { ListOnScrollProps, CommonProps as ReactWindowCommonProps } from "react-window";
 import { NodeApi } from "../interfaces/node-api";
 import { OpenMap } from "../state/open-slice";
 import { useDragDropManager, DndProviderProps } from "react-dnd";
@@ -82,4 +82,8 @@ export interface TreeProps<T> {
     { backend: unknown }
   >["backend"];
   dndManager?: ReturnType<typeof useDragDropManager>;
+
+  /* Custom react-window outer/inner elements */
+  outerElementType?: ReactWindowCommonProps["outerElementType"];
+  innerElementType?: ReactWindowCommonProps["innerElementType"];
 }

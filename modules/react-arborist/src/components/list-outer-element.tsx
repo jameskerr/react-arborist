@@ -24,7 +24,7 @@ export const ListOuterElement = forwardRef(function Outer(
   );
 });
 
-const DropContainer = () => {
+export const DropContainer = () => {
   const tree = useTreeApi();
   return (
     <div
