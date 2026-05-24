@@ -5,25 +5,25 @@ type Item = { id: string; name: string; children?: Item[] };
 
 const data: Item[] = [
   {
-    id: "1",
-    name: "Folders are tall",
+    id: "documents",
+    name: "Documents",
     children: [
-      { id: "1-1", name: "Leaves are short" },
-      { id: "1-2", name: "Another leaf" },
+      { id: "report", name: "report.txt" },
+      { id: "notes", name: "notes.txt" },
       {
-        id: "1-3",
-        name: "Nested folder",
+        id: "images",
+        name: "Images",
         children: [
-          { id: "1-3-1", name: "Deep leaf" },
-          { id: "1-3-2", name: "Deep leaf two" },
+          { id: "photo", name: "photo.png" },
+          { id: "diagram", name: "diagram.svg" },
         ],
       },
     ],
   },
   {
-    id: "2",
-    name: "Second folder",
-    children: [{ id: "2-1", name: "Leaf" }],
+    id: "downloads",
+    name: "Downloads",
+    children: [{ id: "installer", name: "installer.dmg" }],
   },
 ];
 
