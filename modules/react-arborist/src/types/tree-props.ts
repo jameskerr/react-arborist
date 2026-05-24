@@ -7,6 +7,9 @@ import { NodeApi } from "../interfaces/node-api";
 import { OpenMap } from "../state/open-slice";
 import { useDragDropManager, DndProviderProps } from "react-dnd";
 
+/** Returns the height in pixels for a given node's row. */
+export type RowHeightAccessor<T> = (node: NodeApi<T>) => number;
+
 export interface TreeProps<T> {
   /* Data Options */
   data?: readonly T[];
@@ -26,7 +29,7 @@ export interface TreeProps<T> {
   renderContainer?: ElementType<{}>;
 
   /* Sizes */
-  rowHeight?: number;
+  rowHeight?: number | RowHeightAccessor<T>;
   overscanCount?: number;
   width?: number | string;
   height?: number;

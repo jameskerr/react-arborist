@@ -49,6 +49,19 @@ const Home: NextPage = () => {
               <Link href="/cities">View Demo</Link>
             </div>
           </Link>
+
+          <Link href="/variable-height" legacyBehavior>
+            <div className={styles.demoCard}>
+              <div className={`${styles.demoCardImage} cities`}></div>
+              <b>Per-Row Sizing</b>
+              <h2>Variable Row Height</h2>
+              <p>
+                In this demo, we pass a function to the rowHeight prop so each row is sized based on
+                its node.
+              </p>
+              <Link href="/variable-height">View Demo</Link>
+            </div>
+          </Link>
         </div>
       </main>
     </div>

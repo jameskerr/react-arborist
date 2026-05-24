@@ -1,0 +1,79 @@
+import { NodeApi, NodeRendererProps, Tree } from "react-arborist";
+import Link from "next/link";
+
+type Item = { id: string; name: string; children?: Item[] };
+
+const data: Item[] = [
+  {
+    id: "1",
+    name: "Folders are tall",
+    children: [
+      { id: "1-1", name: "Leaves are short" },
+      { id: "1-2", name: "Another leaf" },
+      {
+        id: "1-3",
+        name: "Nested folder",
+        children: [
+          { id: "1-3-1", name: "Deep leaf" },
+          { id: "1-3-2", name: "Deep leaf two" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "2",
+    name: "Second folder",
+    children: [{ id: "2-1", name: "Leaf" }],
+  },
+];
+
+/* Internal nodes (folders) render taller than leaves. */
+const rowHeight = (node: NodeApi<Item>) => (node.isInternal ? 48 : 28);
+
+export default function VariableHeight() {
+  return (
+    <div style={{ padding: 24, fontFamily: "sans-serif" }}>
+      <h1>Variable Row Height</h1>
+      <p>
+        Pass <code>rowHeight</code> a function to size each row based on its node. Here, folders are
+        48px and leaves are 28px. Toggle, rename, and drag rows — the virtualized list recomputes
+        offsets automatically.
+      </p>
+      <Tree
+        initialData={data}
+        openByDefault
+        width={360}
+        height={400}
+        indent={20}
+        rowHeight={rowHeight}
+      >
+        {Node}
+      </Tree>
+      <p style={{ marginTop: 24 }}>
+        <Link href="/">Back to Demos</Link>
+      </p>
+    </div>
+  );
+}
+
+function Node({ node, style, dragHandle }: NodeRendererProps<Item>) {
+  return (
+    <div
+      ref={dragHandle}
+      style={{
+        ...style,
+        display: "flex",
+        alignItems: "center",
+        paddingLeft: 8,
+        fontSize: node.isInternal ? 18 : 14,
+        fontWeight: node.isInternal ? 600 : 400,
+        background: node.isSelected ? "#e0ecff" : undefined,
+        cursor: "pointer",
+      }}
+      onClick={() => node.isInternal && node.toggle()}
+    >
+      {node.isInternal ? (node.isOpen ? "📂" : "📁") : "📄"}
+      <span style={{ marginLeft: 6 }}>{node.data.name}</span>
+    </div>
+  );
+}

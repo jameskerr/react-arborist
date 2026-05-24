@@ -22,6 +22,7 @@ export function useDragHook<T>(node: NodeApi<T>): ConnectDragSource {
       },
       end: () => {
         tree.hideCursor();
+        tree.redrawList();
         tree.dispatch(dnd.dragEnd());
       },
     }),

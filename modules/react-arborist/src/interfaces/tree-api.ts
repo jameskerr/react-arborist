@@ -2,7 +2,7 @@ import { EditResult } from "../types/handlers";
 import { BoolFunc, Identity, IdObj } from "../types/utils";
 import { TreeProps } from "../types/tree-props";
 import { MutableRefObject } from "react";
-import { Align, FixedSizeList, ListOnItemsRenderedProps } from "react-window";
+import { Align, ListOnItemsRenderedProps, VariableSizeList } from "react-window";
 import * as utils from "../utils";
 import { DefaultCursor } from "../components/default-cursor";
 import { DefaultRow } from "../components/default-row";
@@ -30,11 +30,13 @@ export class TreeApi<T> {
   visibleStartIndex: number = 0;
   visibleStopIndex: number = 0;
   idToIndex: { [id: string]: number };
+  /* Memoized prefix-sum of row heights; only used for variable heights. */
+  private rowOffsets: number[] | null = null;
 
   constructor(
     public store: Store<RootState, Actions>,
     public props: TreeProps<T>,
-    public list: MutableRefObject<FixedSizeList | null>,
+    public list: MutableRefObject<VariableSizeList | null>,
     public listEl: MutableRefObject<HTMLDivElement | null>,
   ) {
     /* Changes here must also be made in update() */
@@ -49,6 +51,7 @@ export class TreeApi<T> {
     this.root = createRoot<T>(this);
     this.visibleNodes = createList<T>(this);
     this.idToIndex = createIndex(this.visibleNodes);
+    this.rowOffsets = null;
   }
 
   /* Store helpers */
@@ -79,8 +82,56 @@ export class TreeApi<T> {
     return this.props.indent ?? 24;
   }
 
+  /**
+   * The fixed row height. When a `rowHeight` function is supplied for variable
+   * heights, this returns the default (24); use `rowHeightAt(index)` to get the
+   * height of a specific row.
+   */
   get rowHeight() {
-    return this.props.rowHeight ?? 24;
+    return typeof this.props.rowHeight === "number" ? this.props.rowHeight : 24;
+  }
+
+  /** The height of the row at `index`, evaluating the `rowHeight` function if given. */
+  rowHeightAt = (index: number): number => {
+    const rowHeight = this.props.rowHeight;
+    if (typeof rowHeight === "function") {
+      const node = this.at(index);
+      return node ? rowHeight(node) : 0;
+    }
+    return rowHeight ?? 24;
+  };
+
+  /** The pixel offset of the top of the row at `index` from the top of the list. */
+  rowTopPosition = (index: number): number => {
+    /* Fixed heights: O(1). */
+    if (typeof this.props.rowHeight !== "function") {
+      return index * this.rowHeight;
+    }
+    /* Variable heights: O(1) amortized via a memoized prefix sum. */
+    const offsets = this.getRowOffsets();
+    const clamped = Math.max(0, Math.min(index, offsets.length - 1));
+    return offsets[clamped];
+  };
+
+  /**
+   * Tell the underlying virtualized list to recompute row heights at and after
+   * `index`. Call this if a `rowHeight` function's output changes for reasons
+   * the tree can't observe (e.g. external state).
+   */
+  redrawList = (afterIndex: number = 0) => {
+    this.rowOffsets = null;
+    this.list.current?.resetAfterIndex(Math.max(0, afterIndex));
+  };
+
+  /** Lazily-built prefix sum where offsets[i] is the top of row i. */
+  private getRowOffsets(): number[] {
+    if (this.rowOffsets) return this.rowOffsets;
+    const offsets: number[] = [0];
+    for (let i = 0; i < this.visibleNodes.length; i++) {
+      offsets.push(offsets[i] + this.rowHeightAt(i));
+    }
+    this.rowOffsets = offsets;
+    return offsets;
   }
 
   get overscanCount() {
@@ -218,7 +269,9 @@ export class TreeApi<T> {
     const idents = Array.isArray(node) ? node : [node];
     const ids = idents.map(identify);
     const nodes = ids.map((id) => this.get(id)!).filter((n) => !!n);
+    const fromIndex = Math.min(...nodes.map((n) => n.rowIndex ?? 0));
     await safeRun(this.props.onDelete, { nodes, ids });
+    this.redrawList(fromIndex);
   }
 
   edit(node: string | IdObj): Promise<EditResult> {
@@ -226,6 +279,7 @@ export class TreeApi<T> {
     this.resolveEdit({ cancelled: true });
     this.scrollTo(id);
     this.dispatch(edit(id));
+    this.redrawList(this.get(id)?.rowIndex ?? 0);
     return new Promise((resolve) => {
       TreeApi.editPromise = resolve;
     });
@@ -241,12 +295,14 @@ export class TreeApi<T> {
     });
     this.dispatch(edit(null));
     this.resolveEdit({ cancelled: false, value });
+    this.redrawList(this.get(id)?.rowIndex ?? 0);
     setTimeout(() => this.onFocus()); // Return focus to element;
   }
 
   reset() {
     this.dispatch(edit(null));
     this.resolveEdit({ cancelled: true });
+    this.redrawList();
     setTimeout(() => this.onFocus()); // Return focus to element;
   }
 
@@ -479,19 +535,21 @@ export class TreeApi<T> {
 
   /* Visibility */
 
-  open(identity: Identity) {
+  open(identity: Identity, redraw: boolean = true) {
     const id = identifyNull(identity);
     if (!id) return;
     if (this.isOpen(id)) return;
     this.dispatch(visibility.open(id, this.isFiltered));
+    if (redraw) this.redrawList(this.get(id)?.rowIndex ?? 0);
     safeRun(this.props.onToggle, id);
   }
 
-  close(identity: Identity) {
+  close(identity: Identity, redraw: boolean = true) {
     const id = identifyNull(identity);
     if (!id) return;
     if (!this.isOpen(id)) return;
     this.dispatch(visibility.close(id, this.isFiltered));
+    if (redraw) this.redrawList(this.get(id)?.rowIndex ?? 0);
     safeRun(this.props.onToggle, id);
   }
 
@@ -508,9 +566,10 @@ export class TreeApi<T> {
     let parent = node?.parent;
 
     while (parent) {
-      this.open(parent.id);
+      this.open(parent.id, false);
       parent = parent.parent;
     }
+    this.redrawList();
   }
 
   openSiblings(node: NodeApi<T>) {
@@ -521,24 +580,27 @@ export class TreeApi<T> {
       const isOpen = node.isOpen;
       for (let sibling of parent.children) {
         if (sibling.isInternal) {
-          if (isOpen) this.close(sibling.id);
-          else this.open(sibling.id);
+          if (isOpen) this.close(sibling.id, false);
+          else this.open(sibling.id, false);
         }
       }
+      this.redrawList();
       this.scrollTo(this.focusedNode);
     }
   }
 
   openAll() {
     utils.walk(this.root, (node) => {
-      if (node.isInternal) node.open();
+      if (node.isInternal) this.open(node.id, false);
     });
+    this.redrawList();
   }
 
   closeAll() {
     utils.walk(this.root, (node) => {
-      if (node.isInternal) node.close();
+      if (node.isInternal) this.close(node.id, false);
     });
+    this.redrawList();
   }
 
   /* Scrolling */
