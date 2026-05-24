@@ -2,6 +2,7 @@ import { createRef } from "react";
 import { act, render, screen } from "@testing-library/react";
 import { Tree } from "./tree";
 import { TreeApi } from "../interfaces/tree-api";
+import { NodeApi } from "../interfaces/node-api";
 
 type Datum = { id: string; name: string; children?: Datum[] };
 
@@ -75,4 +76,39 @@ test("mutations tell the list to recompute heights (#238)", () => {
   reset.mockClear();
   act(() => api.open("1"));
   expect(reset).toHaveBeenCalled();
+});
+
+/* react-window caches measurements by index and never invalidates them itself.
+   When data changes via props in variable-height mode, those cached sizes belong
+   to the wrong rows, so update() must drop the cache. It runs during render, so
+   it uses the shouldForceUpdate=false variant. */
+test("changing data in variable-height mode resets the list cache (#238)", () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  const rowHeight = (node: NodeApi<Datum>) => (node.isInternal ? 40 : 20);
+  const { rerender } = render(
+    <Tree<Datum> data={data} ref={ref} rowHeight={rowHeight} openByDefault />,
+  );
+  const reset = jest.spyOn(ref.current!.list.current!, "resetAfterIndex");
+
+  const nextData: Datum[] = [{ id: "9", name: "fresh" }, ...data];
+  act(() => {
+    rerender(<Tree<Datum> data={nextData} ref={ref} rowHeight={rowHeight} openByDefault />);
+  });
+
+  expect(reset).toHaveBeenCalledWith(0, false);
+});
+
+/* The numeric path must stay untouched: itemSize is constant, so there is no
+   stale-cache problem and we should not pay for resets on every prop change. */
+test("changing data with a numeric rowHeight does not reset the cache (#238)", () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  const { rerender } = render(<Tree<Datum> data={data} ref={ref} rowHeight={24} openByDefault />);
+  const reset = jest.spyOn(ref.current!.list.current!, "resetAfterIndex");
+
+  const nextData: Datum[] = [{ id: "9", name: "fresh" }, ...data];
+  act(() => {
+    rerender(<Tree<Datum> data={nextData} ref={ref} rowHeight={24} openByDefault />);
+  });
+
+  expect(reset).not.toHaveBeenCalled();
 });

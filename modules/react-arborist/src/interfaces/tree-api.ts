@@ -52,6 +52,15 @@ export class TreeApi<T> {
     this.visibleNodes = createList<T>(this);
     this.idToIndex = createIndex(this.visibleNodes);
     this.rowOffsets = null;
+    /* react-window caches item measurements by index and never invalidates
+       them on its own. When rowHeight is a function and the visible nodes
+       change (insert/remove/reorder), those cached sizes belong to the wrong
+       rows, so drop them too. update() runs during render, so pass
+       shouldForceUpdate=false: the in-progress render repaints the list and a
+       forceUpdate here would warn about setting state mid-render. */
+    if (typeof props.rowHeight === "function") {
+      this.list.current?.resetAfterIndex(0, false);
+    }
   }
 
   /* Store helpers */
@@ -269,7 +278,8 @@ export class TreeApi<T> {
     const idents = Array.isArray(node) ? node : [node];
     const ids = idents.map(identify);
     const nodes = ids.map((id) => this.get(id)!).filter((n) => !!n);
-    const fromIndex = Math.min(...nodes.map((n) => n.rowIndex ?? 0));
+    /* Guard against Math.min(...[]) === Infinity when no ids resolve to nodes. */
+    const fromIndex = nodes.length ? Math.min(...nodes.map((n) => n.rowIndex ?? 0)) : 0;
     await safeRun(this.props.onDelete, { nodes, ids });
     this.redrawList(fromIndex);
   }
