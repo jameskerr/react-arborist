@@ -91,7 +91,7 @@ export default function GmailSidebar() {
             </li>
           </ul>
           <p>
-            Star it on <a href="https://github.com/brimdata/react-arborist">Github</a> (The docs are
+            Star it on <a href="https://github.com/brimdata/react-arborist">GitHub</a> (The docs are
             there too).
           </p>
           <p>
