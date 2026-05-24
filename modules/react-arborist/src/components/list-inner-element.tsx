@@ -4,7 +4,7 @@ import { useTreeApi } from "../context";
 
 export const ListInnerElement = forwardRef<any, any>(function InnerElement(
   { style, ...rest },
-  ref
+  ref,
 ) {
   const tree = useTreeApi();
   const paddingTop = tree.props.padding ?? tree.props.paddingTop ?? 0;

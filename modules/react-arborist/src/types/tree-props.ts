@@ -47,11 +47,7 @@ export interface TreeProps<T> {
   disableDrop?:
     | string
     | boolean
-    | ((args: {
-        parentNode: NodeApi<T>;
-        dragNodes: NodeApi<T>[];
-        index: number;
-      }) => boolean);
+    | ((args: { parentNode: NodeApi<T>; dragNodes: NodeApi<T>[]; index: number }) => boolean);
 
   /* Event Handlers */
   onActivate?: (node: NodeApi<T>) => void;
@@ -77,10 +73,7 @@ export interface TreeProps<T> {
   dndRootElement?: globalThis.Node | null;
   onClick?: MouseEventHandler;
   onContextMenu?: MouseEventHandler;
-  dndBackend?: Extract<
-    DndProviderProps<unknown, unknown>,
-    { backend: unknown }
-  >["backend"];
+  dndBackend?: Extract<DndProviderProps<unknown, unknown>, { backend: unknown }>["backend"];
   dndManager?: ReturnType<typeof useDragDropManager>;
 
   /* Custom react-window outer/inner elements */

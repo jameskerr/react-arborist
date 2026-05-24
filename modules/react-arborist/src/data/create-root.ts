@@ -1,15 +1,10 @@
-import { IdObj } from "../types/utils";
 import { NodeApi } from "../interfaces/node-api";
 import { TreeApi } from "../interfaces/tree-api";
 
 export const ROOT_ID = "__REACT_ARBORIST_INTERNAL_ROOT__";
 
 export function createRoot<T>(tree: TreeApi<T>): NodeApi<T> {
-  function visitSelfAndChildren(
-    data: T,
-    level: number,
-    parent: NodeApi<T> | null
-  ) {
+  function visitSelfAndChildren(data: T, level: number, parent: NodeApi<T> | null) {
     const id = tree.accessId(data);
     const node = new NodeApi<T>({
       tree,
@@ -23,9 +18,7 @@ export function createRoot<T>(tree: TreeApi<T>): NodeApi<T> {
     });
     const children = tree.accessChildren(data);
     if (children) {
-      node.children = children.map((child: T) =>
-        visitSelfAndChildren(child, level + 1, node)
-      );
+      node.children = children.map((child: T) => visitSelfAndChildren(child, level + 1, node));
     }
     return node;
   }

@@ -1,12 +1,33 @@
 {
   "name": "react-arborist",
   "version": "3.7.0",
+  "keywords": [
+    "arborist",
+    "dnd",
+    "filterable",
+    "multiselection",
+    "react",
+    "react-arborist",
+    "tree",
+    "treeview",
+    "vitualized"
+  ],
+  "homepage": "https://react-arborist.netlify.app",
+  "bugs": "https://github.com/jameskerr/react-arborist/issues",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jameskerr/react-arborist.git"
+  },
   "source": "src/index.ts",
+  "files": [
+    "src",
+    "dist"
+  ],
+  "sideEffects": false,
   "main": "dist/main/index.js",
   "module": "dist/module/index.js",
   "types": "dist/module/index.d.ts",
-  "sideEffects": false,
   "scripts": {
     "build:cjs": "tsc --outDir dist/main",
     "build:es": "tsc --outDir dist/module --module es2022 --moduleResolution node",
@@ -16,37 +37,12 @@
     "test": "jest",
     "watch": "yarn build:es --watch"
   },
-  "files": [
-    "src",
-    "dist"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/jameskerr/react-arborist.git"
-  },
-  "homepage": "https://react-arborist.netlify.app",
-  "bugs": "https://github.com/jameskerr/react-arborist/issues",
-  "keywords": [
-    "react",
-    "arborist",
-    "react-arborist",
-    "treeview",
-    "tree",
-    "vitualized",
-    "dnd",
-    "multiselection",
-    "filterable"
-  ],
   "dependencies": {
     "react-dnd": "^14.0.3",
     "react-dnd-html5-backend": "^14.0.3",
     "react-window": "^1.8.11",
     "redux": "^5.0.0",
     "use-sync-external-store": "^1.2.0"
-  },
-  "peerDependencies": {
-    "react": ">= 16.14",
-    "react-dom": ">= 16.14"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.3.0",
@@ -64,5 +60,9 @@
     "rimraf": "^5.0.5",
     "ts-jest": "^29.1.1",
     "typescript": "^5.6.0"
+  },
+  "peerDependencies": {
+    "react": ">= 16.14",
+    "react-dom": ">= 16.14"
   }
 }

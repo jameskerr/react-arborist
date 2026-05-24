@@ -21,11 +21,7 @@ const circleStyle = {
   borderRadius: "50%",
 };
 
-export const DefaultCursor = React.memo(function DefaultCursor({
-  top,
-  left,
-  indent,
-}: CursorProps) {
+export const DefaultCursor = React.memo(function DefaultCursor({ top, left, indent }: CursorProps) {
   const style: CSSProperties = {
     position: "absolute",
     pointerEvents: "none",

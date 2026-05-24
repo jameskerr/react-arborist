@@ -28,11 +28,7 @@ export const actions = {
     ids: (Array.isArray(id) ? id : [id]).map(identify),
   }),
 
-  set: (args: {
-    ids: Set<string>;
-    anchor: string | null;
-    mostRecent: string | null;
-  }) => ({
+  set: (args: { ids: Set<string>; anchor: string | null; mostRecent: string | null }) => ({
     type: "SELECTION_SET" as const,
     ...args,
   }),
@@ -51,7 +47,7 @@ export const actions = {
 /* Reducer */
 export function reducer(
   state: SelectionState = initialState()["nodes"]["selection"],
-  action: ActionTypes<typeof actions>
+  action: ActionTypes<typeof actions>,
 ): SelectionState {
   const ids = state.ids;
   switch (action.type) {

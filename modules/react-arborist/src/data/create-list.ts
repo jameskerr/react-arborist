@@ -1,6 +1,5 @@
 import { NodeApi } from "../interfaces/node-api";
 import { TreeApi } from "../interfaces/tree-api";
-import { IdObj } from "../types/utils";
 
 export function createList<T>(tree: TreeApi<T>) {
   if (tree.isFiltered) {
@@ -27,7 +26,7 @@ function flattenTree<T>(root: NodeApi<T>): NodeApi<T>[] {
 
 function flattenAndFilterTree<T>(
   root: NodeApi<T>,
-  isMatch: (n: NodeApi<T>) => boolean
+  isMatch: (n: NodeApi<T>) => boolean,
 ): NodeApi<T>[] {
   const matches: Record<string, boolean> = {};
   const list: NodeApi<T>[] = [];

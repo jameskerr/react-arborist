@@ -1,11 +1,10 @@
 import { forwardRef } from "react";
 import { useTreeApi } from "../context";
-import { treeBlur } from "../state/focus-slice";
 import { Cursor } from "./cursor";
 
 export const ListOuterElement = forwardRef(function Outer(
   props: React.HTMLProps<HTMLDivElement>,
-  ref
+  ref,
 ) {
   const { children, ...rest } = props;
   const tree = useTreeApi();

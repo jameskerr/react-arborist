@@ -1,9 +1,9 @@
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { NodeApi, NodeRendererProps, Tree, TreeApi } from "react-arborist";
 import styles from "../styles/cities.module.css";
 import { cities } from "../data/cities";
-import { BsMapFill, BsMap, BsGeo, BsGeoFill } from "react-icons/bs";
+import { BsMapFill, BsGeoFill } from "react-icons/bs";
 import { FillFlexParent } from "../components/fill-flex-parent";
 import { MdArrowDropDown, MdArrowRight } from "react-icons/md";
 import Link from "next/link";
@@ -69,18 +69,14 @@ export default function Cities() {
             This site works best on a desktop screen.
           </p>
           <p>
-            In this demo, we hook into some callbacks, use the tree ref api, and
-            render a large number of nodes.{" "}
+            In this demo, we hook into some callbacks, use the tree ref api, and render a large
+            number of nodes.{" "}
           </p>
           <section>
             <label>
               Demo the <i>selection</i> prop:
             </label>
-            <button
-              onClick={() =>
-                setActive({ id: "1840021543.", name: "San Francisco" })
-              }
-            >
+            <button onClick={() => setActive({ id: "1840021543.", name: "San Francisco" })}>
               Select San Francisco
             </button>
           </section>
@@ -101,7 +97,7 @@ export default function Cities() {
             <input
               type="checkbox"
               checked={followsFocus}
-              onChange={(e) => setFollowsFocus((v) => !v)}
+              onChange={(_e) => setFollowsFocus((v) => !v)}
             />
           </section>
           <section>
@@ -111,7 +107,7 @@ export default function Cities() {
             <input
               type="checkbox"
               checked={disableMulti}
-              onChange={(e) => setDisableMulti((v) => !v)}
+              onChange={(_e) => setDisableMulti((v) => !v)}
             />
           </section>
           <section>
@@ -152,14 +148,10 @@ export default function Cities() {
             <Link href="/">Back To Demos</Link>
           </p>
           <p>
-            <Link href="https://github.com/brimdata/react-arborist">
-              Go to Docs
-            </Link>
+            <Link href="https://github.com/brimdata/react-arborist">Go to Docs</Link>
           </p>
           <p>
-            <Link href="https://twitter.com/specialcasedev">
-              Follow on Twitter
-            </Link>
+            <Link href="https://twitter.com/specialcasedev">Follow on Twitter</Link>
           </p>
         </div>
       </div>
@@ -179,15 +171,13 @@ function Node({ node, style, dragHandle }: NodeRendererProps<Data>) {
       onClick={() => node.isInternal && node.toggle()}
     >
       <div className={styles.indentLines}>
-        {new Array(indentSize / INDENT_STEP).fill(0).map((_, index) => {
+        {Array.from({ length: indentSize / INDENT_STEP }).map((_, index) => {
           return <div key={index}></div>;
         })}
       </div>
       <FolderArrow node={node} />
       <Icon className={styles.icon} />{" "}
-      <span className={styles.text}>
-        {node.isEditing ? <Input node={node} /> : node.data.name}
-      </span>
+      <span className={styles.text}>{node.isEditing ? <Input node={node} /> : node.data.name}</span>
     </div>
   );
 }
@@ -223,13 +213,7 @@ function sortData(data: Data[]) {
 function FolderArrow({ node }: { node: NodeApi<Data> }) {
   return (
     <span className={styles.arrow}>
-      {node.isInternal ? (
-        node.isOpen ? (
-          <MdArrowDropDown />
-        ) : (
-          <MdArrowRight />
-        )
-      ) : null}
+      {node.isInternal ? node.isOpen ? <MdArrowDropDown /> : <MdArrowRight /> : null}
     </span>
   );
 }

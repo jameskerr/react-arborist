@@ -14,10 +14,7 @@ const style = {
   minWidth: 0,
 };
 
-export const FillFlexParent = React.forwardRef(function FillFlexParent(
-  props: Props,
-  forwardRef
-) {
+export const FillFlexParent = React.forwardRef(function FillFlexParent(props: Props, forwardRef) {
   const { ref, width, height } = useResizeObserver();
   return (
     <div style={style} ref={mergeRefs(ref, forwardRef)}>

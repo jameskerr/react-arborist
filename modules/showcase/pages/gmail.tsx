@@ -1,11 +1,5 @@
 import clsx from "clsx";
-import {
-  CursorProps,
-  NodeApi,
-  NodeRendererProps,
-  Tree,
-  TreeApi,
-} from "react-arborist";
+import { CursorProps, NodeApi, NodeRendererProps, Tree, TreeApi } from "react-arborist";
 import { gmailData, GmailItem } from "../data/gmail";
 import * as icons from "react-icons/md";
 import styles from "../styles/Gmail.module.css";
@@ -72,41 +66,36 @@ export default function GmailSidebar() {
             Heads up! <br />
             This site works best on a desktop screen.
           </p>
-          <p>
-            React Arborist can be used to create something like the gmail
-            sidebar.
-          </p>
+          <p>React Arborist can be used to create something like the gmail sidebar.</p>
           <p>The tree is fully functional. Try the following:</p>
           <ul>
             <li>Drag the items around</li>
-            <li>Try to drag Inbox into {"'"}Categories{"'"} (not allowed)</li>
+            <li>
+              Try to drag Inbox into {"'"}Categories{"'"} (not allowed)
+            </li>
             <li>Move focus with the arrow keys</li>
             <li>Toggle folders (press spacebar)</li>
             <li>
-              Rename (press enter, only allowed on items in {"'"}Categories{"'"}
-              )
+              Rename (press enter, only allowed on items in {"'"}Categories{"'"})
             </li>
             <li>Create a new item (press A)</li>
             <li>Create a new folder (press shift+A)</li>
             <li>Delete items (press delete)</li>
             <li>Select multiple items with shift or meta</li>
-            <li>{"'"}Categories{"'"} and {"'"}Spam{"'"} cannot be selected</li>
+            <li>
+              {"'"}Categories{"'"} and {"'"}Spam{"'"} cannot be selected
+            </li>
             <li>
               Filter the tree by typing in this text box:{" "}
-              <input
-                value={term}
-                onChange={(e) => setTerm(e.currentTarget.value)}
-              />
+              <input value={term} onChange={(e) => setTerm(e.currentTarget.value)} />
             </li>
           </ul>
           <p>
-            Star it on{" "}
-            <a href="https://github.com/brimdata/react-arborist">Github</a> (The
-            docs are there too).
+            Star it on <a href="https://github.com/brimdata/react-arborist">Github</a> (The docs are
+            there too).
           </p>
           <p>
-            Follow updates on{" "}
-            <a href="https://twitter.com/specialCaseDev">Twitter</a>.
+            Follow updates on <a href="https://twitter.com/specialCaseDev">Twitter</a>.
           </p>
 
           <p>
@@ -155,11 +144,7 @@ function Input({ node }: { node: NodeApi<GmailItem> }) {
 
 function FolderArrow({ node }: { node: NodeApi<GmailItem> }) {
   if (node.isLeaf) return <span></span>;
-  return (
-    <span>
-      {node.isOpen ? <icons.MdArrowDropDown /> : <icons.MdArrowRight />}
-    </span>
-  );
+  return <span>{node.isOpen ? <icons.MdArrowDropDown /> : <icons.MdArrowRight />}</span>;
 }
 
 function Cursor({ top, left }: CursorProps) {

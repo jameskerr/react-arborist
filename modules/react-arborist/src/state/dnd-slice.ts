@@ -30,7 +30,7 @@ export const actions = {
 /* Reducer */
 export function reducer(
   state: DndState = initialState()["dnd"],
-  action: ActionTypes<typeof actions>
+  action: ActionTypes<typeof actions>,
 ): DndState {
   switch (action.type) {
     case "DND_CURSOR":

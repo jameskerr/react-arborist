@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from "react";
 import { NodeRendererProps } from "../types/renderers";
-import { IdObj } from "../types/utils";
 
 export function DefaultNode<T>(props: NodeRendererProps<T>) {
   return (

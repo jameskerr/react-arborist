@@ -1,204 +1,205 @@
 .page {
-    background: rgba(0,0,0,0.4) url(/img/golden-gate-bridge.jpeg);
-    background-blend-mode: multiply;
-    background-size: cover;
-    min-height: 100vh;
-    color: white;
-    display:flex;
-    flex-direction: column;
+  background: rgba(0, 0, 0, 0.4) url(/img/golden-gate-bridge.jpeg);
+  background-blend-mode: multiply;
+  background-size: cover;
+  min-height: 100vh;
+  color: white;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    font-size: 32px;
-    gap: 24px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  font-size: 32px;
+  gap: 24px;
 }
 
 .header svg {
-    filter: drop-shadow(0 1px 2px rgb(0 0 0 / 65%))
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 65%));
 }
 
 .header h1 {
-    font-size: 24px;
-    margin: 0;
-    font-weight: 300;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 65%);
+  font-size: 24px;
+  margin: 0;
+  font-weight: 300;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 65%);
 }
 
 .header svg:nth-child(2) {
-    color: #d24239;
-    filter: drop-shadow(0 1px 2px rgb(0 0 0 / 65%))
+  color: #d24239;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 65%));
 }
 
 .sidebar {
-    display: flex;
-    width: 270px;
-    flex-direction: column;
-    font-family: Roboto, system-ui;
+  display: flex;
+  width: 270px;
+  flex-direction: column;
+  font-family: Roboto, system-ui;
 }
 
 .composeButton {
-    cursor: pointer;
-    background: white;
-    border-radius: 16px;
-    color: #5f6368;
-    height: 56px;
-    min-width: 96px;
-    border: 0;
-    font-weight: 500;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 1px 2px 0 rgb(60 64 67 / 30%), 0 1px 3px 1px rgb(60 64 67 / 15%);
-    font-size: 14px;
-    width: max-content;
-    display: flex;
-    padding-right: 24px;
-    margin: 16px 0 16px 8px;
+  cursor: pointer;
+  background: white;
+  border-radius: 16px;
+  color: #5f6368;
+  height: 56px;
+  min-width: 96px;
+  border: 0;
+  font-weight: 500;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 1px 2px 0 rgb(60 64 67 / 30%),
+    0 1px 3px 1px rgb(60 64 67 / 15%);
+  font-size: 14px;
+  width: max-content;
+  display: flex;
+  padding-right: 24px;
+  margin: 16px 0 16px 8px;
 }
 
 .composeButton svg {
-    font-size: 18px;
-    margin: 0 12px;
+  font-size: 18px;
+  margin: 0 12px;
 }
 
 .composeButton:hover {
-    box-shadow: 0 1px 3px 0 rgb(60 64 67 / 30%), 0 4px 8px 3px rgb(60 64 67 / 15%);
+  box-shadow:
+    0 1px 3px 0 rgb(60 64 67 / 30%),
+    0 4px 8px 3px rgb(60 64 67 / 15%);
 }
 
-
 [role="treeitem"]:has(.node) {
-    color: white;
-    border-radius: 0 16px 16px 0;
-    cursor: pointer;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 65%);
-    font-weight: 400;
-    font-size: 14px;
-    user-select: none;border: 1px dashed transparent;
+  color: white;
+  border-radius: 0 16px 16px 0;
+  cursor: pointer;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 65%);
+  font-weight: 400;
+  font-size: 14px;
+  user-select: none;
+  border: 1px dashed transparent;
 }
 
 [role="treeitem"]:has(.node):focus-visible {
-    background-color: rgba(255,255,255,.2);
-    outline: none;
+  background-color: rgba(255, 255, 255, 0.2);
+  outline: none;
 }
 
 [role="treeitem"][aria-selected="true"]:has(.node):focus-visible {
-    background-color: rgba(255,255,255,.4);
-    outline: none;
+  background-color: rgba(255, 255, 255, 0.4);
+  outline: none;
 }
 
 [role="treeitem"]:has(.node):hover {
-    background-color: rgba(255,255,255,.2);
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 [role="treeitem"][aria-selected="true"]:has(.node) {
-    background-color: rgba(255,255,255,.3);
-    font-weight: 700;
+  background-color: rgba(255, 255, 255, 0.3);
+  font-weight: 700;
 }
 
 [role="treeitem"]:has(.node:global(.willReceiveDrop)) {
-    background-color: rgba(255,255,255,.4);
-    border: 1px dashed white;
+  background-color: rgba(255, 255, 255, 0.4);
+  border: 1px dashed white;
 }
 
 .node {
-    color: #efefef;
+  color: #efefef;
 }
 
 [role="treeitem"][aria-selected="true"] .node {
-    color: white;
+  color: white;
 }
 
 .node {
-    display: flex;
-    align-items: center;
-    margin: 0 12px 0 2px;
-    height: 100%;
-    line-height: 20px;
-    white-space: nowrap;
+  display: flex;
+  align-items: center;
+  margin: 0 12px 0 2px;
+  height: 100%;
+  line-height: 20px;
+  white-space: nowrap;
 }
-
-
 
 /* Dropdown arrow */
 .node span:nth-child(1) {
-    width: 20px;
-    display: flex;
-    font-size: 20px;
+  width: 20px;
+  display: flex;
+  font-size: 20px;
 }
 
 /* Icon */
 .node span:nth-child(2) {
-    margin-right: 18px;
-    display: flex;
-    align-items: center;
-    font-size: 20px;
+  margin-right: 18px;
+  display: flex;
+  align-items: center;
+  font-size: 20px;
 }
 
 /* Name */
 .node span:nth-child(3) {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dropCursor {
-    width: 100%;
-    height: 0px;
-    border-top: 2px dotted white;
-    position: absolute;
+  width: 100%;
+  height: 0px;
+  border-top: 2px dotted white;
+  position: absolute;
 }
 
 .mainContent {
-    flex: 1;
-    display: flex;
-    min-height: 0;
-    gap: 8px;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  gap: 8px;
 }
 
 .content {
-    overflow: auto;
-    background-color: rgb( 255 255 255 / 0.9);
-    border-radius: 16px;
-    color: black;
-    padding: 32px;
-    margin: 8px;
-    margin: 0 auto;
-    margin-top: 132px;
-    max-width: 600px;
-    align-self: flex-start;
+  overflow: auto;
+  background-color: rgb(255 255 255 / 0.9);
+  border-radius: 16px;
+  color: black;
+  padding: 32px;
+  margin: 8px;
+  margin: 0 auto;
+  margin-top: 132px;
+  max-width: 600px;
+  align-self: flex-start;
 }
 
 .mobileWarning {
-    background: var(--primaryColor);
-    color: white;
-    padding: 1em;
-    font-weight: bold;
-    text-align: center;
-    border-radius: 4px;
-    display: none;
+  background: var(--primaryColor);
+  color: white;
+  padding: 1em;
+  font-weight: bold;
+  text-align: center;
+  border-radius: 4px;
+  display: none;
 }
 
-
 @media screen and (max-width: 600px) {
-    .mainContent {
-        flex-direction: column;
-        padding-right: 0;
-    }
-    .content {
-        order: 1;
-        margin-top: 16px;
-        margin-bottom: 16px;
-        margin: 6px;
-    }
-    .sidebar {
-        order: 2;
-        height: 80vh;
-        width: 100%;
-    }
+  .mainContent {
+    flex-direction: column;
+    padding-right: 0;
+  }
+  .content {
+    order: 1;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    margin: 6px;
+  }
+  .sidebar {
+    order: 2;
+    height: 80vh;
+    width: 100%;
+  }
 
-    .mobileWarning {
-        display: block;
-    }
+  .mobileWarning {
+    display: block;
+  }
 }

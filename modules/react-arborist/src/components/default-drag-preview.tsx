@@ -2,7 +2,6 @@ import React, { CSSProperties, memo } from "react";
 import { XYCoord } from "react-dnd";
 import { useTreeApi } from "../context";
 import { DragPreviewProps } from "../types/renderers";
-import { IdObj } from "../types/utils";
 
 const layerStyles: CSSProperties = {
   position: "fixed",
@@ -26,13 +25,7 @@ const getCountStyle = (offset: XYCoord | null) => {
   return { transform: `translate(${x + 10}px, ${y + 10}px)` };
 };
 
-export function DefaultDragPreview({
-  offset,
-  mouse,
-  id,
-  dragIds,
-  isDragging,
-}: DragPreviewProps) {
+export function DefaultDragPreview({ offset, mouse, id, dragIds, isDragging }: DragPreviewProps) {
   return (
     <Overlay isDragging={isDragging}>
       <Position offset={offset}>
@@ -43,10 +36,7 @@ export function DefaultDragPreview({
   );
 }
 
-const Overlay = memo(function Overlay(props: {
-  children: JSX.Element[];
-  isDragging: boolean;
-}) {
+const Overlay = memo(function Overlay(props: { children: JSX.Element[]; isDragging: boolean }) {
   if (!props.isDragging) return null;
   return <div style={layerStyles}>{props.children}</div>;
 });
@@ -70,10 +60,7 @@ function Count(props: { count: number; mouse: XYCoord | null }) {
   else return null;
 }
 
-const PreviewNode = memo(function PreviewNode<T>(props: {
-  id: string | null;
-  dragIds: string[];
-}) {
+const PreviewNode = memo(function PreviewNode<T>(props: { id: string | null; dragIds: string[] }) {
   const tree = useTreeApi<T>();
   const node = tree.get(props.id);
   if (!node) return null;

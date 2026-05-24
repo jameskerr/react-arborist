@@ -21,25 +21,14 @@ const structure = [
   folder(
     "src",
     file("index.ts"),
-    folder(
-      "lib",
-      file("index.ts"),
-      file("worker.ts"),
-      file("utils.ts"),
-      file("model.ts")
-    ),
+    folder("lib", file("index.ts"), file("worker.ts"), file("utils.ts"), file("model.ts")),
     folder(
       "ui",
       file("button.ts"),
       file("form.ts"),
       file("table.ts"),
-      folder(
-        "demo",
-        file("welcome.ts"),
-        file("example.ts"),
-        file("container.ts")
-      )
-    )
+      folder("demo", file("welcome.ts"), file("example.ts"), file("container.ts")),
+    ),
   ),
 ];
 

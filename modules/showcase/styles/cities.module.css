@@ -1,249 +1,248 @@
-.container{
-    display: flex;
-    flex-direction: column;
+.container {
+  display: flex;
+  flex-direction: column;
 }
 
 .split {
-    display: flex;
+  display: flex;
 }
 
 .treeContainer {
-    display: flex;
-    height: 100vh;
-    flex: 1;
-    min-width: 0;
+  display: flex;
+  height: 100vh;
+  flex: 1;
+  min-width: 0;
 }
 
 .contentContainer {
-    flex: 2;
-    padding: 50px;
-    height: 100vh;
-    overflow-y: auto;
+  flex: 2;
+  padding: 50px;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .contentContainer section {
-    margin-bottom: 25px;
+  margin-bottom: 25px;
 }
 
 .contentContainer button {
-    color: white;
-    background: rgb(20, 127, 250);
-    border: none;
-    box-shadow: 1px 1px 0 rgb(12, 105, 211),
+  color: white;
+  background: rgb(20, 127, 250);
+  border: none;
+  box-shadow:
+    1px 1px 0 rgb(12, 105, 211),
     2px 2px 0 rgb(12, 105, 211),
     3px 3px 0 rgb(12, 105, 211),
     4px 4px 0 rgb(12, 105, 211),
-    5px 5px 0 rgb(12, 105, 211)
-    ;
-    font-size: 20px;
-    padding: 10px; 
-    cursor: pointer;
-    margin-bottom: 10px;
+    5px 5px 0 rgb(12, 105, 211);
+  font-size: 20px;
+  padding: 10px;
+  cursor: pointer;
+  margin-bottom: 10px;
 }
 
 .contentContainer button:active {
-    background:  rgb(12, 105, 211);
-    box-shadow: none;
-    position: relative;
-    top: 3px;
-    left: 3px;
+  background: rgb(12, 105, 211);
+  box-shadow: none;
+  position: relative;
+  top: 3px;
+  left: 3px;
 }
 
 .contentContainer input {
-    border: 2px solid rgb(12, 105, 211);
-    box-shadow: 1px 1px 0 rgb(12, 105, 211),
+  border: 2px solid rgb(12, 105, 211);
+  box-shadow:
+    1px 1px 0 rgb(12, 105, 211),
     2px 2px 0 rgb(12, 105, 211),
     3px 3px 0 rgb(12, 105, 211),
     4px 4px 0 rgb(12, 105, 211),
-    5px 5px 0 rgb(12, 105, 211)
-    ;
-    font-size: 20px;
-    padding: 10px; 
+    5px 5px 0 rgb(12, 105, 211);
+  font-size: 20px;
+  padding: 10px;
 }
 
 .contentContainer label,
 .contentContainer button,
 .contentContainer input {
-    display: block;
-    margin: 10px 0;
+  display: block;
+  margin: 10px 0;
 }
 
 .statsgrid {
-    display:flex;
-    gap: 10px;
-    flex-wrap: wrap;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .infobox {
-    width: 200px;
-    height: 100px;
-    background:rgb(20, 127, 250);
-    border-radius: 4px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color:rgb(179, 211, 249);
-    box-shadow: 1px 1px 0 rgb(12, 105, 211),
+  width: 200px;
+  height: 100px;
+  background: rgb(20, 127, 250);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: rgb(179, 211, 249);
+  box-shadow:
+    1px 1px 0 rgb(12, 105, 211),
     2px 2px 0 rgb(12, 105, 211),
     3px 3px 0 rgb(12, 105, 211),
     4px 4px 0 rgb(12, 105, 211),
-    5px 5px 0 rgb(12, 105, 211)
-    ;
+    5px 5px 0 rgb(12, 105, 211);
 }
 
 .stat {
-    color: white;
-    text-shadow: 0 1px 1px rgb(0 0 0 /0.4);
-    font-size: 30px;
-    justify-self: center;
-    margin: auto 0;
-    padding: 5px;
-    text-align: center;
+  color: white;
+  text-shadow: 0 1px 1px rgb(0 0 0 /0.4);
+  font-size: 30px;
+  justify-self: center;
+  margin: auto 0;
+  padding: 5px;
+  text-align: center;
 }
 
-
 .tree {
-    border-radius: 16px;
-    background: #efefef;
+  border-radius: 16px;
+  background: #efefef;
 }
 
 .row {
-    white-space: nowrap;
-    cursor: pointer;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .node {
-    position: relative;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    margin: 0 20px;
-    height: 100%;
+  position: relative;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  margin: 0 20px;
+  height: 100%;
 }
 
 .node:global(.willReceiveDrop) {
-    background: #bbb;
+  background: #bbb;
 }
 
 .node:global(.isSelected) {
-    background: rgb(20, 127, 250, 0.5);
-    color: white;
-    border-radius: 0;
+  background: rgb(20, 127, 250, 0.5);
+  color: white;
+  border-radius: 0;
 }
 
 .node:global(.isSelectedStart) {
-    border-radius: 8px 8px 0 0 ;
+  border-radius: 8px 8px 0 0;
 }
 
 .node:global(.isSelectedEnd) {
-    border-radius: 0 0  8px 8px;
+  border-radius: 0 0 8px 8px;
 }
 
 .node:global(.isSelectedStart.isSelectedEnd) {
-    border-radius: 8px;
+  border-radius: 8px;
 }
 
 .tree:hover .indentLines {
-    display: flex;
+  display: flex;
 }
 
 .indentLines {
-    --indent-size: 15px;
+  --indent-size: 15px;
 
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: -1;
-    display: none;
-    align-items: flex-start;
-    height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  display: none;
+  align-items: flex-start;
+  height: 100%;
 }
 
 .indentLines > div {
-    height: 100%;
-    padding-left: 10px;
-    border-right: 1px solid #ccc;
-    margin-right: calc(var(--indent-size) - 10px - 1px);
+  height: 100%;
+  padding-left: 10px;
+  border-right: 1px solid #ccc;
+  margin-right: calc(var(--indent-size) - 10px - 1px);
 }
 
 .row:focus {
-    outline: none;
+  outline: none;
 }
 
 .row:focus .node {
-    background: #ddd;
+  background: #ddd;
 }
 
 .row:focus .node:global(.isSelected) {
-    background: rgb(12, 105, 211);
+  background: rgb(12, 105, 211);
 }
 
 .icon {
-    margin: 0 10px;
-    flex-shrink: 0;
+  margin: 0 10px;
+  flex-shrink: 0;
 }
 
 .text {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .node:global(.isInternal) {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .arrow {
-    width: 20px;
-    display: flex;
-    font-size: 20px;
+  width: 20px;
+  display: flex;
+  font-size: 20px;
 }
 
-.buttonRow { 
-    display: flex;
-    gap: 20px;
+.buttonRow {
+  display: flex;
+  gap: 20px;
 }
 
 .mobileWarning {
-    background: var(--primaryColor);
-    color: white;
-    padding: 1em;
-    font-weight: bold;
-    text-align: center;
-    border-radius: 4px;
-    display: none;
+  background: var(--primaryColor);
+  color: white;
+  padding: 1em;
+  font-weight: bold;
+  text-align: center;
+  border-radius: 4px;
+  display: none;
 }
 
 @media screen and (max-width: 720px) {
-    .split {
-        display: block;
-    }
-    .treeContainer {
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 40vh;
-        position: absolute;
-        display: flex;
-    }
-    .tree {
-        box-shadow: 0 -3px 6px rgb(0 0 0 / 0.15);
-    }
-    .contentContainer {
-        padding-bottom: 50vh;
-    }
+  .split {
+    display: block;
+  }
+  .treeContainer {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40vh;
+    position: absolute;
+    display: flex;
+  }
+  .tree {
+    box-shadow: 0 -3px 6px rgb(0 0 0 / 0.15);
+  }
+  .contentContainer {
+    padding-bottom: 50vh;
+  }
 
-    .mobileWarning {
-        display: block;
-    }
+  .mobileWarning {
+    display: block;
+  }
 }
-  
-@media (prefers-color-scheme: dark) {
-    .tree {
-        background: #101010;
-    }
 
-    .row:focus-visible .node {
-        color: black;
-    }
+@media (prefers-color-scheme: dark) {
+  .tree {
+    background: #101010;
+  }
+
+  .row:focus-visible .node {
+    color: black;
+  }
 }

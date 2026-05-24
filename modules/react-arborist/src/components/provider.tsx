@@ -1,18 +1,7 @@
-import {
-  ReactNode,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-} from "react";
+import { ReactNode, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { useSyncExternalStore } from "use-sync-external-store/shim";
 import { FixedSizeList } from "react-window";
-import {
-  DataUpdatesContext,
-  DndContext,
-  NodesContext,
-  TreeApiContext,
-} from "../context";
+import { DataUpdatesContext, DndContext, NodesContext, TreeApiContext } from "../context";
 import { TreeApi } from "../interfaces/tree-api";
 import { initialState } from "../state/initial";
 import { Actions, rootReducer, RootState } from "../state/root-reducer";
@@ -30,21 +19,17 @@ type Props<T> = {
 
 const SERVER_STATE = initialState();
 
-export function TreeProvider<T>({
-  treeProps,
-  imperativeHandle,
-  children,
-}: Props<T>) {
+export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props<T>) {
   const list = useRef<FixedSizeList | null>(null);
   const listEl = useRef<HTMLDivElement | null>(null);
   const store = useRef<Store<RootState, Actions>>(
     // @ts-ignore
-    createStore(rootReducer, initialState(treeProps))
+    createStore(rootReducer, initialState(treeProps)),
   );
   const state = useSyncExternalStore<RootState>(
     store.current.subscribe,
     store.current.getState,
-    () => SERVER_STATE
+    () => SERVER_STATE,
   );
 
   /* The tree api object is stable. */
@@ -57,7 +42,7 @@ export function TreeProvider<T>({
   useMemo(() => {
     updateCount.current += 1;
     api.update(treeProps);
-  }, [...Object.values(treeProps)]);
+  }, Object.values(treeProps));
 
   /* Rebuild visible nodes when open state changes, without clobbering
      props set imperatively via api.update(). Bumping updateCount keeps

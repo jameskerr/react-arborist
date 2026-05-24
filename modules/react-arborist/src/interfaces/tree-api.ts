@@ -35,7 +35,7 @@ export class TreeApi<T> {
     public store: Store<RootState, Actions>,
     public props: TreeProps<T>,
     public list: MutableRefObject<FixedSizeList | null>,
-    public listEl: MutableRefObject<HTMLDivElement | null>
+    public listEl: MutableRefObject<HTMLDivElement | null>,
   ) {
     /* Changes here must also be made in update() */
     this.root = createRoot<T>(this);
@@ -95,9 +95,7 @@ export class TreeApi<T> {
     const match =
       this.props.searchMatch ??
       ((node, term) => {
-        const string = JSON.stringify(
-          Object.values(node.data as { [k: string]: unknown })
-        );
+        const string = JSON.stringify(Object.values(node.data as { [k: string]: unknown }));
         return string.toLocaleLowerCase().includes(term.toLocaleLowerCase());
       });
     return (node: NodeApi<T>) => match(node, this.searchTerm);
@@ -113,7 +111,7 @@ export class TreeApi<T> {
     const id = utils.access<string>(data, get);
     if (!id)
       throw new Error(
-        "Data must contain an 'id' property or props.idAccessor must return a string"
+        "Data must contain an 'id' property or props.idAccessor must return a string",
       );
     return id;
   }
@@ -150,8 +148,7 @@ export class TreeApi<T> {
 
   get(id: string | null): NodeApi<T> | null {
     if (!id) return null;
-    if (id in this.idToIndex)
-      return this.visibleNodes[this.idToIndex[id]] || null;
+    if (id in this.idToIndex) return this.visibleNodes[this.idToIndex[id]] || null;
     else return null;
   }
 
@@ -194,12 +191,9 @@ export class TreeApi<T> {
       type?: "internal" | "leaf";
       parentId?: null | string;
       index?: null | number;
-    } = {}
+    } = {},
   ) {
-    const parentId =
-      opts.parentId === undefined
-        ? utils.getInsertParentId(this)
-        : opts.parentId;
+    const parentId = opts.parentId === undefined ? utils.getInsertParentId(this) : opts.parentId;
     const index = opts.index ?? utils.getInsertIndex(this);
     const type = opts.type ?? "leaf";
     const data = await safeRun(this.props.onCreate, {
@@ -389,9 +383,7 @@ export class TreeApi<T> {
   }
 
   selectAll() {
-    const allSelectableNodes = this.filterSelectableNodes(
-      Object.keys(this.idToIndex),
-    );
+    const allSelectableNodes = this.filterSelectableNodes(Object.keys(this.idToIndex));
     this.setSelection({
       ids: allSelectableNodes,
       anchor: allSelectableNodes[0] ?? null,
@@ -408,11 +400,7 @@ export class TreeApi<T> {
       .filter((n): n is NodeApi<T> => !!n && n.isSelectable);
   }
 
-  setSelection(args: {
-    ids: (IdObj | string)[] | null;
-    anchor: Identity;
-    mostRecent: Identity;
-  }) {
+  setSelection(args: { ids: (IdObj | string)[] | null; anchor: Identity; mostRecent: Identity }) {
     const ids = new Set(args.ids?.map(identify));
     const anchor = identifyNull(args.anchor);
     const mostRecent = identifyNull(args.mostRecent);
@@ -437,9 +425,7 @@ export class TreeApi<T> {
   }
 
   get dragNodes() {
-    return this.state.dnd.dragIds
-      .map((id) => this.get(id))
-      .filter((n) => !!n) as NodeApi<T>[];
+    return this.state.dnd.dragIds.map((id) => this.get(id)).filter((n) => !!n) as NodeApi<T>[];
   }
 
   get dragNode() {
@@ -535,7 +521,8 @@ export class TreeApi<T> {
       const isOpen = node.isOpen;
       for (let sibling of parent.children) {
         if (sibling.isInternal) {
-          isOpen ? this.close(sibling.id) : this.open(sibling.id);
+          if (isOpen) this.close(sibling.id);
+          else this.open(sibling.id);
         }
       }
       this.scrollTo(this.focusedNode);
@@ -626,10 +613,7 @@ export class TreeApi<T> {
     return this.isActionPossible(data, this.props.disableSelect);
   }
 
-  private isActionPossible(
-    data: T,
-    disabler: string | boolean | BoolFunc<T> = () => false,
-  ) {
+  private isActionPossible(data: T, disabler: string | boolean | BoolFunc<T> = () => false) {
     return !utils.access(data, disabler);
   }
 

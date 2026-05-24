@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useTreeApi } from "../context";
-import { IdObj } from "../types/utils";
 
 export function useFreshNode<T>(index: number) {
   const tree = useTreeApi<T>();

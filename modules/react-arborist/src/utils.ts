@@ -49,10 +49,7 @@ export function dfs(node: NodeApi<any>, id: string): NodeApi<any> | null {
   return null;
 }
 
-export function walk(
-  node: NodeApi<any>,
-  fn: (node: NodeApi<any>) => void
-): void {
+export function walk(node: NodeApi<any>, fn: (node: NodeApi<any>) => void): void {
   fn(node);
   if (node.children) {
     for (let child of node.children) {
@@ -110,15 +107,12 @@ function prevItem(list: HTMLElement[], index: number) {
 function getFocusable(target: HTMLElement) {
   return Array.from(
     document.querySelectorAll(
-      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled]), details:not([disabled]), summary:not(:disabled)'
-    )
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled]), details:not([disabled]), summary:not(:disabled)',
+    ),
   ).filter((e) => e === target || !target.contains(e)) as HTMLElement[];
 }
 
-export function access<T = boolean>(
-  obj: any,
-  accessor: string | boolean | Function
-): T {
+export function access<T = boolean>(obj: any, accessor: string | boolean | Function): T {
   if (typeof accessor === "boolean") return accessor as unknown as T;
   if (typeof accessor === "string") return obj[accessor] as T;
   return accessor(obj) as T;
@@ -234,10 +228,7 @@ const defaultTreeLineChars: TreeLineChars = {
  * getTreeLinePrefix(node, { last: "`- ", middle: "|- ", pipe: "|", blank: "  " })
  * ```
  */
-export function getTreeLinePrefix(
-  node: NodeApi<any>,
-  chars: Partial<TreeLineChars> = {}
-): string {
+export function getTreeLinePrefix(node: NodeApi<any>, chars: Partial<TreeLineChars> = {}): string {
   const c = { ...defaultTreeLineChars, ...chars };
   if (node.level === 0) return "";
 

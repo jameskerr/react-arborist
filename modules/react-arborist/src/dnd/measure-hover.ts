@@ -12,12 +12,8 @@ export function measureHover(el: HTMLElement, offset: XYCoord, indent: number) {
   const inBottomHalf = !inTopHalf;
   const pad = height / 4;
   const inMiddle = y > pad && y < height - pad;
-  const maxLevel = Number(
-    inBottomHalf ? el.dataset.level : prevEl ? prevEl.dataset.level : 0
-  );
-  const minLevel = Number(
-    inTopHalf ? el.dataset.level : nextEl ? nextEl.dataset.level : 0
-  );
+  const maxLevel = Number(inBottomHalf ? el.dataset.level : prevEl ? prevEl.dataset.level : 0);
+  const minLevel = Number(inTopHalf ? el.dataset.level : nextEl ? nextEl.dataset.level : 0);
   const level = bound(Math.floor(x / indent), minLevel, maxLevel);
 
   return { level, inTopHalf, inBottomHalf, inMiddle };

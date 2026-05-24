@@ -9,10 +9,7 @@ type Props = {
   index: number;
 };
 
-export const RowContainer = React.memo(function RowContainer<T>({
-  index,
-  style,
-}: Props) {
+export const RowContainer = React.memo(function RowContainer<T>({ index, style }: Props) {
   /* When will the <Row> will re-render.
    *
    * The row component is memo'd so it will only render
@@ -42,7 +39,7 @@ export const RowContainer = React.memo(function RowContainer<T>({
       el.current = n;
       dropRef(n);
     },
-    [dropRef]
+    [dropRef],
   );
 
   const indent = tree.indent * node.level;
@@ -50,11 +47,9 @@ export const RowContainer = React.memo(function RowContainer<T>({
   const rowStyle = useMemo(
     () => ({
       ...style,
-      top:
-        parseFloat(style.top as string) +
-        (tree.props.padding ?? tree.props.paddingTop ?? 0),
+      top: parseFloat(style.top as string) + (tree.props.padding ?? tree.props.paddingTop ?? 0),
     }),
-    [style, tree.props.padding, tree.props.paddingTop]
+    [style, tree.props.padding, tree.props.paddingTop],
   );
   const rowAttrs: React.HTMLAttributes<any> = {
     role: "treeitem",

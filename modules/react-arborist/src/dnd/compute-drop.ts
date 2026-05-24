@@ -1,12 +1,6 @@
 import { XYCoord } from "react-dnd";
 import { NodeApi } from "../interfaces/node-api";
-import {
-  bound,
-  indexOf,
-  isClosed,
-  isItem,
-  isOpenWithEmptyChildren,
-} from "../utils";
+import { bound, indexOf, isClosed, isItem, isOpenWithEmptyChildren } from "../utils";
 import { DropResult } from "./drop-hook";
 
 function measureHover(el: HTMLElement, offset: XYCoord) {
@@ -29,7 +23,7 @@ function getNodesAroundCursor(
   node: NodeApi | null,
   prev: NodeApi | null,
   next: NodeApi | null,
-  hover: HoverData
+  hover: HoverData,
 ): [NodeApi | null, NodeApi | null] {
   if (!node) {
     // We're hovering over the empty part of the list, not over an item,
@@ -67,16 +61,13 @@ export type ComputedDrop = {
   cursor: Cursor | null;
 };
 
-function dropAt(
-  parentId: string | undefined,
-  index: number | null
-): DropResult {
+function dropAt(parentId: string | undefined, index: number | null): DropResult {
   return { parentId: parentId || null, index };
 }
 
 function lineCursor(index: number, level: number) {
   return {
-    type: "line" as "line",
+    type: "line" as const,
     index,
     level,
   };
@@ -84,13 +75,13 @@ function lineCursor(index: number, level: number) {
 
 function noCursor() {
   return {
-    type: "none" as "none",
+    type: "none" as const,
   };
 }
 
 function highlightCursor(id: string) {
   return {
-    type: "highlight" as "highlight",
+    type: "highlight" as const,
     id,
   };
 }

@@ -5,13 +5,9 @@ import { OuterDrop } from "./outer-drop";
 import { TreeContainer } from "./tree-container";
 import { DragPreviewContainer } from "./drag-preview-container";
 import { TreeProps } from "../types/tree-props";
-import { IdObj } from "../types/utils";
 import { useValidatedProps } from "../hooks/use-validated-props";
 
-function TreeComponent<T>(
-  props: TreeProps<T>,
-  ref: React.Ref<TreeApi<T> | undefined>
-) {
+function TreeComponent<T>(props: TreeProps<T>, ref: React.Ref<TreeApi<T> | undefined>) {
   const treeProps = useValidatedProps(props);
   return (
     <TreeProvider treeProps={treeProps} imperativeHandle={ref}>
@@ -24,5 +20,5 @@ function TreeComponent<T>(
 }
 
 export const Tree = forwardRef(TreeComponent) as <T>(
-  props: TreeProps<T> & { ref?: React.ForwardedRef<TreeApi<T> | undefined> }
+  props: TreeProps<T> & { ref?: React.ForwardedRef<TreeApi<T> | undefined> },
 ) => ReturnType<typeof TreeComponent>;

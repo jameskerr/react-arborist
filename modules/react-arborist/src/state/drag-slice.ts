@@ -15,7 +15,7 @@ export type DragSlice = {
 
 export function reducer(
   state: DragSlice = initialState().nodes.drag,
-  action: ActionTypes<typeof dnd>
+  action: ActionTypes<typeof dnd>,
 ): DragSlice {
   switch (action.type) {
     case "DND_DRAG_START":
@@ -29,10 +29,7 @@ export function reducer(
         selectedIds: [],
       };
     case "DND_HOVERING":
-      if (
-        action.parentId !== state.destinationParentId ||
-        action.index != state.destinationIndex
-      ) {
+      if (action.parentId !== state.destinationParentId || action.index != state.destinationIndex) {
         return {
           ...state,
           destinationParentId: action.parentId,

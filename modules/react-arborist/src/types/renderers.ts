@@ -1,5 +1,4 @@
 import { CSSProperties, HTMLAttributes, ReactElement } from "react";
-import { IdObj } from "./utils";
 import { NodeApi } from "../interfaces/node-api";
 import { TreeApi } from "../interfaces/tree-api";
 import { XYCoord } from "react-dnd";

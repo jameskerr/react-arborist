@@ -1,5 +1,5 @@
 import { useDragLayer } from "react-dnd";
-import { useDndContext, useTreeApi } from "../context";
+import { useTreeApi } from "../context";
 import { DefaultDragPreview } from "./default-drag-preview";
 
 export function DragPreviewContainer() {

@@ -1,6 +1,5 @@
 {
   "name": "e2e",
-  "packageManager": "yarn@3.2.0",
   "scripts": {
     "cy:run": "yarn cypress run",
     "start": "yarn cypress open",
@@ -11,5 +10,6 @@
     "cypress": "^13.6.1",
     "serve": "^14.2.1",
     "start-server-and-test": "^2.0.3"
-  }
+  },
+  "packageManager": "yarn@3.2.0"
 }

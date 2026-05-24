@@ -18,14 +18,7 @@ const data: Datum[] = [
 
 test("imperative tree.update() props survive node toggles (#228)", () => {
   const ref = createRef<TreeApi<Datum> | undefined>();
-  render(
-    <Tree<Datum>
-      data={data}
-      ref={ref}
-      rowHeight={24}
-      openByDefault={false}
-    />
-  );
+  render(<Tree<Datum> data={data} ref={ref} rowHeight={24} openByDefault={false} />);
   const api = ref.current!;
   expect(api.rowHeight).toBe(24);
 

@@ -16,7 +16,7 @@ export function treeBlur() {
 
 export function reducer(
   state: FocusState = { id: null, treeFocused: false },
-  action: ReturnType<typeof focus> | ReturnType<typeof treeBlur>
+  action: ReturnType<typeof focus> | ReturnType<typeof treeBlur>,
 ) {
   if (action.type === "FOCUS") {
     return { ...state, id: action.id, treeFocused: true };

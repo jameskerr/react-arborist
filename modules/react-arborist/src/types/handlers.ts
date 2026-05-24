@@ -27,6 +27,4 @@ export type DeleteHandler<T> = (args: {
   nodes: NodeApi<T>[];
 }) => void | Promise<void>;
 
-export type EditResult =
-  | { cancelled: true }
-  | { cancelled: false; value: string };
+export type EditResult = { cancelled: true } | { cancelled: false; value: string };

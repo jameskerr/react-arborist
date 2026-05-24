@@ -7,10 +7,7 @@ export function edit(id: string | null) {
 }
 
 /* Reducer */
-export function reducer(
-  state: EditState = { id: null },
-  action: ReturnType<typeof edit>
-) {
+export function reducer(state: EditState = { id: null }, action: ReturnType<typeof edit>) {
   if (action.type === "EDIT") {
     return { ...state, id: action.id };
   } else {

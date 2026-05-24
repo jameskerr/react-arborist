@@ -1,12 +1,6 @@
 import { useMemo, useState } from "react";
 import { SimpleTree } from "../data/simple-tree";
-import {
-  CreateHandler,
-  DeleteHandler,
-  MoveHandler,
-  RenameHandler,
-} from "../types/handlers";
-import { IdObj } from "../types/utils";
+import { CreateHandler, DeleteHandler, MoveHandler, RenameHandler } from "../types/handlers";
 
 export type SimpleTreeData = {
   id: string;
@@ -22,7 +16,7 @@ export function useSimpleTree<T>(initialData: readonly T[]) {
     () =>
       new SimpleTree<// @ts-ignore
       T>(data),
-    [data]
+    [data],
   );
 
   const onMove: MoveHandler<T> = (args: {

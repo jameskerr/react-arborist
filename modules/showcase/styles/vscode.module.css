@@ -1,43 +1,43 @@
 .root {
-    display: grid;
-    grid-template-columns: 360px 1fr;
-    grid-template-rows: 1fr;
-    height: 100vh;
-    width: 100vw;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  grid-template-rows: 1fr;
+  height: 100vh;
+  width: 100vw;
 }
 
 .node {
-    font-size: 13px;
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 10px;
-    cursor: default;
-    height: 100%;
-    align-items: center;;
+  font-size: 13px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  cursor: default;
+  height: 100%;
+  align-items: center;
 }
 
 .sidebar {
-    background: #192226;
-    color: rgb(95, 122, 135);
+  background: #192226;
+  color: rgb(95, 122, 135);
 }
 
 .main {
-    background: #253238;
+  background: #253238;
 }
 
 .node:global(.isInternal) svg {
-    fill: #80CBC4;
+  fill: #80cbc4;
 }
 
 .node:global(.isLeaf) svg {
-    width: 10px;
-    fill: #3865BD;
+  width: 10px;
+  fill: #3865bd;
 }
 
 .node:hover {
-    color: white;
+  color: white;
 }
 
 .highlight {
-    background: #062F4A;
+  background: #062f4a;
 }

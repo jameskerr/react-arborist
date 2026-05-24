@@ -37,7 +37,7 @@ export function useOuterDrop() {
         }
       },
     }),
-    [tree]
+    [tree],
   );
 
   drop(tree.listEl);

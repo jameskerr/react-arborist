@@ -22,10 +22,7 @@ export const actions = {
 
 /* Reducer */
 
-function openMapReducer(
-  state: OpenMap = {},
-  action: ActionTypes<typeof actions>
-) {
+function openMapReducer(state: OpenMap = {}, action: ActionTypes<typeof actions>) {
   if (action.type === "VISIBILITY_OPEN") {
     return { ...state, [action.id]: true };
   } else if (action.type === "VISIBILITY_CLOSE") {
@@ -42,7 +39,7 @@ function openMapReducer(
 
 export function reducer(
   state: OpenSlice = { filtered: {}, unfiltered: {} },
-  action: ActionTypes<typeof actions>
+  action: ActionTypes<typeof actions>,
 ): OpenSlice {
   if (!action.type.startsWith("VISIBILITY")) return state;
   if (action.filtered) {

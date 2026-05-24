@@ -112,7 +112,7 @@ describe("Testing the Gmail Demo", () => {
   it("drags and drops in its list", () => {
     dragAndDrop(
       cy.get("@item").contains("Inbox").first(),
-      cy.get("@item").contains("Sent").first()
+      cy.get("@item").contains("Sent").first(),
     );
 
     cy.get("@item").contains("Inbox").click();
@@ -122,7 +122,7 @@ describe("Testing the Gmail Demo", () => {
   it("drags and drops into folder", () => {
     dragAndDrop(
       cy.get("@item").contains("Starred").first(),
-      cy.get("@item").contains("Social").first()
+      cy.get("@item").contains("Social").first(),
     );
     cy.get("@item").contains("Starred").click();
     cy.focused().invoke("index").should("eq", 11);
@@ -131,7 +131,7 @@ describe("Testing the Gmail Demo", () => {
   it("prevents Inbox from Dragging into Categories", () => {
     dragAndDrop(
       cy.get("@item").contains("Inbox").first(),
-      cy.get("@item").contains("Social").first()
+      cy.get("@item").contains("Social").first(),
     );
     cy.get("@item").contains("Inbox").click();
     cy.focused().invoke("index").should("eq", 0);

@@ -59,7 +59,9 @@ function readChangelogSection(version) {
 }
 
 if (!versionArg) {
-  fail("Usage: yarn release <patch|minor|major|X.Y.Z> [--preview] [--any-branch] [--no-tests] [--yes]");
+  fail(
+    "Usage: yarn release <patch|minor|major|X.Y.Z> [--preview] [--any-branch] [--no-tests] [--yes]",
+  );
 }
 
 step("Checking branch");
@@ -89,7 +91,9 @@ if (flags.anyBranch) {
   const local = out(`git rev-parse ${branch}`);
   const remote = out(`git rev-parse ${remoteName}/${branch}`);
   if (local !== remote) {
-    fail(`Local ${branch} (${local.slice(0, 7)}) differs from ${remoteName}/${branch} (${remote.slice(0, 7)}).`);
+    fail(
+      `Local ${branch} (${local.slice(0, 7)}) differs from ${remoteName}/${branch} (${remote.slice(0, 7)}).`,
+    );
   }
   console.log("  in sync");
 }
