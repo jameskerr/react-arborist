@@ -2,7 +2,7 @@ import { EditResult } from "../types/handlers";
 import { BoolFunc, Identity, IdObj } from "../types/utils";
 import { TreeProps } from "../types/tree-props";
 import { MutableRefObject } from "react";
-import { Align, ListOnItemsRenderedProps, VariableSizeList } from "react-window";
+import { Align, FixedSizeList, ListOnItemsRenderedProps, VariableSizeList } from "react-window";
 import * as utils from "../utils";
 import { DefaultCursor } from "../components/default-cursor";
 import { DefaultRow } from "../components/default-row";
@@ -36,7 +36,7 @@ export class TreeApi<T> {
   constructor(
     public store: Store<RootState, Actions>,
     public props: TreeProps<T>,
-    public list: MutableRefObject<VariableSizeList | null>,
+    public list: MutableRefObject<FixedSizeList | VariableSizeList | null>,
     public listEl: MutableRefObject<HTMLDivElement | null>,
   ) {
     /* Changes here must also be made in update() */
@@ -52,14 +52,16 @@ export class TreeApi<T> {
     this.visibleNodes = createList<T>(this);
     this.idToIndex = createIndex(this.visibleNodes);
     this.rowOffsets = null;
-    /* react-window caches item measurements by index and never invalidates
-       them on its own. When rowHeight is a function and the visible nodes
-       change (insert/remove/reorder), those cached sizes belong to the wrong
-       rows, so drop them too. update() runs during render, so pass
-       shouldForceUpdate=false: the in-progress render repaints the list and a
-       forceUpdate here would warn about setting state mid-render. */
-    if (typeof props.rowHeight === "function") {
-      this.list.current?.resetAfterIndex(0, false);
+    /* Variable-height mode renders a VariableSizeList, which caches item
+       measurements by index and never invalidates them on its own. When the
+       visible nodes change (insert/remove/reorder), those cached sizes belong
+       to the wrong rows, so drop them. Fixed-height mode renders a
+       FixedSizeList (no cache, nothing to reset). update() runs during render,
+       so pass shouldForceUpdate=false: the in-progress render repaints the list
+       and a forceUpdate here would warn about setting state mid-render. */
+    const list = this.list.current;
+    if (list && "resetAfterIndex" in list) {
+      list.resetAfterIndex(0, false);
     }
   }
 
@@ -129,7 +131,12 @@ export class TreeApi<T> {
    */
   redrawList = (afterIndex: number = 0) => {
     this.rowOffsets = null;
-    this.list.current?.resetAfterIndex(Math.max(0, afterIndex));
+    /* Only the VariableSizeList (function rowHeight) caches measurements; a
+       FixedSizeList has constant heights and nothing to recompute. */
+    const list = this.list.current;
+    if (list && "resetAfterIndex" in list) {
+      list.resetAfterIndex(Math.max(0, afterIndex));
+    }
   };
 
   /** Lazily-built prefix sum where offsets[i] is the top of row i. */

@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { useSyncExternalStore } from "use-sync-external-store/shim";
-import { VariableSizeList } from "react-window";
+import { FixedSizeList, VariableSizeList } from "react-window";
 import { DataUpdatesContext, DndContext, NodesContext, TreeApiContext } from "../context";
 import { TreeApi } from "../interfaces/tree-api";
 import { initialState } from "../state/initial";
@@ -20,7 +20,7 @@ type Props<T> = {
 const SERVER_STATE = initialState();
 
 export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props<T>) {
-  const list = useRef<VariableSizeList | null>(null);
+  const list = useRef<FixedSizeList | VariableSizeList | null>(null);
   const listEl = useRef<HTMLDivElement | null>(null);
   const store = useRef<Store<RootState, Actions>>(
     // @ts-ignore

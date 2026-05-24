@@ -1,4 +1,4 @@
-import { VariableSizeList } from "react-window";
+import { FixedSizeList, VariableSizeList } from "react-window";
 import { useDataUpdates, useTreeApi } from "../context";
 import { focusNextElement, focusPrevElement } from "../utils";
 import { ListOuterElement } from "./list-outer-element";
@@ -216,24 +216,45 @@ export function DefaultContainer() {
         if (node) tree.focus(node.id);
       }}
     >
-      {/* @ts-ignore */}
-      <VariableSizeList
-        className={tree.props.className}
-        outerRef={tree.listEl}
-        itemCount={tree.visibleNodes.length}
-        height={tree.height}
-        width={tree.width}
-        itemSize={tree.rowHeightAt}
-        overscanCount={tree.overscanCount}
-        itemKey={(index) => tree.visibleNodes[index]?.id || index}
-        outerElementType={tree.props.outerElementType ?? ListOuterElement}
-        innerElementType={tree.props.innerElementType ?? ListInnerElement}
-        onScroll={tree.props.onScroll}
-        onItemsRendered={tree.onItemsRendered.bind(tree)}
-        ref={tree.list}
-      >
+      <List />
+    </div>
+  );
+}
+
+/**
+ * Fixed-height trees (numeric rowHeight) render a FixedSizeList, preserving the
+ * original O(1) layout and avoiding VariableSizeList's measurement cache. Only
+ * the function form, which needs per-row heights, uses VariableSizeList.
+ */
+function List() {
+  const tree = useTreeApi();
+  const commonProps = {
+    className: tree.props.className,
+    outerRef: tree.listEl,
+    itemCount: tree.visibleNodes.length,
+    height: tree.height,
+    width: tree.width,
+    overscanCount: tree.overscanCount,
+    itemKey: (index: number) => tree.visibleNodes[index]?.id || index,
+    outerElementType: tree.props.outerElementType ?? ListOuterElement,
+    innerElementType: tree.props.innerElementType ?? ListInnerElement,
+    onScroll: tree.props.onScroll,
+    onItemsRendered: tree.onItemsRendered.bind(tree),
+  };
+
+  if (typeof tree.props.rowHeight === "function") {
+    return (
+      // @ts-ignore
+      <VariableSizeList {...commonProps} itemSize={tree.rowHeightAt} ref={tree.list}>
         {RowContainer}
       </VariableSizeList>
-    </div>
+    );
+  }
+
+  return (
+    // @ts-ignore
+    <FixedSizeList {...commonProps} itemSize={tree.rowHeight} ref={tree.list}>
+      {RowContainer}
+    </FixedSizeList>
   );
 }

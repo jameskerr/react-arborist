@@ -1,5 +1,6 @@
 import { createRef } from "react";
 import { act, render, screen } from "@testing-library/react";
+import { FixedSizeList, VariableSizeList } from "react-window";
 import { Tree } from "./tree";
 import { TreeApi } from "../interfaces/tree-api";
 import { NodeApi } from "../interfaces/node-api";
@@ -66,9 +67,11 @@ test("function rowHeight gives each row its own height and cumulative top (#238)
 
 test("mutations tell the list to recompute heights (#238)", () => {
   const ref = createRef<TreeApi<Datum> | undefined>();
-  render(<Tree<Datum> data={data} ref={ref} rowHeight={24} openByDefault />);
+  /* Only variable-height mode renders a VariableSizeList with a measurement
+     cache to recompute, so use a function rowHeight here. */
+  render(<Tree<Datum> data={data} ref={ref} rowHeight={() => 24} openByDefault />);
   const api = ref.current!;
-  const reset = jest.spyOn(api.list.current!, "resetAfterIndex");
+  const reset = jest.spyOn(api.list.current as VariableSizeList, "resetAfterIndex");
 
   act(() => api.close("1"));
   expect(reset).toHaveBeenCalled();
@@ -88,7 +91,7 @@ test("changing data in variable-height mode resets the list cache (#238)", () =>
   const { rerender } = render(
     <Tree<Datum> data={data} ref={ref} rowHeight={rowHeight} openByDefault />,
   );
-  const reset = jest.spyOn(ref.current!.list.current!, "resetAfterIndex");
+  const reset = jest.spyOn(ref.current!.list.current as VariableSizeList, "resetAfterIndex");
 
   const nextData: Datum[] = [{ id: "9", name: "fresh" }, ...data];
   act(() => {
@@ -98,17 +101,20 @@ test("changing data in variable-height mode resets the list cache (#238)", () =>
   expect(reset).toHaveBeenCalledWith(0, false);
 });
 
-/* The numeric path must stay untouched: itemSize is constant, so there is no
-   stale-cache problem and we should not pay for resets on every prop change. */
-test("changing data with a numeric rowHeight does not reset the cache (#238)", () => {
+/* The numeric path must stay on FixedSizeList: it has constant item sizes, so
+   there is no measurement cache to go stale and none of VariableSizeList's
+   overhead. A FixedSizeList has no resetAfterIndex method at all. */
+test("numeric rowHeight renders a cache-free FixedSizeList (#238)", () => {
   const ref = createRef<TreeApi<Datum> | undefined>();
-  const { rerender } = render(<Tree<Datum> data={data} ref={ref} rowHeight={24} openByDefault />);
-  const reset = jest.spyOn(ref.current!.list.current!, "resetAfterIndex");
+  render(<Tree<Datum> data={data} ref={ref} rowHeight={24} openByDefault />);
+  const list = ref.current!.list.current!;
+  expect(list).toBeInstanceOf(FixedSizeList);
+  expect("resetAfterIndex" in list).toBe(false);
+});
 
-  const nextData: Datum[] = [{ id: "9", name: "fresh" }, ...data];
-  act(() => {
-    rerender(<Tree<Datum> data={nextData} ref={ref} rowHeight={24} openByDefault />);
-  });
-
-  expect(reset).not.toHaveBeenCalled();
+/* The function path uses VariableSizeList so per-row heights are possible. */
+test("function rowHeight renders a VariableSizeList (#238)", () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(<Tree<Datum> data={data} ref={ref} rowHeight={() => 24} openByDefault />);
+  expect(ref.current!.list.current!).toBeInstanceOf(VariableSizeList);
 });
