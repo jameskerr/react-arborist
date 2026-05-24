@@ -35,7 +35,9 @@ describe("Variable Row Height Demo", () => {
   });
 
   it("recomputes offsets when a folder collapses", () => {
-    cy.contains("[role=treeitem]", "Documents").click(); // collapse
+    // Click the row's text node (not the treeitem box) so the click always
+    // lands on the handler, regardless of how the renderer fills the row.
+    cy.get("@item").contains("Documents").click(); // collapse
     // Only Documents, Downloads, and installer.dmg remain visible.
     cy.get("@item").should("have.length", 3);
     // Downloads now sits directly below Documents (one 48px row) instead of at 208px.

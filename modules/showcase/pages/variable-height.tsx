@@ -62,6 +62,9 @@ function Node({ node, style, dragHandle }: NodeRendererProps<Item>) {
       ref={dragHandle}
       style={{
         ...style,
+        /* react-window applies the row height to the outer treeitem; fill it so
+           the whole row (not just the text) is clickable. */
+        height: "100%",
         display: "flex",
         alignItems: "center",
         paddingLeft: 8,
