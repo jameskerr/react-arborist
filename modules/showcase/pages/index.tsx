@@ -62,6 +62,19 @@ const Home: NextPage = () => {
               <Link href="/variable-height">View Demo</Link>
             </div>
           </Link>
+
+          <Link href="/drag-out" legacyBehavior>
+            <div className={styles.demoCard}>
+              <div className={`${styles.demoCardImage} cities`}></div>
+              <b>Cross-Source DnD</b>
+              <h2>Drag Nodes Out</h2>
+              <p>
+                In this demo, we drag nodes onto a drop target outside the tree, which reads the
+                dragged node&apos;s data from the react-dnd item.
+              </p>
+              <Link href="/drag-out">View Demo</Link>
+            </div>
+          </Link>
         </div>
       </main>
     </div>

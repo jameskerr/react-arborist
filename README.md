@@ -351,8 +351,22 @@ interface TreeProps<T> {
     { backend: unknown }
   >["backend"];
   dndManager?: ReturnType<typeof useDragDropManager>;
+  dragType?: string | ((node: NodeApi<T>) => string);
 }
 ```
+
+### Dragging Nodes to External Drop Targets
+
+The react-dnd drag item created for each row carries the dragged node's `data`, so a drop target rendered outside the tree can read it:
+
+```tsx
+const [, drop] = useDrop(() => ({
+  accept: "NODE",
+  drop: (item) => console.log(item.data), // the dragged node's data
+}));
+```
+
+The tree and your external target must share one react-dnd backend. Wrap both in a single `DndProvider` and pass its manager to the tree via the `dndManager` prop. By default rows advertise the `"NODE"` item type; set the `dragType` prop (a fixed string, or a function of the node) to advertise a custom type instead. Note that the tree's own drop targets only accept `"NODE"`, so a row given a custom `dragType` is no longer reorderable within the tree.
 
 ## Row Component Props
 

@@ -79,6 +79,15 @@ export interface TreeProps<T> {
   dndBackend?: Extract<DndProviderProps<unknown, unknown>, { backend: unknown }>["backend"];
   dndManager?: ReturnType<typeof useDragDropManager>;
 
+  /* The react-dnd item type each row's drag source advertises. Defaults to
+     "NODE". Set a custom value (or a per-node function) so rows can be dropped
+     onto external react-dnd targets that accept that type. The dragged node's
+     data is always exposed on the drag item, so an external target accepting
+     the default "NODE" type can read it without setting this. Note: the tree's
+     own drop targets only accept "NODE", so a row given a custom type is no
+     longer reorderable within the tree. */
+  dragType?: string | ((node: NodeApi<T>) => string);
+
   /* Custom react-window outer/inner elements */
   outerElementType?: ReactWindowCommonProps["outerElementType"];
   innerElementType?: ReactWindowCommonProps["innerElementType"];

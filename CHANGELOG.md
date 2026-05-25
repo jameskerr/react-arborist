@@ -1,3 +1,9 @@
+# Version 3.9.0
+
+**Features**
+
+- Tree nodes can now be dragged onto react-dnd drop targets outside the tree. The drag item carries the dragged node's `data`, so an external target accepting the default `"NODE"` type can read it (the tree and the target must share one backend via the `dndManager` prop). A new `dragType` prop on `Tree` (a string or `(node) => string`) lets rows advertise a custom react-dnd item type (#282, also addresses #209/#210)
+
 # Version 3.8.0
 
 **Features**
