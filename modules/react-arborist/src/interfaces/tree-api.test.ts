@@ -45,4 +45,6 @@ test("variable rowHeight function", () => {
   expect(api.rowTopPosition(1)).toBe(10);
   expect(api.rowTopPosition(2)).toBe(30);
   expect(api.rowTopPosition(3)).toBe(70); // total list height
+  // Out-of-range index falls back to the default height, never an invalid 0.
+  expect(api.rowHeightAt(99)).toBe(24);
 });

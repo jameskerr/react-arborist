@@ -36,8 +36,8 @@ export default function VariableHeight() {
       <h1>Variable Row Height</h1>
       <p>
         Pass <code>rowHeight</code> a function to size each row based on its node. Here, folders are
-        48px and leaves are 28px. Toggle, rename, and drag rows — the virtualized list recomputes
-        offsets automatically.
+        48px and leaves are 28px. Toggle and drag rows — the virtualized list recomputes offsets
+        automatically.
       </p>
       <Tree
         initialData={data}

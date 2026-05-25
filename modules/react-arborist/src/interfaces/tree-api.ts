@@ -102,12 +102,16 @@ export class TreeApi<T> {
     return typeof this.props.rowHeight === "number" ? this.props.rowHeight : 24;
   }
 
-  /** The height of the row at `index`, evaluating the `rowHeight` function if given. */
+  /**
+   * The height of the row at `index`, evaluating the `rowHeight` function if
+   * given. Falls back to the default height for an out-of-range index so this
+   * never feeds an invalid `0` to react-window's `itemSize`.
+   */
   rowHeightAt = (index: number): number => {
     const rowHeight = this.props.rowHeight;
     if (typeof rowHeight === "function") {
       const node = this.at(index);
-      return node ? rowHeight(node) : 0;
+      return node ? rowHeight(node) : this.rowHeight;
     }
     return rowHeight ?? 24;
   };
