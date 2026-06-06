@@ -19,13 +19,13 @@ Yarn 4 workspaces monorepo. Top-level scripts in the root `package.json` delegat
 
 Other notable files:
 
-- `bin/release.mjs` — release script. Driven by `yarn release` (see below).
-- `bin/publish` — legacy manual publish script; the modern flow uses `release.mjs` + a GitHub Actions OIDC publish workflow.
+- `bin/release.mjs` — release orchestration script, driven by `yarn release`. Bumps the version and pushes a tag; the tag push is what kicks off publishing.
+- `bin/publish` — the actual npm publish step. Builds the library, copies `README.md` into the library workspace, then `npm publish`es from there. Invoked from CI by `.github/workflows/publish.yml` on tag push; also runnable by hand.
 - `CHANGELOG.md` — release notes. The release script reads the `# Version X.Y.Z` section from here and refuses to release if it's missing.
 
 ## Tooling
 
-- Node: pin to whatever `fnm` / `.nvmrc` says locally; CI uses a recent LTS.
+- Node: pinned by `.node-version` at the repo root (currently `24.12.0`); use `fnm` (or any tool that reads `.node-version`) to match locally. Note that CI's publish workflow runs on Node `20.x` — kept separate because the published package needs to load on older Node.
 - Package manager: Yarn 4.0.2 (`packageManager` field in root `package.json`).
 - Lint: `oxlint` (`yarn lint`, `yarn lint:fix`).
 - Format: `oxfmt` (`yarn fmt`, `yarn fmt:check`).
