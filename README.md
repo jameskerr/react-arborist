@@ -34,6 +34,22 @@ yarn add react-arborist
 npm install react-arborist
 ```
 
+## Testing
+
+The package ships with Jest tests under `modules/react-arborist/src/**/*.test.ts?(x)`.
+From the package directory you can run:
+
+```bash
+cd modules/react-arborist
+yarn test
+```
+
+Good starting points:
+
+- `src/interfaces/tree-api.test.ts` for pure API behavior
+- `src/components/provider.test.tsx` for rendered tree behavior
+- `src/dnd/drag-hook.test.ts` for drag-and-drop behavior
+
 ## Examples
 
 Assume our data is this:
