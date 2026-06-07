@@ -51,6 +51,8 @@ Unit tests live alongside the source in `modules/react-arborist/src/**/*.test.ts
 
 A passing run is not enough — **read the console output and treat warnings as failures to fix, not noise to scroll past.** Jest reports passing tests even when React or the libraries log to `console.error`/`console.warn`, so it's easy to let warnings accumulate. The common offender here is React's "An update to X inside a test was not wrapped in act(...)": some tree interactions (selection, focus) kick off an async `scrollTo`, whose state update resolves on a microtask after the synchronous `act()` scope from `fireEvent`/`render` has already closed. Wrap the interaction (or a trailing flush) in `await act(async () => { … })` so that update lands inside an `act` scope. When you add or change a test, run the whole suite and confirm it is **warning-clean** before pushing.
 
+## Release process
+
 Releases are driven by `bin/release.mjs` (`yarn release`). The script does git checks, runs tests, builds, bumps `modules/react-arborist/package.json`, commits, tags, pushes, and creates a GitHub Release. The tag push triggers `.github/workflows/publish.yml`, which `npm publish`es via OIDC Trusted Publishing — no npm token is involved.
 
 ### Steps
