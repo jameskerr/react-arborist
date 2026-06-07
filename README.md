@@ -247,7 +247,7 @@ function App() {
 
 You can add a ref to it with this package [Pmndrs/react-use-measure](https://github.com/pmndrs/react-use-measure)
  
-That hook will will measure the boundaries (for instance width, height, top, left) of a view you reference. Then you pass the width and the height to the Tree.
+That hook will measure the boundaries (for instance width, height, top, left) of a view you reference. Then you pass the width and the height to the Tree.
 
 ```js
 import useMeasure from "react-use-measure";
