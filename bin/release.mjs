@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import os from "node:os";
@@ -10,6 +10,16 @@ import { fileURLToPath } from "node:url";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const pkgPath = path.join(rootDir, "modules/react-arborist/package.json");
 const changelogPath = path.join(rootDir, "CHANGELOG.md");
+const changesDir = path.join(rootDir, ".changes");
+
+/* type → { changelog heading, bump rank }. Headings match the existing
+   CHANGELOG.md sections; rank picks the largest bump across all changesets. */
+const TYPES = {
+  breaking: { heading: "**Breaking Changes**", rank: 3 },
+  feature: { heading: "**Features**", rank: 2 },
+  fix: { heading: "**Fixes**", rank: 1 },
+};
+const RANK_TO_BUMP = { 3: "major", 2: "minor", 1: "patch" };
 
 const args = process.argv.slice(2);
 const flags = {
@@ -50,18 +60,51 @@ function bump(current, kind) {
   fail(`Invalid version: "${kind}". Use patch, minor, major, or X.Y.Z.`);
 }
 
-function readChangelogSection(version) {
-  const content = readFileSync(changelogPath, "utf8");
-  const escaped = version.replace(/\./g, "\\.");
-  const re = new RegExp(`^# Version ${escaped}\\s*\\n([\\s\\S]*?)(?=^# Version |\\Z)`, "m");
-  const match = content.match(re);
-  return match ? match[1].trim() : null;
+/* Read every .changes/*.md (except README.md) and parse its frontmatter. Each
+   file is a `--- key: value --- body` document; no YAML dep needed. */
+function readChangesets() {
+  let files;
+  try {
+    files = readdirSync(changesDir);
+  } catch {
+    return [];
+  }
+  return files
+    .filter((f) => f.endsWith(".md") && f !== "README.md")
+    .map((f) => {
+      const raw = readFileSync(path.join(changesDir, f), "utf8");
+      const m = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/);
+      if (!m) fail(`Malformed changeset ${f}: expected frontmatter between --- fences.`);
+      const meta = {};
+      for (const line of m[1].split("\n")) {
+        const kv = line.match(/^\s*([A-Za-z]+)\s*:\s*(.+?)\s*$/);
+        if (kv) meta[kv[1]] = kv[2];
+      }
+      if (!TYPES[meta.type]) {
+        fail(
+          `Changeset ${f}: type must be one of ${Object.keys(TYPES).join(", ")} (got "${meta.type}").`,
+        );
+      }
+      if (!meta.pr) fail(`Changeset ${f}: missing "pr".`);
+      const body = m[2].trim();
+      if (!body) fail(`Changeset ${f}: body is empty.`);
+      return { type: meta.type, pr: meta.pr, credit: meta.credit, body, file: f };
+    });
 }
 
-if (!versionArg) {
-  fail(
-    "Usage: yarn release <patch|minor|major|X.Y.Z> [--preview] [--any-branch] [--no-tests] [--yes]",
-  );
+/* Build the `# Version X.Y.Z` block plus the body alone (for the GH release). */
+function renderSection(version, changesets) {
+  const parts = [];
+  for (const type of Object.keys(TYPES)) {
+    const entries = changesets.filter((c) => c.type === type);
+    if (entries.length === 0) continue;
+    const bullets = entries
+      .map((c) => `- ${c.body} (#${c.pr}${c.credit ? `, originally #${c.credit}` : ""})`)
+      .join("\n");
+    parts.push(`${TYPES[type].heading}\n\n${bullets}`);
+  }
+  const body = parts.join("\n\n");
+  return { body, block: `# Version ${version}\n\n${body}\n` };
 }
 
 step("Checking branch");
@@ -106,22 +149,31 @@ if (!flags.skipTests) {
 step("Building library");
 run("yarn build-lib");
 
+const changesets = readChangesets();
+if (changesets.length === 0) {
+  fail("No changesets in .changes/. Add a `.changes/*.md` entry before releasing.");
+}
+
 const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
 const oldVersion = pkg.version;
-const newVersion = bump(oldVersion, versionArg);
+// Derive the bump from the changeset types; an explicit arg overrides it.
+const maxRank = Math.max(...changesets.map((c) => TYPES[c.type].rank));
+const kind = versionArg ?? RANK_TO_BUMP[maxRank];
+const newVersion = bump(oldVersion, kind);
 const tag = `v${newVersion}`;
 
-console.log(`\nVersion: ${oldVersion} → ${newVersion}  (tag: ${tag})`);
+console.log(
+  `\nVersion: ${oldVersion} → ${newVersion}  (tag: ${tag}, ${versionArg ? "explicit" : "inferred"} ${kind})`,
+);
 
 if (out(`git tag -l ${tag}`)) {
   fail(`Tag ${tag} already exists.`);
 }
 
-const releaseNotes = readChangelogSection(newVersion);
-if (!releaseNotes) {
-  fail(`No "# Version ${newVersion}" section found in CHANGELOG.md. Add one before releasing.`);
-}
-console.log(`\nRelease notes (from CHANGELOG.md):\n${releaseNotes}\n`);
+const { body: releaseNotes, block: changelogBlock } = renderSection(newVersion, changesets);
+console.log(
+  `\nRelease notes (assembled from ${changesets.length} changeset(s)):\n${releaseNotes}\n`,
+);
 
 if (!flags.preview && !flags.yes) {
   const rl = createInterface({ input, output });
@@ -139,6 +191,18 @@ if (flags.preview) {
 } else {
   pkg.version = newVersion;
   writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+}
+
+step(`Prepending "# Version ${newVersion}" to CHANGELOG.md`);
+if (flags.preview) {
+  console.log(`  [preview] prepend assembled section`);
+} else {
+  writeFileSync(changelogPath, `${changelogBlock}\n${readFileSync(changelogPath, "utf8")}`);
+}
+
+step(`Consuming ${changesets.length} changeset(s)`);
+for (const c of changesets) {
+  run(`git rm --quiet ${path.join(".changes", c.file)}`);
 }
 
 step("Committing");

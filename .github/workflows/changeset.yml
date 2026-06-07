@@ -1,0 +1,34 @@
+name: Changeset
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+jobs:
+  changeset:
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-changelog') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require a changeset for library source changes
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          changed=$(git diff --name-only "origin/$BASE...HEAD")
+          touches_src=$(echo "$changed" | grep -E '^modules/react-arborist/src/' || true)
+          if [ -z "$touches_src" ]; then
+            echo "No library source changes — changeset not required."
+            exit 0
+          fi
+          added=$(git diff --name-only --diff-filter=A "origin/$BASE...HEAD" \
+            | grep -E '^\.changes/.+\.md$' | grep -v '^\.changes/README\.md$' || true)
+          if [ -n "$added" ]; then
+            echo "Found changeset(s):"
+            echo "$added"
+            exit 0
+          fi
+          echo "::error::This PR changes modules/react-arborist/src/ but adds no .changes/ entry."
+          echo "Add a changeset (see .changes/README.md) describing the change, or apply the"
+          echo "'skip-changelog' label if it has no user-facing effect."
+          exit 1

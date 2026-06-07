@@ -21,7 +21,8 @@ Other notable files:
 
 - `bin/release.mjs` — release orchestration script, driven by `yarn release`. Bumps the version and pushes a tag; the tag push is what kicks off publishing.
 - `bin/publish` — the actual npm publish step. Builds the library, copies `README.md` into the library workspace, then `npm publish`es from there. Invoked from CI by `.github/workflows/publish.yml` on tag push; also runnable by hand.
-- `CHANGELOG.md` — release notes. The release script reads the `# Version X.Y.Z` section from here and refuses to release if it's missing.
+- `CHANGELOG.md` — release notes. **No longer hand-edited per change.** The release script assembles a new `# Version X.Y.Z` section here from the pending entries in `.changes/` (see below).
+- `.changes/` — one Markdown file per user-facing change (the "changeset"). Each PR adds its own file, so entries never conflict and PRs merge in any order. `bin/release.mjs` consumes them at release time. Format is documented in `.changes/README.md`.
 
 ## Tooling
 
@@ -58,14 +59,15 @@ Releases are driven by `bin/release.mjs` (`yarn release`). The script does git c
 ### Steps
 
 1. On `main`, working tree clean, in sync with the remote.
-2. Add a `# Version X.Y.Z` section at the top of `CHANGELOG.md` for the upcoming version, with `**Features**` / `**Fixes**` subsections. Each bullet should end with the PR number in parens, e.g. `(#342)`. Commit and push. (Often this entry lands as part of the feature PR itself — check `CHANGELOG.md` before adding a new commit.)
-3. Run `yarn release <patch|minor|major|X.Y.Z>`. The script:
+2. Confirm the pending changes have `.changes/` entries (they normally land with their PRs). You do **not** hand-edit `CHANGELOG.md` — the script writes it.
+3. Run `yarn release` (no version argument needed — the bump is inferred). The script:
    - Verifies branch is `main`, working tree is clean, local matches remote.
    - Runs `yarn workspace react-arborist test` and `yarn build-lib`.
-   - Reads the matching `# Version X.Y.Z` section from `CHANGELOG.md` — **fails if missing**.
-   - Bumps `modules/react-arborist/package.json`, commits as `vX.Y.Z`, tags `vX.Y.Z`.
+   - Reads `.changes/*.md` — **fails if there are none**. Infers the bump from the entry types (`breaking` → major, `feature` → minor, `fix` → patch; takes the largest). Pass an explicit `patch|minor|major|X.Y.Z` only to override.
+   - Assembles a new `# Version X.Y.Z` section and prepends it to `CHANGELOG.md`, then `git rm`s the consumed `.changes/` files.
+   - Bumps `modules/react-arborist/package.json`, commits as `vX.Y.Z` (changelog + deletions + version in one commit), tags `vX.Y.Z`.
    - Pushes the commit and tag to the tracking remote.
-   - Creates a GitHub Release using the changelog section as the body.
+   - Creates a GitHub Release using the assembled section as the body.
 4. `gh run watch` to watch the publish workflow. Confirm the new version on <https://www.npmjs.com/package/react-arborist>.
 
 ### Flags
@@ -77,11 +79,11 @@ Releases are driven by `bin/release.mjs` (`yarn release`). The script does git c
 
 ### Agent guidance
 
-Agents should **not** run `yarn release` themselves — it pushes tags, mutates npm, and creates a public GitHub Release. The maintainer cuts releases. An agent's job around a release is typically:
+Agents should **not** run `yarn release` themselves — it pushes tags, mutates npm, and creates a public GitHub Release. The maintainer cuts releases. An agent's job around a change is typically:
 
-- Add or refine the `# Version X.Y.Z` entry in `CHANGELOG.md`.
-- Confirm `main` has all the PRs that should be in the release.
-- Optionally run `yarn release <kind> --preview` to verify the script's preconditions pass.
+- Add a `.changes/` entry for the change (see `.changes/README.md`) — **not** edit `CHANGELOG.md` directly. A PR that touches `modules/react-arborist/src/` without one fails the `Changeset` CI check; apply the `skip-changelog` label for changes with no user-facing effect.
+- Confirm `main` has all the PRs (and their changesets) that should be in the release.
+- Optionally run `yarn release --preview` (add `--any-branch --no-tests` off `main`) to verify the inferred bump and the assembled notes look right.
 
 ## Conventions
 
