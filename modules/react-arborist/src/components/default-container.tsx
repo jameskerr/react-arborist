@@ -19,6 +19,9 @@ export function DefaultContainer() {
   return (
     <div
       role="tree"
+      aria-label={tree.props["aria-label"]}
+      aria-labelledby={tree.props["aria-labelledby"]}
+      aria-multiselectable={!tree.props.disableMultiSelection || undefined}
       style={{
         height: tree.height,
         width: tree.width,
@@ -133,16 +136,16 @@ export function DefaultContainer() {
           }
           return;
         }
-        if (e.key === "a" && e.metaKey && !tree.props.disableMultiSelection) {
+        if (e.key === "a" && (e.metaKey || e.ctrlKey) && !tree.props.disableMultiSelection) {
           e.preventDefault();
           tree.selectAll();
           return;
         }
-        if (e.key === "a" && !e.metaKey && tree.props.onCreate) {
+        if (e.key === "a" && !e.metaKey && !e.ctrlKey && tree.props.onCreate) {
           tree.createLeaf();
           return;
         }
-        if (e.key === "A" && !e.metaKey) {
+        if (e.key === "A" && !e.metaKey && !e.ctrlKey) {
           if (!tree.props.onCreate) return;
           tree.createInternal();
           return;

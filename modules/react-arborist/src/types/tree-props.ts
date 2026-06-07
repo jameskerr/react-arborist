@@ -69,6 +69,10 @@ export interface TreeProps<T> {
   searchTerm?: string;
   searchMatch?: (node: NodeApi<T>, searchTerm: string) => boolean;
 
+  /* Accessibility */
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
+
   /* Extra */
   className?: string | undefined;
   rowClassName?: string | undefined;

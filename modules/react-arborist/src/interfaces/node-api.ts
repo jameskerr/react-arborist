@@ -200,7 +200,7 @@ export class NodeApi<T = any> {
   }
 
   handleClick = (e: React.MouseEvent) => {
-    if (e.metaKey && !this.tree.props.disableMultiSelection) {
+    if ((e.metaKey || e.ctrlKey) && !this.tree.props.disableMultiSelection) {
       if (this.isSelected) this.deselect();
       else this.selectMulti();
     } else if (e.shiftKey && !this.tree.props.disableMultiSelection) {

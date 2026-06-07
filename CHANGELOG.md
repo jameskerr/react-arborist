@@ -1,3 +1,13 @@
+# Version 3.10.0
+
+**Features**
+
+- `aria-label` and `aria-labelledby` props on `Tree` are now forwarded onto the internal `role="tree"` element, giving the tree an accessible name per the W3C Treeview pattern. The element also gains `aria-multiselectable` unless `disableMultiSelection` is set (#325)
+
+**Fixes**
+
+- Mouse multi-selection now responds to Ctrl+Click and Ctrl+A on Windows/Linux, in addition to the existing Cmd (Meta) shortcuts on macOS (#303)
+
 # Version 3.9.0
 
 **Features**
