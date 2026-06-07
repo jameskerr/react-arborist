@@ -455,12 +455,13 @@ export class TreeApi<T> {
   }
 
   deselectAll() {
+    // setSelection fires onSelect; don't fire it again here (see #332).
     this.setSelection({ ids: [], anchor: null, mostRecent: null });
-    safeRun(this.props.onSelect, this.selectedNodes);
   }
 
   selectAll() {
     const allSelectableNodes = this.filterSelectableNodes(Object.keys(this.idToIndex));
+    // setSelection fires onSelect; don't fire it again here (see #332).
     this.setSelection({
       ids: allSelectableNodes,
       anchor: allSelectableNodes[0] ?? null,
@@ -468,7 +469,6 @@ export class TreeApi<T> {
     });
     this.dispatch(focus(this.lastNode?.id));
     if (this.focusedNode) safeRun(this.props.onFocus, this.focusedNode);
-    safeRun(this.props.onSelect, this.selectedNodes);
   }
 
   private filterSelectableNodes(nodes: (IdObj | string)[]) {

@@ -48,3 +48,62 @@ test("variable rowHeight function", () => {
   // Out-of-range index falls back to the default height, never an invalid 0.
   expect(api.rowHeightAt(99)).toBe(24);
 });
+
+describe("onSelect fires exactly once per selection method (#332)", () => {
+  function setupWithSpy() {
+    const onSelect = jest.fn();
+    const api = setupApi({ data: rowData, onSelect });
+    return { api, onSelect };
+  }
+
+  test("setSelection", () => {
+    const { api, onSelect } = setupWithSpy();
+    api.setSelection({ ids: ["a"], anchor: "a", mostRecent: "a" });
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  test("select", () => {
+    const { api, onSelect } = setupWithSpy();
+    api.select("a");
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  test("selectMulti", () => {
+    const { api, onSelect } = setupWithSpy();
+    api.selectMulti("a");
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  test("selectContiguous", () => {
+    const { api, onSelect } = setupWithSpy();
+    api.select("a");
+    onSelect.mockClear();
+    api.selectContiguous("c");
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  test("selectAll", () => {
+    const { api, onSelect } = setupWithSpy();
+    api.selectAll();
+    expect(api.selectedIds.size).toBe(3);
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  test("deselectAll", () => {
+    const { api, onSelect } = setupWithSpy();
+    api.selectAll();
+    onSelect.mockClear();
+    api.deselectAll();
+    expect(api.selectedIds.size).toBe(0);
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  test("deselect", () => {
+    const { api, onSelect } = setupWithSpy();
+    api.selectMulti("a");
+    api.selectMulti("b");
+    onSelect.mockClear();
+    api.deselect("a");
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+});
