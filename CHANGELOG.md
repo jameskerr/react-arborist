@@ -1,3 +1,11 @@
+# Version 3.10.1
+
+**Fixes**
+
+- `selectAll()` and `deselectAll()` no longer fire `onSelect` twice. They go
+through `setSelection()`, which already invokes the callback, so consumers now
+see a single `onSelect` per Cmd-A or clear-selection action. (#357)
+
 # Version 3.10.0
 
 **Features**
