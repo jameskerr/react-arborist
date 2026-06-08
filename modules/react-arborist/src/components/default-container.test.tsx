@@ -61,6 +61,15 @@ test("Ctrl+Click falls through to a plain select when multi-select is disabled (
   expect(b.getAttribute("aria-selected")).toBe("true");
 });
 
+/* #10: a row's background/selection highlight must span the full scrollable
+   width, not stop at the viewport edge, when content overflows horizontally. */
+test("rows get min-width: max-content so the highlight spans overflow (#10)", () => {
+  render(<Tree<Datum> data={data} openByDefault />);
+  for (const row of screen.getAllByRole("treeitem")) {
+    expect((row as HTMLElement).style.minWidth).toBe("max-content");
+  }
+});
+
 /* #325: forward an accessible name and multiselectable state onto the
    role="tree" element. */
 test("forwards aria-label to the role=tree element (#325)", () => {
