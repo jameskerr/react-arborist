@@ -1,5 +1,6 @@
 .DS_Store
 node_modules
+.yarn
 resources
 public
 hugo_stats.json
