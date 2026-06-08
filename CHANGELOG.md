@@ -1,3 +1,10 @@
+# Version 3.10.1
+
+**Fixes**
+
+- selectAll() and deselectAll() no longer fire onSelect twice. They go through setSelection(), which already invokes the callback, so consumers now see a single onSelect per Cmd-A or clear-selection action. (#357)
+- A row's background and selection highlight now span the full scrollable width instead of stopping at the viewport edge. Previously a deeply nested or long node that overflowed horizontally would clip the highlight (issue #10); `min-width: max-content` is now applied to each row. (#358)
+
 # Version 3.10.0
 
 **Features**
