@@ -1,9 +1,37 @@
-type SimpleData = { id: string; name: string; children?: SimpleData[] };
+export type SimpleTreeOptions<T> = {
+  idAccessor?: string | ((d: T) => string);
+  childrenAccessor?: string | ((d: T) => readonly T[] | null | undefined);
+};
 
-export class SimpleTree<T extends SimpleData> {
+/* Resolved id/children readers plus the string key the controller writes
+   children back under. A string accessor is used for both reading and writing;
+   a function accessor can only be read, so writes fall back to "children".
+   This is what lets initialData honor idAccessor/childrenAccessor (issue #73):
+   without it, the controller assumed `id`/`children` and silently dropped moves
+   for trees keyed differently. */
+type Accessors<T> = {
+  getId: (data: T) => string;
+  getChildren: (data: T) => readonly T[] | null | undefined;
+  childrenKey: string;
+};
+
+function resolveAccessors<T>(options: SimpleTreeOptions<T> = {}): Accessors<T> {
+  const id = options.idAccessor ?? "id";
+  const children = options.childrenAccessor ?? "children";
+  return {
+    getId: typeof id === "function" ? id : (data) => (data as any)[id],
+    getChildren: typeof children === "function" ? children : (data) => (data as any)[children],
+    childrenKey: typeof children === "string" ? children : "children",
+  };
+}
+
+export class SimpleTree<T> {
   root: SimpleNode<T>;
-  constructor(data: T[]) {
-    this.root = createRoot<T>(data);
+  private accessors: Accessors<T>;
+
+  constructor(data: T[], options: SimpleTreeOptions<T> = {}) {
+    this.accessors = resolveAccessors(options);
+    this.root = createRoot<T>(data, this.accessors);
   }
 
   get data() {
@@ -48,26 +76,29 @@ export class SimpleTree<T extends SimpleData> {
   }
 }
 
-function createRoot<T extends SimpleData>(data: T[]) {
-  const root = new SimpleNode<T>({ id: "ROOT" } as T, null);
-  root.children = data.map((d) => createNode(d as T, root));
+function createRoot<T>(data: T[], accessors: Accessors<T>) {
+  const root = new SimpleNode<T>({} as T, null, accessors);
+  root.id = "ROOT";
+  root.children = data.map((d) => createNode(d, root, accessors));
   return root;
 }
 
-function createNode<T extends SimpleData>(data: T, parent: SimpleNode<T>) {
-  const node = new SimpleNode<T>(data, parent);
-  if (data.children) node.children = data.children.map((d) => createNode<T>(d as T, node));
+function createNode<T>(data: T, parent: SimpleNode<T>, accessors: Accessors<T>) {
+  const node = new SimpleNode<T>(data, parent, accessors);
+  const children = accessors.getChildren(data);
+  if (children) node.children = children.map((d) => createNode<T>(d, node, accessors));
   return node;
 }
 
-class SimpleNode<T extends SimpleData> {
+class SimpleNode<T> {
   id: string;
   children?: SimpleNode<T>[];
   constructor(
     public data: T,
     public parent: SimpleNode<T> | null,
+    private accessors: Accessors<T>,
   ) {
-    this.id = data.id;
+    this.id = accessors.getId(data);
   }
 
   hasParent(): this is this & { parent: SimpleNode<T> } {
@@ -79,16 +110,19 @@ class SimpleNode<T extends SimpleData> {
   }
 
   addChild(data: T, index: number) {
-    const node = createNode(data, this);
+    const node = createNode(data, this, this.accessors);
     this.children = this.children ?? [];
     this.children.splice(index, 0, node);
-    this.data.children = this.data.children ?? [];
-    this.data.children.splice(index, 0, data);
+    const key = this.accessors.childrenKey;
+    const raw = this.data as any;
+    raw[key] = raw[key] ?? [];
+    raw[key].splice(index, 0, data);
   }
 
   removeChild(index: number) {
     this.children?.splice(index, 1);
-    this.data.children?.splice(index, 1);
+    const raw = this.data as any;
+    raw[this.accessors.childrenKey]?.splice(index, 1);
   }
 
   update(changes: Partial<T>) {

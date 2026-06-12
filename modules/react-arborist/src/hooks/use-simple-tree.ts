@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { SimpleTree } from "../data/simple-tree";
+import { SimpleTree, SimpleTreeOptions } from "../data/simple-tree";
 import { CreateHandler, DeleteHandler, MoveHandler, RenameHandler } from "../types/handlers";
 
 export type SimpleTreeData = {
@@ -10,13 +10,13 @@ export type SimpleTreeData = {
 
 let nextId = 0;
 
-export function useSimpleTree<T>(initialData: readonly T[]) {
+export function useSimpleTree<T>(initialData: readonly T[], options: SimpleTreeOptions<T> = {}) {
   const [data, setData] = useState(initialData);
+  const idAccessor = options.idAccessor;
+  const childrenAccessor = options.childrenAccessor;
   const tree = useMemo(
-    () =>
-      new SimpleTree<// @ts-ignore
-      T>(data),
-    [data],
+    () => new SimpleTree<T>(data as T[], { idAccessor, childrenAccessor }),
+    [data, idAccessor, childrenAccessor],
   );
 
   const onMove: MoveHandler<T> = (args: {
@@ -35,9 +35,15 @@ export function useSimpleTree<T>(initialData: readonly T[]) {
     setData(tree.data);
   };
 
+  // New nodes must carry their id/children under the same keys the accessors
+  // read, or the controller can't find them afterward (issue #73). A function
+  // accessor can't be written to, so fall back to the default key.
+  const idKey = typeof idAccessor === "string" ? idAccessor : "id";
+  const childrenKey = typeof childrenAccessor === "string" ? childrenAccessor : "children";
+
   const onCreate: CreateHandler<T> = ({ parentId, index, type }) => {
-    const data = { id: `simple-tree-id-${nextId++}`, name: "" } as any;
-    if (type === "internal") data.children = [];
+    const data = { [idKey]: `simple-tree-id-${nextId++}`, name: "" } as any;
+    if (type === "internal") data[childrenKey] = [];
     tree.create({ parentId, index, data });
     setData(tree.data);
     return data;

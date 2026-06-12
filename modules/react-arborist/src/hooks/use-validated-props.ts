@@ -21,7 +21,10 @@ Use the data prop if you want to provide your own handlers.`,
      *
      * We will provide the real data and the handlers to update it.
      *   */
-    const [data, controller] = useSimpleTree<T>(props.initialData);
+    const [data, controller] = useSimpleTree<T>(props.initialData, {
+      idAccessor: props.idAccessor,
+      childrenAccessor: props.childrenAccessor,
+    });
     return { ...props, ...controller, data };
   } else {
     return props;
