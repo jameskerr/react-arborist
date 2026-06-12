@@ -18,12 +18,13 @@ test("tree.canDrop()", () => {
 const rowData = [{ id: "a" }, { id: "b" }, { id: "c" }];
 
 describe("tree.drop() fires onMove (#313)", () => {
-  test("reports the hovered parent and index", () => {
+  test("reports the hovered parent and index, mapping the root id to null", () => {
     const onMove = jest.fn();
     const api = setupApi({ data: rowData, onMove });
-    // Simulate hovering the bottom drop zone: root parent, index past the end.
+    // The bottom drop zone hovers the root with an index past the end, just like
+    // computeDrop() reports it. tree.drop() should map the root id back to null.
     api.dispatch(dnd.dragStart("a", ["a"]));
-    api.dispatch(dnd.hovering(null, 3));
+    api.dispatch(dnd.hovering(api.root.id, 3));
     api.drop();
     expect(onMove).toHaveBeenCalledTimes(1);
     expect(onMove).toHaveBeenCalledWith(
@@ -33,11 +34,16 @@ describe("tree.drop() fires onMove (#313)", () => {
 
   test("coerces a null index (dropped onto a folder) to 0", () => {
     const onMove = jest.fn();
-    const api = setupApi({ data: rowData, onMove });
-    api.dispatch(dnd.dragStart("a", ["a"]));
-    api.dispatch(dnd.hovering(null, null));
+    const folderData = [{ id: "folder", children: [{ id: "child" }] }];
+    const api = setupApi({ data: folderData, onMove });
+    // Dropping onto a folder (rather than between rows) reports the folder as the
+    // parent with a null index, which tree.drop() should coerce to 0.
+    api.dispatch(dnd.dragStart("child", ["child"]));
+    api.dispatch(dnd.hovering("folder", null));
     api.drop();
-    expect(onMove).toHaveBeenCalledWith(expect.objectContaining({ index: 0 }));
+    expect(onMove).toHaveBeenCalledWith(
+      expect.objectContaining({ parentId: "folder", index: 0 }),
+    );
   });
 });
 
