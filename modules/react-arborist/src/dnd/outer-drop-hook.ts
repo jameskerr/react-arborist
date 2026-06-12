@@ -36,6 +36,11 @@ export function useOuterDrop() {
           tree.hideCursor();
         }
       },
+      drop: (_item, m) => {
+        if (!m.isOver({ shallow: true })) return null;
+        if (!m.canDrop()) return null;
+        tree.drop();
+      },
     }),
     [tree],
   );

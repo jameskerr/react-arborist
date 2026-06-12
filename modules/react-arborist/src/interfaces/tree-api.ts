@@ -546,6 +546,18 @@ export class TreeApi<T> {
     }
   }
 
+  drop() {
+    const { parentId, index, dragIds } = this.state.dnd;
+    safeRun(this.props.onMove, {
+      dragIds,
+      parentId: parentId === ROOT_ID ? null : parentId,
+      index: index === null ? 0 : index, // When it's null it was dropped over a folder
+      dragNodes: this.dragNodes,
+      parentNode: this.get(parentId),
+    });
+    this.open(parentId);
+  }
+
   hideCursor() {
     this.dispatch(dnd.cursor({ type: "none" }));
   }

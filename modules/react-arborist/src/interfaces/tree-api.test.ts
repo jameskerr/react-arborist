@@ -1,5 +1,6 @@
 import { createStore } from "redux";
 import { rootReducer } from "../state/root-reducer";
+import { actions as dnd } from "../state/dnd-slice";
 import { TreeProps } from "../types/tree-props";
 import { TreeApi } from "./tree-api";
 
@@ -15,6 +16,30 @@ test("tree.canDrop()", () => {
 });
 
 const rowData = [{ id: "a" }, { id: "b" }, { id: "c" }];
+
+describe("tree.drop() fires onMove (#313)", () => {
+  test("reports the hovered parent and index", () => {
+    const onMove = jest.fn();
+    const api = setupApi({ data: rowData, onMove });
+    // Simulate hovering the bottom drop zone: root parent, index past the end.
+    api.dispatch(dnd.dragStart("a", ["a"]));
+    api.dispatch(dnd.hovering(null, 3));
+    api.drop();
+    expect(onMove).toHaveBeenCalledTimes(1);
+    expect(onMove).toHaveBeenCalledWith(
+      expect.objectContaining({ dragIds: ["a"], parentId: null, index: 3 }),
+    );
+  });
+
+  test("coerces a null index (dropped onto a folder) to 0", () => {
+    const onMove = jest.fn();
+    const api = setupApi({ data: rowData, onMove });
+    api.dispatch(dnd.dragStart("a", ["a"]));
+    api.dispatch(dnd.hovering(null, null));
+    api.drop();
+    expect(onMove).toHaveBeenCalledWith(expect.objectContaining({ index: 0 }));
+  });
+});
 
 test("rowHeight defaults to 24", () => {
   const api = setupApi({});
