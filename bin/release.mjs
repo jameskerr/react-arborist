@@ -60,6 +60,27 @@ function bump(current, kind) {
   fail(`Invalid version: "${kind}". Use patch, minor, major, or X.Y.Z.`);
 }
 
+/* Numeric semver compare: negative if a < b, positive if a > b, 0 if equal. */
+function compareVersions(a, b) {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  for (let i = 0; i < 3; i++) {
+    if (pa[i] !== pb[i]) return pa[i] - pb[i];
+  }
+  return 0;
+}
+
+/* Highest X.Y.Z among existing vX.Y.Z tags, or null if there are none. */
+function latestReleasedVersion() {
+  const versions = out(`git tag -l "v[0-9]*"`)
+    .split("\n")
+    .filter(Boolean)
+    .map((t) => t.replace(/^v/, ""))
+    .filter((v) => /^\d+\.\d+\.\d+$/.test(v));
+  if (versions.length === 0) return null;
+  return versions.sort(compareVersions).at(-1);
+}
+
 /* Read every .changes/*.md (except README.md) and parse its frontmatter. Each
    file is a `--- key: value --- body` document; no YAML dep needed. */
 function readChangesets() {
@@ -156,6 +177,23 @@ if (changesets.length === 0) {
 
 const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
 const oldVersion = pkg.version;
+
+// Drift guard: a healthy release commit bumps package.json and creates its tag
+// together, so package.json should always match the highest existing release
+// tag. If a tag beyond package.json's version exists, a prior release's version
+// bump never landed on this branch (e.g. it was cut elsewhere and only the
+// changelog was back-ported). Continuing would recompute an already-published
+// version. Make package.json match the released version before releasing.
+const latestReleased = latestReleasedVersion();
+if (latestReleased && compareVersions(latestReleased, oldVersion) > 0) {
+  fail(
+    `package.json is at ${oldVersion}, but tag v${latestReleased} already exists — ` +
+      `this branch is behind the latest release. Bump ` +
+      `modules/react-arborist/package.json to ${latestReleased} (matching the ` +
+      `published version) and commit that before releasing.`,
+  );
+}
+
 // Derive the bump from the changeset types; an explicit arg overrides it.
 const maxRank = Math.max(...changesets.map((c) => TYPES[c.type].rank));
 const kind = versionArg ?? RANK_TO_BUMP[maxRank];
