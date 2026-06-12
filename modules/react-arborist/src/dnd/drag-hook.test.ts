@@ -1,5 +1,5 @@
 import { NodeApi } from "../interfaces/node-api";
-import { dragTypeForNode } from "./drag-hook";
+import { canDragNode, dragTypeForNode } from "./drag-hook";
 
 /* dragTypeForNode only reads node.data when dragType is a function, so a
    minimal stub stands in for a real NodeApi. */
@@ -19,4 +19,22 @@ test("resolves a per-node dragType function against the node", () => {
   const dragType = (node: NodeApi<{ kind: string }>) => node.data.kind.toUpperCase();
   expect(dragTypeForNode(dragType, nodeWith({ kind: "folder" }))).toBe("FOLDER");
   expect(dragTypeForNode(dragType, nodeWith({ kind: "file" }))).toBe("FILE");
+});
+
+/* canDragNode only reads the isDraggable/isEditing flags, so a minimal stub
+   stands in for a real NodeApi. */
+function draggableNode(flags: { isDraggable: boolean; isEditing: boolean }): NodeApi {
+  return flags as NodeApi;
+}
+
+test("a draggable node that isn't being edited can drag", () => {
+  expect(canDragNode(draggableNode({ isDraggable: true, isEditing: false }))).toBe(true);
+});
+
+test("a non-draggable node can't drag", () => {
+  expect(canDragNode(draggableNode({ isDraggable: false, isEditing: false }))).toBe(false);
+});
+
+test("a node being renamed can't drag, even when draggable (#195)", () => {
+  expect(canDragNode(draggableNode({ isDraggable: true, isEditing: true }))).toBe(false);
 });

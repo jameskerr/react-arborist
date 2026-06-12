@@ -15,12 +15,19 @@ export function dragTypeForNode<T>(dragType: TreeProps<T>["dragType"], node: Nod
   return dragType ?? "NODE";
 }
 
+/* A node can start a drag only when it's draggable and not currently being
+   renamed. Without the editing guard, dragging inside the rename input would
+   pick the row up and move it (issue #195). */
+export function canDragNode<T>(node: NodeApi<T>): boolean {
+  return node.isDraggable && !node.isEditing;
+}
+
 export function useDragHook<T>(node: NodeApi<T>): ConnectDragSource {
   const tree = useTreeApi<T>();
   const ids = tree.selectedIds;
   const [_, ref, preview] = useDrag<DragItem<T>, DropResult, void>(
     () => ({
-      canDrag: () => node.isDraggable,
+      canDrag: () => canDragNode(node),
       type: dragTypeForNode(tree.props.dragType, node),
       item: () => {
         // This is fired once at the beginning of a drag operation
