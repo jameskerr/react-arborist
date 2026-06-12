@@ -21,8 +21,8 @@ Other notable files:
 
 - `bin/release.mjs` — release orchestration script, driven by `yarn release`. Bumps the version and pushes a tag; the tag push is what kicks off publishing.
 - `bin/publish` — the actual npm publish step. Builds the library, copies `README.md` into the library workspace, then `npm publish`es from there. Invoked from CI by `.github/workflows/publish.yml` on tag push; also runnable by hand.
-- `CHANGELOG.md` — release notes. **No longer hand-edited per change.** The release script assembles a new `# Version X.Y.Z` section here from the pending entries in `.changes/` (see below).
-- `.changes/` — one Markdown file per user-facing change (the "changeset"). Each PR adds its own file, so entries never conflict and PRs merge in any order. `bin/release.mjs` consumes them at release time. Format is documented in `.changes/README.md`.
+- `CHANGELOG.md` — assembled release notes, one `# Version X.Y.Z` section per release. `bin/release.mjs` generates each section from the pending `.changes/` entries at release time. To record a change you add a `.changes/` entry, not a `CHANGELOG.md` edit (see "Adding a changeset" below).
+- `.changes/` — one Markdown file per user-facing change (the "changeset"). Each PR adds its own file, so entries never conflict and PRs merge in any order. `bin/release.mjs` consumes them at release time. The format is in `.changes/README.md`; the field-level gotchas are under "Adding a changeset" below.
 
 ## Tooling
 
@@ -81,12 +81,23 @@ Releases are driven by `bin/release.mjs` (`yarn release`). The script does git c
 
 Agents should **not** run `yarn release` themselves — it pushes tags, mutates npm, and creates a public GitHub Release. The maintainer cuts releases. An agent's job around a change is typically:
 
-- Add a `.changes/` entry for the change (see `.changes/README.md`) — **not** edit `CHANGELOG.md` directly. A PR that touches `modules/react-arborist/src/` without one fails the `Changeset` CI check; apply the `skip-changelog` label for changes with no user-facing effect.
+- Add a `.changes/` entry for the change (details below) — **not** edit `CHANGELOG.md` directly. A PR that touches `modules/react-arborist/src/` without one fails the `Changeset` CI check; apply the `skip-changelog` label for changes with no user-facing effect (refactors, tests, CI, docs).
 - Confirm `main` has all the PRs (and their changesets) that should be in the release.
 - Optionally run `yarn release --preview` (add `--any-branch --no-tests` off `main`) to verify the inferred bump and the assembled notes look right.
+
+#### Adding a changeset
+
+Create `.changes/<short-slug>.md` (slug is free-form; name it after the change, e.g. `313-drop-bottom-of-list.md`). `.changes/README.md` has the full format; the parts that trip agents up:
+
+- **`type`** (required): one of `breaking`, `feature`, `fix`. This both files the entry under the matching `CHANGELOG.md` heading and sets the release bump (`breaking` → major, `feature` → minor, `fix` → patch; the release takes the largest across all pending entries).
+- **`pr`** (required): *this PR's own* number, rendered as the trailing `(#NNN)`. You can't know it until the PR exists, so the order is: write the changeset with your best-guess number, open the PR, then read the real number from `gh pr view` and correct the field in a follow-up commit if the guess was wrong. Never leave an unverified number.
+- **`credit`** (optional): the number of an *earlier PR this one supersedes*, rendered as `(#NNN, originally #MMM)`. The repo has a long tail of stale PRs; use `credit` to attribute the original author when you carry someone else's PR across the line. **It is not for the issue you're fixing** — an issue number here renders as if it were a superseded PR, which is wrong. Reference the fixed issue in the body text instead.
+- **Body** (everything after the closing `---`): the changelog bullet text. Mention the issue being fixed here (e.g. "... again (issue #313).").
+
+To sanity-check an entry before it ships, **commit it first**, then run `yarn release --preview --any-branch --no-tests` and read the assembled section it prints. The preview runs a working-tree-clean check before it parses `.changes/`, so it fails on a dirty tree even with `--any-branch` — an uncommitted changeset won't preview.
 
 ## Conventions
 
 - Commit messages: short imperative subject; no required prefix. Look at recent `git log` for tone.
-- PRs: when a PR closes or supersedes older PRs (this repo has accumulated a long tail), credit the original author in the changelog with `originally #NNN`.
+- PRs: when a change supersedes an older PR (this repo has a long tail), attribute the original author via the changeset's `credit` field — see "Adding a changeset". `credit` is for a prior PR, never the issue being fixed.
 - Don't add comments that just restate the code. Don't add backwards-compat shims for code that hasn't shipped yet.
