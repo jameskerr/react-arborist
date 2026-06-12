@@ -59,4 +59,10 @@ describe("SimpleTree honors custom accessors (issue #73, #170)", () => {
     t.move({ id: "2", parentId: "1", index: 1 });
     expect(t.data[0].elements!.map((c) => c.uuid)).toEqual(["1a", "2"]);
   });
+
+  test("a function idAccessor that reaches into the data doesn't throw on construction", () => {
+    const nested = [{ meta: { id: "x" }, name: "x" }];
+    // The synthetic root must not run this accessor on its empty data.
+    expect(() => new SimpleTree(nested, { idAccessor: (d) => d.meta.id })).not.toThrow();
+  });
 });

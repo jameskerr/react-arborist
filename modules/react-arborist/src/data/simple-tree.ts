@@ -77,8 +77,10 @@ export class SimpleTree<T> {
 }
 
 function createRoot<T>(data: T[], accessors: Accessors<T>) {
-  const root = new SimpleNode<T>({} as T, null, accessors);
-  root.id = "ROOT";
+  // The synthetic root has no real data, so it gets an explicit id rather than
+  // running the user's accessor on `{}` — a function accessor that reaches into
+  // the data (e.g. `d => d.meta.id`) would otherwise throw during construction.
+  const root = new SimpleNode<T>({} as T, null, accessors, "ROOT");
   root.children = data.map((d) => createNode(d, root, accessors));
   return root;
 }
@@ -97,8 +99,9 @@ class SimpleNode<T> {
     public data: T,
     public parent: SimpleNode<T> | null,
     private accessors: Accessors<T>,
+    id?: string,
   ) {
-    this.id = accessors.getId(data);
+    this.id = id ?? accessors.getId(data);
   }
 
   hasParent(): this is this & { parent: SimpleNode<T> } {

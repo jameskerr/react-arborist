@@ -36,12 +36,24 @@ export function useSimpleTree<T>(initialData: readonly T[], options: SimpleTreeO
   };
 
   // New nodes must carry their id/children under the same keys the accessors
-  // read, or the controller can't find them afterward (issue #73). A function
-  // accessor can't be written to, so fall back to the default key.
+  // read, or the controller (and the tree's own accessId) can't find them
+  // afterward (issue #73). A function accessor can't be inverted to a writable
+  // key, so node creation with one isn't supportable — fail fast instead of
+  // returning a node that throws deeper in the tree.
   const idKey = typeof idAccessor === "string" ? idAccessor : "id";
   const childrenKey = typeof childrenAccessor === "string" ? childrenAccessor : "children";
 
   const onCreate: CreateHandler<T> = ({ parentId, index, type }) => {
+    if (typeof idAccessor === "function") {
+      throw new Error(
+        `React Arborist => initialData can't create nodes when idAccessor is a function: the generated id can't be written under a key the accessor reads. Use a string idAccessor, or the controlled \`data\` prop with your own onCreate.`,
+      );
+    }
+    if (type === "internal" && typeof childrenAccessor === "function") {
+      throw new Error(
+        `React Arborist => initialData can't create folder nodes when childrenAccessor is a function: the new children array can't be written under a key the accessor reads. Use a string childrenAccessor, or the controlled \`data\` prop with your own onCreate.`,
+      );
+    }
     const data = { [idKey]: `simple-tree-id-${nextId++}`, name: "" } as any;
     if (type === "internal") data[childrenKey] = [];
     tree.create({ parentId, index, data });
