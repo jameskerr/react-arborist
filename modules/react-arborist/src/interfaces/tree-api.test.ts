@@ -47,6 +47,52 @@ describe("tree.drop() fires onMove (#313)", () => {
   });
 });
 
+describe("custom idAccessor is honored when methods receive raw data (#347)", () => {
+  const uuidData = [{ uuid: "a" }, { uuid: "b" }, { uuid: "c" }];
+
+  test("select(data) resolves the id through idAccessor", () => {
+    const onSelect = jest.fn();
+    const api = setupApi({ data: uuidData, idAccessor: "uuid", onSelect });
+    api.select(uuidData[1]);
+    expect(api.selectedIds.has("b")).toBe(true);
+    expect(api.selectedNodes.map((n) => n.id)).toEqual(["b"]);
+  });
+
+  test("focus(data) resolves the id through idAccessor", () => {
+    const api = setupApi({ data: uuidData, idAccessor: "uuid" });
+    api.focus(uuidData[2]);
+    expect(api.focusedNode?.id).toBe("c");
+  });
+
+  test("delete(data) passes the accessor-derived id to onDelete", () => {
+    const onDelete = jest.fn();
+    const api = setupApi({ data: uuidData, idAccessor: "uuid", onDelete });
+    api.delete(uuidData[0]);
+    expect(onDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ ids: ["a"] }),
+    );
+  });
+
+  test("create() focuses the new node by its accessor-derived id", async () => {
+    // create() passes the raw row data returned by onCreate straight to
+    // focus/edit/select; before the fix these read `.id` and lost the node.
+    const onCreate = () => ({ uuid: "new" });
+    const api = setupApi({ data: uuidData, idAccessor: "uuid", onCreate });
+    await api.create();
+    expect(api.state.nodes.focus.id).toBe("new");
+  });
+
+  test("a function idAccessor is honored too", () => {
+    const fnData = [{ meta: { key: "x" } }, { meta: { key: "y" } }];
+    const api = setupApi({
+      data: fnData,
+      idAccessor: (d: any) => d.meta.key,
+    });
+    api.select(fnData[1]);
+    expect(api.selectedIds.has("y")).toBe(true);
+  });
+});
+
 test("rowHeight defaults to 24", () => {
   const api = setupApi({});
   expect(api.rowHeight).toBe(24);

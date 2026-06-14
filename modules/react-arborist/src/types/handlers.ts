@@ -1,12 +1,14 @@
 import { NodeApi } from "../interfaces/node-api";
 import { IdObj } from "./utils";
 
+// Returns the newly created row data, whose id is read via idAccessor. `IdObj`
+// is kept for back-compat with handlers that return a bare `{ id }` (#347).
 export type CreateHandler<T> = (args: {
   parentId: string | null;
   parentNode: NodeApi<T> | null;
   index: number;
   type: "internal" | "leaf";
-}) => (IdObj | null) | Promise<IdObj | null>;
+}) => (T | IdObj | null) | Promise<T | IdObj | null>;
 
 export type MoveHandler<T> = (args: {
   dragIds: string[];
