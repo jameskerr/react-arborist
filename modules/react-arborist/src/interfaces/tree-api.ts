@@ -693,14 +693,17 @@ export class TreeApi<T> {
   private scrollToNodeHorizontally(node: NodeApi<T> | null) {
     const el = this.listEl.current;
     if (!node || !el) return;
-    if (el.scrollWidth <= el.clientWidth) return; // nothing to scroll
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (maxScroll <= 0) return; // nothing to scroll
     const left = node.level * this.indent;
     const viewLeft = el.scrollLeft;
     const viewRight = el.scrollLeft + el.clientWidth;
-    /* Only move when the node's indentation is outside the viewport, then align
-       its content start to the left edge so the label is revealed. */
-    if (left < viewLeft || left > viewRight) {
-      el.scrollLeft = left;
+    /* The visible range is half-open [viewLeft, viewRight): a pixel at viewRight
+       is already clipped. Only move when the node's indentation falls outside
+       it, aligning its content start to the left edge so the label is revealed,
+       clamped to the list's scrollable range. */
+    if (left < viewLeft || left >= viewRight) {
+      el.scrollLeft = Math.max(0, Math.min(left, maxScroll));
     }
   }
 

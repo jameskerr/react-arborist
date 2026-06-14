@@ -213,6 +213,23 @@ describe("scrollTo brings a deeply nested node into view horizontally (#220)", (
     expect(el.scrollLeft).toBe(48);
   });
 
+  test("scrolls when the node's start sits exactly on the right edge", async () => {
+    // viewRight === left (48): the visible range is half-open, so the content
+    // start is already clipped and must be scrolled into view.
+    const el = { scrollWidth: 500, clientWidth: 48, scrollLeft: 0 };
+    const api = setupWithListEl(el);
+    await api.scrollTo("deep");
+    expect(el.scrollLeft).toBe(48);
+  });
+
+  test("clamps the target to the maximum scrollable distance", async () => {
+    // left (48) exceeds maxScroll (60 - 40 = 20), so scrollLeft is clamped.
+    const el = { scrollWidth: 60, clientWidth: 40, scrollLeft: 0 };
+    const api = setupWithListEl(el);
+    await api.scrollTo("deep");
+    expect(el.scrollLeft).toBe(20);
+  });
+
   test("leaves scroll untouched when the node is already in view", async () => {
     const el = { scrollWidth: 500, clientWidth: 200, scrollLeft: 0 };
     const api = setupWithListEl(el);
