@@ -195,8 +195,8 @@ export class TreeApi<T> {
    * just where nodes were built. A NodeApi already carries its accessor-derived
    * `id`, so it is used directly rather than re-accessed (the accessor reads the
    * underlying data, which a NodeApi does not expose under that key). Unlike
-   * `accessId`, a missing id resolves to `undefined` rather than throwing, so
-   * passing an unknown identifier remains a silent no-op as it was before.
+   * `accessId`, an unresolved id comes back as `undefined` rather than throwing,
+   * preserving the previous behavior of the `id`-only lookup.
    */
   identify(identity: string | IdObj | T): string {
     if (typeof identity === "string") return identity;
