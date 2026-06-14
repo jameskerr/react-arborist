@@ -675,10 +675,33 @@ export class TreeApi<T> {
         const index = this.idToIndex[id];
         if (index === undefined) return;
         this.list.current?.scrollToItem(index, align);
+        /* react-window only scrolls vertically. A deeply nested node is
+           indented by level * indent and can sit past the right edge when rows
+           overflow horizontally, so bring it into view ourselves (#220). */
+        this.scrollToNodeHorizontally(this.get(id));
       })
       .catch(() => {
         // Id: ${id} never appeared in the list.
       });
+  }
+
+  /**
+   * Horizontally scroll the list so the node's indented content is in view.
+   * A no-op when the list doesn't overflow horizontally (the common case), so
+   * it never disturbs scrolling for trees that fit their width.
+   */
+  private scrollToNodeHorizontally(node: NodeApi<T> | null) {
+    const el = this.listEl.current;
+    if (!node || !el) return;
+    if (el.scrollWidth <= el.clientWidth) return; // nothing to scroll
+    const left = node.level * this.indent;
+    const viewLeft = el.scrollLeft;
+    const viewRight = el.scrollLeft + el.clientWidth;
+    /* Only move when the node's indentation is outside the viewport, then align
+       its content start to the left edge so the label is revealed. */
+    if (left < viewLeft || left > viewRight) {
+      el.scrollLeft = left;
+    }
   }
 
   /* State Checks */

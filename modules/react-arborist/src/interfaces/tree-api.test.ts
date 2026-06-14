@@ -184,3 +184,46 @@ describe("onSelect fires exactly once per selection method (#332)", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("scrollTo brings a deeply nested node into view horizontally (#220)", () => {
+  // A folder tree where "deep" sits at level 2 (indented 2 * 24 = 48px).
+  const nestedData = [{ id: "root", children: [{ id: "mid", children: [{ id: "deep" }] }] }];
+
+  // react-window's scrollToItem only scrolls vertically; the horizontal scroll
+  // happens on the outer list element, which we stub here.
+  function setupWithListEl(el: Partial<HTMLDivElement>) {
+    const store = createStore(rootReducer);
+    const list = { current: { scrollToItem: jest.fn() } as any };
+    const listEl = { current: el as HTMLDivElement };
+    return new TreeApi(store, { data: nestedData }, list, listEl);
+  }
+
+  test("scrolls right when the node is past the right edge", async () => {
+    const el = { scrollWidth: 500, clientWidth: 40, scrollLeft: 0 };
+    const api = setupWithListEl(el);
+    await api.scrollTo("deep");
+    // Aligns the node's indentation start (level 2 * indent 24) to the left edge.
+    expect(el.scrollLeft).toBe(48);
+  });
+
+  test("scrolls left when the node is past the left edge", async () => {
+    const el = { scrollWidth: 500, clientWidth: 100, scrollLeft: 200 };
+    const api = setupWithListEl(el);
+    await api.scrollTo("deep");
+    expect(el.scrollLeft).toBe(48);
+  });
+
+  test("leaves scroll untouched when the node is already in view", async () => {
+    const el = { scrollWidth: 500, clientWidth: 200, scrollLeft: 0 };
+    const api = setupWithListEl(el);
+    await api.scrollTo("deep");
+    expect(el.scrollLeft).toBe(0);
+  });
+
+  test("no-ops when the list does not overflow horizontally", async () => {
+    const el = { scrollWidth: 100, clientWidth: 100, scrollLeft: 0 };
+    const api = setupWithListEl(el);
+    await api.scrollTo("deep");
+    expect(el.scrollLeft).toBe(0);
+  });
+});
