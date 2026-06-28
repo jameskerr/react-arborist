@@ -14,6 +14,7 @@ export const ListOuterElement = forwardRef(function Outer(
       ref={ref}
       {...rest}
       onClick={(e) => {
+        if (tree.props.disableDeselectOnClick) return;
         if (e.currentTarget === e.target) tree.deselectAll();
       }}
     >

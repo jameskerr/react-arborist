@@ -1,5 +1,7 @@
+import { createRef } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { Tree } from "./tree";
+import { TreeApi } from "../interfaces/tree-api";
 
 type Datum = { id: string; name: string; children?: Datum[] };
 
@@ -90,4 +92,31 @@ test("marks the tree aria-multiselectable by default (#325)", () => {
 test("omits aria-multiselectable when multi-select is disabled (#325)", () => {
   render(<Tree<Datum> data={data} disableMultiSelection />);
   expect(screen.getByRole("tree").hasAttribute("aria-multiselectable")).toBe(false);
+});
+
+/* #245, #308: clicking the empty area below the rows clears the selection by
+   default; disableDeselectOnClick opts out of that. The deselect handler lives
+   on the list's outer (scroll) element, which is wired to tree.listEl. */
+test("clicking empty tree space clears the selection by default (#245)", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(<Tree<Datum> data={data} openByDefault ref={ref} />);
+  const [, a] = screen.getAllByRole("treeitem");
+
+  await click(a);
+  expect(a.getAttribute("aria-selected")).toBe("true");
+
+  await click(ref.current!.listEl.current!);
+  expect(a.getAttribute("aria-selected")).toBe("false");
+});
+
+test("disableDeselectOnClick keeps the selection when empty space is clicked (#245, #308)", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(<Tree<Datum> data={data} openByDefault disableDeselectOnClick ref={ref} />);
+  const [, a] = screen.getAllByRole("treeitem");
+
+  await click(a);
+  expect(a.getAttribute("aria-selected")).toBe("true");
+
+  await click(ref.current!.listEl.current!);
+  expect(a.getAttribute("aria-selected")).toBe("true");
 });
