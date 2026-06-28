@@ -714,7 +714,10 @@ export class TreeApi<T> {
    * window clamps the upper bound to the scrollable range.
    */
   scrollToOffset(offset: number) {
-    this.list.current?.scrollTo(Math.max(0, offset));
+    /* Coerce non-finite offsets (NaN/Infinity, easy to get from malformed
+       persisted state) to the top rather than forwarding them to the list. */
+    const safe = Number.isFinite(offset) ? Math.max(0, offset) : 0;
+    this.list.current?.scrollTo(safe);
   }
 
   /** The list's current vertical scroll offset, in pixels from the top. */

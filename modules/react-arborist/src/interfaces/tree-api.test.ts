@@ -267,6 +267,14 @@ describe("scrollToOffset / scrollOffset set and read the vertical position (#194
     expect(list.current.scrollTo).toHaveBeenCalledWith(0);
   });
 
+  test("scrollToOffset coerces non-finite offsets to the top", () => {
+    const { api, list } = setup();
+    api.scrollToOffset(NaN);
+    api.scrollToOffset(Infinity);
+    expect(list.current.scrollTo).toHaveBeenNthCalledWith(1, 0);
+    expect(list.current.scrollTo).toHaveBeenNthCalledWith(2, 0);
+  });
+
   test("scrollOffset reads the list element's scrollTop", () => {
     const { api } = setup({ scrollTop: 80 });
     expect(api.scrollOffset).toBe(80);
