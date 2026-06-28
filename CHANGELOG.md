@@ -1,3 +1,12 @@
+# Version 3.11.0
+
+**Features**
+
+- `TreeApi` now exposes `scrollToOffset(offset)` to scroll the list to an exact
+pixel offset from the top, and a `scrollOffset` getter to read the current
+position — the offset-based counterpart to `scrollTo(id)`, useful for saving
+and restoring scroll position (#194). (#368)
+
 # Version 3.10.6
 
 **Fixes**
