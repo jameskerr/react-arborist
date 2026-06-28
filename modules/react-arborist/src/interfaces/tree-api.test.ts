@@ -244,3 +244,36 @@ describe("scrollTo brings a deeply nested node into view horizontally (#220)", (
     expect(el.scrollLeft).toBe(0);
   });
 });
+
+describe("scrollToOffset / scrollOffset set and read the vertical position (#194)", () => {
+  const data = [{ id: "a" }, { id: "b" }, { id: "c" }];
+
+  function setup(el?: Partial<HTMLDivElement>) {
+    const store = createStore(rootReducer);
+    const list = { current: { scrollTo: jest.fn() } as any };
+    const listEl = { current: (el ?? null) as HTMLDivElement | null };
+    return { api: new TreeApi(store, { data }, list, listEl), list, listEl };
+  }
+
+  test("scrollToOffset forwards the offset to the underlying list", () => {
+    const { api, list } = setup();
+    api.scrollToOffset(120);
+    expect(list.current.scrollTo).toHaveBeenCalledWith(120);
+  });
+
+  test("scrollToOffset clamps negative offsets to the top", () => {
+    const { api, list } = setup();
+    api.scrollToOffset(-50);
+    expect(list.current.scrollTo).toHaveBeenCalledWith(0);
+  });
+
+  test("scrollOffset reads the list element's scrollTop", () => {
+    const { api } = setup({ scrollTop: 80 });
+    expect(api.scrollOffset).toBe(80);
+  });
+
+  test("scrollOffset is 0 before the list element mounts", () => {
+    const { api } = setup();
+    expect(api.scrollOffset).toBe(0);
+  });
+});

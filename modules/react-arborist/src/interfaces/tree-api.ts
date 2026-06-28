@@ -707,6 +707,21 @@ export class TreeApi<T> {
     }
   }
 
+  /**
+   * Scroll the list vertically to an exact pixel offset from the top. This is
+   * the offset-based counterpart to scrollTo(), handy for saving and restoring
+   * a scroll position (#194). Negative values are clamped to the top; react-
+   * window clamps the upper bound to the scrollable range.
+   */
+  scrollToOffset(offset: number) {
+    this.list.current?.scrollTo(Math.max(0, offset));
+  }
+
+  /** The list's current vertical scroll offset, in pixels from the top. */
+  get scrollOffset(): number {
+    return this.listEl.current?.scrollTop ?? 0;
+  }
+
   /* State Checks */
 
   get isEditing() {
