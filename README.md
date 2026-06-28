@@ -745,6 +745,14 @@ _tree_.**scrollTo**(_id_, _[align]_)
 
 Scroll to the node with _id_. If this node is not visible, this method will open all its parents. The align argument can be _"auto" | "smart" | "center" | "end" | "start"_.
 
+_tree_.**scrollToOffset**(_offset_)
+
+Scroll the list vertically to an exact pixel _offset_ from the top — the offset-based counterpart to _scrollTo_, useful for saving and restoring a scroll position. Negative or non-finite values are clamped to the top, and react-window clamps the upper bound to the scrollable range.
+
+_tree_.**scrollOffset** : _number_
+
+Returns the list's current vertical scroll offset, in pixels from the top. Pairs with _scrollToOffset_ to persist and restore the scroll position.
+
 ### Properties
 
 _tree_.**isEditing** : _boolean_
