@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { CursorProps, NodeApi, NodeRendererProps, Tree, TreeApi } from "react-arborist";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import { gmailData, GmailItem } from "../data/gmail";
 import * as icons from "react-icons/md";
 import styles from "../styles/Gmail.module.css";
@@ -33,6 +34,7 @@ export default function GmailSidebar() {
             {({ width, height }) => {
               return (
                 <Tree
+                  dndBackend={HTML5Backend}
                   ref={globalTree}
                   initialData={gmailData}
                   width={width}
