@@ -26,13 +26,18 @@ Here is a Gmail sidebar clone built with react-arborist.
 
 ## Installation
 
-```
-yarn add react-arborist
+react-arborist requires `react-dnd` as a peer dependency. Install both together:
+
+```bash
+npm install react-arborist react-dnd react-dnd-html5-backend
 ```
 
+```bash
+yarn add react-arborist react-dnd react-dnd-html5-backend
 ```
-npm install react-arborist
-```
+
+`react-dnd-html5-backend` is optional if you supply your own backend or manager via the
+`dndBackend` / `dndManager` props (see [react-dnd compatibility](#react-dnd-compatibility) below).
 
 ## Examples
 
@@ -370,6 +375,104 @@ const [, drop] = useDrop(() => ({
 ```
 
 The tree and your external target must share one react-dnd backend. Wrap both in a single `DndProvider` and pass its manager to the tree via the `dndManager` prop. By default rows advertise the `"NODE"` item type; set the `dragType` prop (a fixed string, or a function of the node) to advertise a custom type instead. Note that the tree's own drop targets only accept `"NODE"`, so a row given a custom `dragType` is no longer reorderable within the tree.
+
+## react-dnd Compatibility
+
+react-arborist requires **react-dnd v16** and **Node.js ≥ 22**.
+
+### Why react-dnd is a peer dependency
+
+From react-arborist v4, `react-dnd` and `react-dnd-html5-backend` are **peer
+dependencies** rather than bundled dependencies. This matters because react-dnd
+registers a global singleton (`window[Symbol.for('__REACT_DND_CONTEXT_INSTANCE__')]`).
+If your application and react-arborist each bundled their own copy, you would end up
+with two independent singletons, causing drag-and-drop to silently break or throw
+`"Cannot have two HTML5 backends at the same time"`.
+
+Making react-dnd a peer dependency means npm/yarn/pnpm will always resolve a single
+shared copy for your entire application.
+
+### Multiple trees on the same page
+
+If you render more than one `<Tree>` simultaneously, wrap them all in a single
+`<DndProvider>` and pass its manager to each tree:
+
+```tsx
+import { DndProvider, useDragDropManager } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+
+function App() {
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <ForestView />
+    </DndProvider>
+  );
+}
+
+function ForestView() {
+  const manager = useDragDropManager();
+  return (
+    <>
+      <Tree data={leftData} dndManager={manager}>{Node}</Tree>
+      <Tree data={rightData} dndManager={manager}>{Node}</Tree>
+    </>
+  );
+}
+```
+
+Without the shared manager, each `<Tree>` would create its own `DndProvider` and
+attempt to register a second HTML5 backend on the same window.
+
+### Custom backends
+
+Pass any react-dnd-compatible backend via `dndBackend`:
+
+```tsx
+import { TouchBackend } from "react-dnd-touch-backend";
+
+<Tree data={data} dndBackend={TouchBackend}>{Node}</Tree>
+```
+
+### react-dnd v16 and Jest
+
+react-dnd v16 and its transitive dependencies (`dnd-core`, `@react-dnd/*`) ship
+**ESM-only** builds. Jest's default CJS runtime can't load them directly. Add a
+`transformIgnorePatterns` entry so ts-jest (or babel-jest) transpiles them to CJS:
+
+```js
+// jest.config.js
+module.exports = {
+  transform: {
+    "^.+\\.[jt]sx?$": ["ts-jest", { isolatedModules: true, tsconfig: { allowJs: true } }],
+  },
+  transformIgnorePatterns: [
+    "/node_modules/(?!(react-dnd|react-dnd-html5-backend|dnd-core|@react-dnd)/)",
+  ],
+  testEnvironmentOptions: {
+    customExportConditions: ["node", "require", "default"],
+  },
+};
+```
+
+> **Why not `--experimental-vm-modules`?** Node 22+ supports `require()` of ESM
+> modules natively at the runtime level, but Jest intercepts `require` with its own
+> CJS module system regardless of Node version. The `transformIgnorePatterns` approach
+> works on all Jest versions without experimental flags.
+
+### Migrating from v3
+
+v3 bundled react-dnd v14 as a regular dependency. v4 promotes it to a peer dependency.
+
+```bash
+# Before (v3) — react-dnd was pulled in automatically
+npm install react-arborist
+
+# After (v4) — install react-dnd alongside react-arborist
+npm install react-arborist react-dnd react-dnd-html5-backend
+```
+
+If you render multiple trees or already use react-dnd elsewhere in your app, adopt
+the shared `DndProvider` + `dndManager` pattern shown above.
 
 ## Row Component Props
 

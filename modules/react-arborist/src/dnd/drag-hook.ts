@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { ConnectDragSource, useDrag } from "react-dnd";
-import { getEmptyImage } from "react-dnd-html5-backend";
 import { useTreeApi } from "../context";
 import { NodeApi } from "../interfaces/node-api";
 import { DragItem } from "../types/dnd";
@@ -45,7 +44,15 @@ export function useDragHook<T>(node: NodeApi<T>): ConnectDragSource {
   );
 
   useEffect(() => {
-    preview(getEmptyImage());
+    // Suppress the browser's ghost-image only when html5-backend is installed.
+    // Custom-backend users may omit html5-backend; the fallback is the native drag preview.
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      preview(require("react-dnd-html5-backend").getEmptyImage());
+    } catch (err) {
+      if ((err as { code?: string }).code !== "MODULE_NOT_FOUND") throw err;
+      // react-dnd-html5-backend not installed — skip custom drag preview
+    }
   }, [preview]);
 
   return ref;
