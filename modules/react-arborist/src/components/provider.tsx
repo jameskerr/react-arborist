@@ -27,7 +27,16 @@ function getDefaultBackend() {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require("react-dnd-html5-backend").HTML5Backend;
-  } catch {
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    if (code === "ERR_REQUIRE_ESM") {
+      throw new Error(
+        "[react-arborist] react-dnd-html5-backend is installed but is an ESM-only build " +
+          "that cannot be auto-loaded via require(). Pass your backend explicitly: " +
+          "<Tree dndBackend={HTML5Backend} /> or <Tree dndManager={manager} />.",
+      );
+    }
+    if (code !== "MODULE_NOT_FOUND") throw err;
     throw new Error(
       "[react-arborist] react-dnd-html5-backend is not installed. " +
         "Either install it (`npm install react-dnd-html5-backend`) or pass a " +

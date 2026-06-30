@@ -46,12 +46,14 @@ export function useDragHook<T>(node: NodeApi<T>): ConnectDragSource {
   useEffect(() => {
     // Suppress the browser's ghost-image only when html5-backend is installed.
     // Custom-backend users may omit html5-backend; the fallback is the native drag preview.
+    if (typeof require === "undefined") return; // pure-ESM runtime — skip ghost image
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       preview(require("react-dnd-html5-backend").getEmptyImage());
     } catch (err) {
-      if ((err as { code?: string }).code !== "MODULE_NOT_FOUND") throw err;
-      // react-dnd-html5-backend not installed — skip custom drag preview
+      const code = (err as { code?: string }).code;
+      if (code === "MODULE_NOT_FOUND" || code === "ERR_REQUIRE_ESM") return;
+      throw err;
     }
   }, [preview]);
 
