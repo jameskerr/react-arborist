@@ -1,15 +1,50 @@
 import { ReactNode, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { useSyncExternalStore } from "use-sync-external-store/shim";
 import { FixedSizeList, VariableSizeList } from "react-window";
+import { createStore, Store } from "redux";
+import { DndProvider } from "react-dnd";
 import { DataUpdatesContext, DndContext, NodesContext, TreeApiContext } from "../context";
 import { TreeApi } from "../interfaces/tree-api";
 import { initialState } from "../state/initial";
 import { Actions, rootReducer, RootState } from "../state/root-reducer";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import { DndProvider } from "react-dnd";
-import { TreeProps } from "../types/tree-props";
-import { createStore, Store } from "redux";
 import { actions as visibility } from "../state/open-slice";
+import { TreeProps } from "../types/tree-props";
+
+/* react-dnd-html5-backend is an optional peer dependency — only required when
+   neither dndBackend nor dndManager is provided. Lazy-require so that projects
+   using a custom backend don't need to install it at all. */
+function getDefaultBackend() {
+  // Pure-ESM module contexts (e.g. the dist/module build loaded as an ES module)
+  // don't have require(). Bundlers (webpack/vite) resolve this at build time, but
+  // unbundled ESM consumers must pass dndBackend or dndManager explicitly.
+  if (typeof require === "undefined") {
+    throw new Error(
+      "[react-arborist] Cannot auto-load react-dnd-html5-backend in a pure-ESM " +
+        "module context. Pass your backend explicitly: " +
+        "<Tree dndBackend={HTML5Backend} /> or <Tree dndManager={manager} />.",
+    );
+  }
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require("react-dnd-html5-backend").HTML5Backend;
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    if (code === "ERR_REQUIRE_ESM") {
+      throw new Error(
+        "[react-arborist] react-dnd-html5-backend is installed but is an ESM-only build " +
+          "that cannot be auto-loaded via require(). Pass your backend explicitly: " +
+          "<Tree dndBackend={HTML5Backend} /> or <Tree dndManager={manager} />.",
+      );
+    }
+    if (code !== "MODULE_NOT_FOUND") throw err;
+    throw new Error(
+      "[react-arborist] react-dnd-html5-backend is not installed. " +
+        "Either install it (`npm install react-dnd-html5-backend`) or pass a " +
+        "custom backend via the `dndBackend` prop, or share an existing " +
+        "DragDropManager via the `dndManager` prop.",
+    );
+  }
+}
 
 type Props<T> = {
   treeProps: TreeProps<T>;
@@ -23,7 +58,8 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
   const list = useRef<FixedSizeList | VariableSizeList | null>(null);
   const listEl = useRef<HTMLDivElement | null>(null);
   const store = useRef<Store<RootState, Actions>>(
-    // @ts-ignore
+    // @ts-expect-error Redux 5 tightened createStore's PreloadedState generic;
+    // rootReducer is typed without it (v4-style). Migrate to configureStore to remove this.
     createStore(rootReducer, initialState(treeProps)),
   );
   const state = useSyncExternalStore<RootState>(
@@ -71,23 +107,19 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
     }
   }, [api.props.searchTerm]);
 
+  const dndProps = treeProps.dndManager
+    ? { manager: treeProps.dndManager }
+    : {
+        backend: treeProps.dndBackend ?? getDefaultBackend(),
+        options: { rootElement: api.props.dndRootElement ?? undefined },
+      };
+
   return (
     <TreeApiContext.Provider value={api}>
       <DataUpdatesContext.Provider value={updateCount.current}>
         <NodesContext.Provider value={state.nodes}>
           <DndContext.Provider value={state.dnd}>
-            <DndProvider
-              {...(treeProps.dndManager
-                ? { manager: treeProps.dndManager }
-                : {
-                    backend: treeProps.dndBackend || HTML5Backend,
-                    options: {
-                      rootElement: api.props.dndRootElement || undefined,
-                    },
-                  })}
-            >
-              {children}
-            </DndProvider>
+            <DndProvider {...dndProps}>{children}</DndProvider>
           </DndContext.Provider>
         </NodesContext.Provider>
       </DataUpdatesContext.Provider>
