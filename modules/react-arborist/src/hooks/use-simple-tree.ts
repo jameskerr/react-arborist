@@ -13,7 +13,7 @@ export type UseSimpleTreeOptions<T> = SimpleTreeOptions<T> & {
      resulting data array — a single place to persist the whole tree without
      wiring up each handler yourself (#302). Fires only on real changes, not on
      mount or re-render. */
-  onChange?: (data: T[]) => void;
+  onChange?: (data: readonly T[]) => void;
 };
 
 let nextId = 0;
