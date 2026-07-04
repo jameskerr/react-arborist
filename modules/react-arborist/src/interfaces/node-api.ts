@@ -32,6 +32,24 @@ export class NodeApi<T = any> {
     this.parent = params.parent;
     this.isDraggable = params.isDraggable;
     this.rowIndex = params.rowIndex;
+
+    /* Bind the action methods to the instance so they can be passed as
+       callbacks (e.g. `<Toggle onClick={node.toggle} />`) without losing `this`.
+       A detached call would otherwise read `this.tree` off `undefined` and throw
+       "Cannot read properties of undefined (reading 'tree')" (#301). */
+    this.select = this.select.bind(this);
+    this.deselect = this.deselect.bind(this);
+    this.selectMulti = this.selectMulti.bind(this);
+    this.selectContiguous = this.selectContiguous.bind(this);
+    this.activate = this.activate.bind(this);
+    this.focus = this.focus.bind(this);
+    this.toggle = this.toggle.bind(this);
+    this.open = this.open.bind(this);
+    this.openParents = this.openParents.bind(this);
+    this.close = this.close.bind(this);
+    this.submit = this.submit.bind(this);
+    this.reset = this.reset.bind(this);
+    this.edit = this.edit.bind(this);
   }
 
   get isRoot() {
