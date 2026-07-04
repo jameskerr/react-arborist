@@ -34,6 +34,14 @@ describe("NodeApi action methods are bound to the instance (#301)", () => {
     expect(api.selectedIds.has("leaf")).toBe(true);
   });
 
+  test("a detached node.submit still submits a rename (takes an argument)", () => {
+    const onRename = jest.fn();
+    const api = setupApi({ data, onRename });
+    const { submit } = api.get("leaf")!;
+    expect(() => submit("renamed")).not.toThrow();
+    expect(onRename).toHaveBeenCalledWith(expect.objectContaining({ id: "leaf", name: "renamed" }));
+  });
+
   test.each([
     "select",
     "deselect",
@@ -46,6 +54,7 @@ describe("NodeApi action methods are bound to the instance (#301)", () => {
     "openParents",
     "close",
     "reset",
+    "submit",
     "edit",
   ] as const)("node.%s is bound and callable while detached", (method) => {
     const api = setupApi({ data });
