@@ -87,6 +87,19 @@ describe("custom idAccessor is honored when methods receive raw data (#347)", ()
     api.select(fnData[1]);
     expect(api.selectedIds.has("y")).toBe(true);
   });
+
+  test("selectContiguous resolves nodes to accessor-derived ids", () => {
+    // selectContiguous feeds NodeApi lists to the selection slice, which stores
+    // ids. Those must be the accessor-derived ids, not `undefined` from a missing
+    // `.id` — guards the string-only selection slice against a custom accessor.
+    const api = setupApi({
+      data: [{ uuid: "a" }, { uuid: "b" }, { uuid: "c" }, { uuid: "d" }],
+      idAccessor: "uuid",
+    });
+    api.select("a");
+    api.selectContiguous("c");
+    expect([...api.selectedIds].sort()).toEqual(["a", "b", "c"]);
+  });
 });
 
 describe("custom idAccessor flows through drag-and-drop onMove (#170)", () => {

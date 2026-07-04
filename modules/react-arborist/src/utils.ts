@@ -1,6 +1,5 @@
 import { NodeApi } from "./interfaces/node-api";
 import { TreeApi } from "./interfaces/tree-api";
-import { IdObj } from "./types/utils";
 
 export function bound(n: number, min: number, max: number) {
   return Math.max(Math.min(n, max), min);
@@ -116,15 +115,6 @@ export function access<T = boolean>(obj: any, accessor: string | boolean | Funct
   if (typeof accessor === "boolean") return accessor as unknown as T;
   if (typeof accessor === "string") return obj[accessor] as T;
   return accessor(obj) as T;
-}
-
-export function identifyNull(obj: string | IdObj | null) {
-  if (obj === null) return null;
-  else return identify(obj);
-}
-
-export function identify(obj: string | IdObj) {
-  return typeof obj === "string" ? obj : obj.id;
 }
 
 export function mergeRefs(...refs: any) {

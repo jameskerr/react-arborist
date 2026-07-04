@@ -468,8 +468,8 @@ export class TreeApi<T> {
       const selectableNodes = this.filterSelectableNodes(
         this.nodesBetween(anchor, this.identifyNull(id)),
       );
-      this.dispatch(selection.remove(this.nodesBetween(anchor, mostRecent)));
-      this.dispatch(selection.add(selectableNodes));
+      this.dispatch(selection.remove(this.nodesBetween(anchor, mostRecent).map((n) => n.id)));
+      this.dispatch(selection.add(selectableNodes.map((n) => n.id)));
       this.dispatch(selection.mostRecent(id));
     }
     this.scrollTo(id);
