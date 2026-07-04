@@ -8,16 +8,33 @@ export type SimpleTreeData = {
   children?: SimpleTreeData[];
 };
 
+export type UseSimpleTreeOptions<T> = SimpleTreeOptions<T> & {
+  /* Called after any internal mutation (move, create, rename, delete) with the
+     resulting data array — a single place to persist the whole tree without
+     wiring up each handler yourself (#302). Fires only on real changes, not on
+     mount or re-render. */
+  onChange?: (data: T[]) => void;
+};
+
 let nextId = 0;
 
-export function useSimpleTree<T>(initialData: readonly T[], options: SimpleTreeOptions<T> = {}) {
+export function useSimpleTree<T>(initialData: readonly T[], options: UseSimpleTreeOptions<T> = {}) {
   const [data, setData] = useState(initialData);
   const idAccessor = options.idAccessor;
   const childrenAccessor = options.childrenAccessor;
+  const onChange = options.onChange;
   const tree = useMemo(
     () => new SimpleTree<T>(data as T[], { idAccessor, childrenAccessor }),
     [data, idAccessor, childrenAccessor],
   );
+
+  /* Push the tree's new state into React and notify the caller. Reads
+     tree.data once so onChange receives exactly what was committed. */
+  const commit = () => {
+    const next = tree.data;
+    setData(next);
+    onChange?.(next);
+  };
 
   const onMove: MoveHandler<T> = (args: {
     dragIds: string[];
@@ -27,12 +44,12 @@ export function useSimpleTree<T>(initialData: readonly T[], options: SimpleTreeO
     for (const id of args.dragIds) {
       tree.move({ id, parentId: args.parentId, index: args.index });
     }
-    setData(tree.data);
+    commit();
   };
 
   const onRename: RenameHandler<T> = ({ name, id }) => {
     tree.update({ id, changes: { name } as any });
-    setData(tree.data);
+    commit();
   };
 
   // New nodes must carry their id/children under the same keys the accessors
@@ -57,13 +74,13 @@ export function useSimpleTree<T>(initialData: readonly T[], options: SimpleTreeO
     const data = { [idKey]: `simple-tree-id-${nextId++}`, name: "" } as any;
     if (type === "internal") data[childrenKey] = [];
     tree.create({ parentId, index, data });
-    setData(tree.data);
+    commit();
     return data;
   };
 
   const onDelete: DeleteHandler<T> = (args: { ids: string[] }) => {
     args.ids.forEach((id) => tree.drop({ id }));
-    setData(tree.data);
+    commit();
   };
 
   const controller = { onMove, onRename, onCreate, onDelete };
