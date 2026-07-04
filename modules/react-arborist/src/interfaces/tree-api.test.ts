@@ -41,9 +41,7 @@ describe("tree.drop() fires onMove (#313)", () => {
     api.dispatch(dnd.dragStart("child", ["child"]));
     api.dispatch(dnd.hovering("folder", null));
     api.drop();
-    expect(onMove).toHaveBeenCalledWith(
-      expect.objectContaining({ parentId: "folder", index: 0 }),
-    );
+    expect(onMove).toHaveBeenCalledWith(expect.objectContaining({ parentId: "folder", index: 0 }));
   });
 });
 
@@ -68,9 +66,7 @@ describe("custom idAccessor is honored when methods receive raw data (#347)", ()
     const onDelete = jest.fn();
     const api = setupApi({ data: uuidData, idAccessor: "uuid", onDelete });
     api.delete(uuidData[0]);
-    expect(onDelete).toHaveBeenCalledWith(
-      expect.objectContaining({ ids: ["a"] }),
-    );
+    expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ ids: ["a"] }));
   });
 
   test("create() focuses the new node by its accessor-derived id", async () => {
@@ -90,6 +86,50 @@ describe("custom idAccessor is honored when methods receive raw data (#347)", ()
     });
     api.select(fnData[1]);
     expect(api.selectedIds.has("y")).toBe(true);
+  });
+});
+
+describe("custom idAccessor flows through drag-and-drop onMove (#170)", () => {
+  // Data keyed by `uuid` instead of `id`, with a folder to reorder into. The
+  // drag hook and computeDrop only ever see `node.id`, which createRoot derives
+  // via the accessor — so onMove should report uuid values, never `undefined`.
+  const uuidData = [{ uuid: "folder", children: [{ uuid: "child" }] }, { uuid: "sibling" }];
+
+  test("dropping onto a folder reports accessor-derived dragIds and parentId", () => {
+    const onMove = jest.fn();
+    const api = setupApi({ data: uuidData, idAccessor: "uuid", onMove });
+    const [folder, sibling] = api.root.children!;
+    // Sanity: node ids come from the accessor, not a missing `.id`.
+    expect([folder.id, sibling.id]).toEqual(["folder", "sibling"]);
+
+    // Drag "sibling" onto the folder, exactly as the drag hook + computeDrop do:
+    // both feed `node.id` into the dnd state that tree.drop() reads back.
+    api.dispatch(dnd.dragStart(sibling.id, [sibling.id]));
+    api.dispatch(dnd.hovering(folder.id, null));
+    api.drop();
+
+    expect(onMove).toHaveBeenCalledTimes(1);
+    const args = onMove.mock.calls[0][0];
+    expect(args).toEqual(
+      expect.objectContaining({ dragIds: ["sibling"], parentId: "folder", index: 0 }),
+    );
+    expect(args.parentNode?.id).toBe("folder");
+  });
+
+  test("reordering at the root reports accessor-derived ids with parentId null", () => {
+    const onMove = jest.fn();
+    const api = setupApi({ data: uuidData, idAccessor: "uuid", onMove });
+    const sibling = api.root.children![1];
+
+    // Reorder "sibling" above "folder" at the root; computeDrop reports the root
+    // id, which tree.drop() maps back to null.
+    api.dispatch(dnd.dragStart(sibling.id, [sibling.id]));
+    api.dispatch(dnd.hovering(api.root.id, 0));
+    api.drop();
+
+    expect(onMove).toHaveBeenCalledWith(
+      expect.objectContaining({ dragIds: ["sibling"], parentId: null, index: 0 }),
+    );
   });
 });
 
