@@ -1,5 +1,4 @@
-import { ActionTypes, IdObj } from "../types/utils";
-import { identify } from "../utils";
+import { ActionTypes } from "../types/utils";
 import { initialState } from "./initial";
 
 /* Types */
@@ -9,23 +8,26 @@ export type SelectionState = {
   mostRecent: string | null;
 };
 
-/* Actions */
+/* Actions. These take ids already resolved to strings: callers go through
+   TreeApi.identify(), which honors a custom idAccessor. Keeping the slice
+   string-only means there is a single, accessor-aware identify() rather than a
+   second `.id`-assuming one hiding here. */
 export const actions = {
   clear: () => ({ type: "SELECTION_CLEAR" as const }),
 
-  only: (id: string | IdObj) => ({
+  only: (id: string) => ({
     type: "SELECTION_ONLY" as const,
-    id: identify(id),
+    id,
   }),
 
-  add: (id: string | string[] | IdObj | IdObj[]) => ({
+  add: (id: string | string[]) => ({
     type: "SELECTION_ADD" as const,
-    ids: (Array.isArray(id) ? id : [id]).map(identify),
+    ids: Array.isArray(id) ? id : [id],
   }),
 
-  remove: (id: string | string[] | IdObj | IdObj[]) => ({
+  remove: (id: string | string[]) => ({
     type: "SELECTION_REMOVE" as const,
-    ids: (Array.isArray(id) ? id : [id]).map(identify),
+    ids: Array.isArray(id) ? id : [id],
   }),
 
   set: (args: { ids: Set<string>; anchor: string | null; mostRecent: string | null }) => ({
@@ -33,14 +35,14 @@ export const actions = {
     ...args,
   }),
 
-  mostRecent: (id: string | null | IdObj) => ({
+  mostRecent: (id: string | null) => ({
     type: "SELECTION_MOST_RECENT" as const,
-    id: id === null ? null : identify(id),
+    id,
   }),
 
-  anchor: (id: string | null | IdObj) => ({
+  anchor: (id: string | null) => ({
     type: "SELECTION_ANCHOR" as const,
-    id: id === null ? null : identify(id),
+    id,
   }),
 };
 
