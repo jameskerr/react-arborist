@@ -142,7 +142,23 @@ test("does not preventDefault Space typed into a nested input (#257)", () => {
   expect(notPrevented).toBe(true);
 });
 
-test("still preventDefaults Space typed on the tree container itself (#257)", () => {
+test("does not preventDefault Space typed into a nested contenteditable (#257)", () => {
+  render(
+    <Tree<Datum> data={data} openByDefault>
+      {() => (
+        <div>
+          <div aria-label="editable" contentEditable suppressContentEditableWarning />
+        </div>
+      )}
+    </Tree>,
+  );
+  const [editable] = screen.getAllByLabelText("editable");
+
+  const notPrevented = fireEvent.keyDown(editable, { key: " ", code: "Space" });
+  expect(notPrevented).toBe(true);
+});
+
+test("still calls preventDefault on Space typed on the tree container itself (#257)", () => {
   render(<Tree<Datum> data={data} openByDefault />);
   const tree = screen.getByRole("tree");
 

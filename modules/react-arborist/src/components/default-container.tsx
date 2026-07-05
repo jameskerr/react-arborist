@@ -50,10 +50,13 @@ export function DefaultContainer() {
         // Their events bubble up to this handler, where shortcuts like Space
         // would otherwise call preventDefault and swallow the character. Rows
         // are plain divs, so navigation is unaffected. (#257)
-        const target = e.target as HTMLElement;
+        const target = e.target;
         if (
+          target instanceof Element &&
           target !== e.currentTarget &&
-          target.closest("input, textarea, select, [contenteditable='true']")
+          target.closest(
+            "input, textarea, select, [contenteditable]:not([contenteditable='false'])",
+          )
         ) {
           return;
         }
