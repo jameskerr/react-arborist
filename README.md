@@ -346,9 +346,12 @@ interface TreeProps<T> {
   className?: string | undefined;
   rowClassName?: string | undefined;
 
-  dndRootElement?: globalThis.Node | null;
+  /* Tree container mouse events — fire for clicks / right-clicks anywhere in
+     the tree (see "Handling Clicks on the Tree Container" below). */
   onClick?: MouseEventHandler;
   onContextMenu?: MouseEventHandler;
+
+  dndRootElement?: globalThis.Node | null;
   dndBackend?: Extract<
     DndProviderProps<unknown, unknown>,
     { backend: unknown }
@@ -357,6 +360,30 @@ interface TreeProps<T> {
   dragType?: string | ((node: NodeApi<T>) => string);
 }
 ```
+
+### Handling Clicks on the Tree Container
+
+`onClick` and `onContextMenu` are attached to the tree's outer container, so they fire for mouse events anywhere in the tree — clicks that bubble up from a row, as well as clicks on the empty space below the last row. Use them for interactions that aren't tied to a single node, such as clearing the selection or opening your own context menu for the tree as a whole.
+
+To act only when the empty area was clicked (and not a row), check whether the event started inside a row — rows carry `role="treeitem"`:
+
+```tsx
+<Tree
+  data={data}
+  onClick={(e) => {
+    const onRow = (e.target as Element).closest('[role="treeitem"]');
+    if (!onRow) {
+      // clicked the empty area, not a row
+    }
+  }}
+  onContextMenu={(e) => {
+    e.preventDefault(); // suppress the native menu
+    // open a custom context menu for the tree
+  }}
+/>
+```
+
+Clicking empty space already clears the selection by default; pass the [`disableDeselectOnClick`](#tree-component-props) prop to keep the selection instead.
 
 ### Dragging Nodes to External Drop Targets
 
