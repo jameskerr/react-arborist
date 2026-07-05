@@ -45,6 +45,18 @@ export function DefaultContainer() {
         if (tree.isEditing) {
           return;
         }
+        // Don't hijack keystrokes typed into a nested form field or editable
+        // element (e.g. an <input> inside a modal rendered within the tree).
+        // Their events bubble up to this handler, where shortcuts like Space
+        // would otherwise call preventDefault and swallow the character. Rows
+        // are plain divs, so navigation is unaffected. (#257)
+        const target = e.target as HTMLElement;
+        if (
+          target !== e.currentTarget &&
+          target.closest("input, textarea, select, [contenteditable='true']")
+        ) {
+          return;
+        }
         if (e.key === "Backspace") {
           if (!tree.props.onDelete) return;
           const ids = Array.from(tree.selectedIds);
