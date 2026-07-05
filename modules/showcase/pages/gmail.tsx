@@ -5,6 +5,7 @@ import { gmailData, GmailItem } from "../data/gmail";
 import * as icons from "react-icons/md";
 import styles from "../styles/Gmail.module.css";
 import { FillFlexParent } from "../components/fill-flex-parent";
+import { RenameInput } from "../components/rename-input";
 import { SiGmail } from "react-icons/si";
 import { BsTree } from "react-icons/bs";
 import { useState } from "react";
@@ -122,25 +123,9 @@ function Node({ node, style, dragHandle }: NodeRendererProps<GmailItem>) {
       <span>
         <Icon />
       </span>
-      <span>{node.isEditing ? <Input node={node} /> : node.data.name}</span>
+      <span>{node.isEditing ? <RenameInput node={node} /> : node.data.name}</span>
       <span>{node.data.unread === 0 ? null : node.data.unread}</span>
     </div>
-  );
-}
-
-function Input({ node }: { node: NodeApi<GmailItem> }) {
-  return (
-    <input
-      autoFocus
-      type="text"
-      defaultValue={node.data.name}
-      onFocus={(e) => e.currentTarget.select()}
-      onBlur={() => node.reset()}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") node.reset();
-        if (e.key === "Enter") node.submit(e.currentTarget.value);
-      }}
-    />
   );
 }
 

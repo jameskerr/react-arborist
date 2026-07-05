@@ -433,6 +433,20 @@ import { TouchBackend } from "react-dnd-touch-backend";
 <Tree data={data} dndBackend={TouchBackend}>{Node}</Tree>
 ```
 
+Passing `dndBackend` or `dndManager` explicitly opts out of the default
+`react-dnd-html5-backend` auto-loading described below.
+
+### How the default backend is loaded
+
+When neither `dndBackend` nor `dndManager` is provided, `<Tree>` auto-loads
+`react-dnd-html5-backend` for you. Dynamic `import()` is the default loading
+path — it works in Node, bundlers, and pure-ESM runtimes alike. As a fast
+path, `require()` is tried first wherever it's available (Node, bundlers,
+Jest), so the common case gets the backend synchronously with no async delay;
+`import()` only kicks in when `require()` isn't available or the installed
+build is ESM-only. In that fallback case, `<Tree>` renders nothing for one
+tick while the backend loads.
+
 ### react-dnd v16 and Jest
 
 react-dnd v16 and its transitive dependencies (`dnd-core`, `@react-dnd/*`) ship

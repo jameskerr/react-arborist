@@ -33,8 +33,14 @@
   "types": "dist/module/index.d.ts",
   "exports": {
     ".": {
-      "require": { "types": "./dist/main/index.d.ts", "default": "./dist/main/index.js" },
-      "import": { "types": "./dist/module/index.d.ts", "default": "./dist/module/index.js" }
+      "require": {
+        "types": "./dist/main/index.d.ts",
+        "default": "./dist/main/index.js"
+      },
+      "import": {
+        "types": "./dist/module/index.d.ts",
+        "default": "./dist/module/index.js"
+      }
     }
   },
   "scripts": {

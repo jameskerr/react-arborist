@@ -6,6 +6,7 @@ import styles from "../styles/cities.module.css";
 import { cities } from "../data/cities";
 import { BsMapFill, BsGeoFill } from "react-icons/bs";
 import { FillFlexParent } from "../components/fill-flex-parent";
+import { RenameInput } from "../components/rename-input";
 import { MdArrowDropDown, MdArrowRight } from "react-icons/md";
 import Link from "next/link";
 
@@ -179,25 +180,10 @@ function Node({ node, style, dragHandle }: NodeRendererProps<Data>) {
       </div>
       <FolderArrow node={node} />
       <Icon className={styles.icon} />{" "}
-      <span className={styles.text}>{node.isEditing ? <Input node={node} /> : node.data.name}</span>
+      <span className={styles.text}>
+        {node.isEditing ? <RenameInput node={node} /> : node.data.name}
+      </span>
     </div>
-  );
-}
-
-function Input({ node }: { node: NodeApi<Data> }) {
-  return (
-    <input
-      autoFocus
-      name="name"
-      type="text"
-      defaultValue={node.data.name}
-      onFocus={(e) => e.currentTarget.select()}
-      onBlur={() => node.reset()}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") node.reset();
-        if (e.key === "Enter") node.submit(e.currentTarget.value);
-      }}
-    />
   );
 }
 

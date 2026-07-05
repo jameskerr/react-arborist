@@ -9,42 +9,7 @@ import { initialState } from "../state/initial";
 import { Actions, rootReducer, RootState } from "../state/root-reducer";
 import { actions as visibility } from "../state/open-slice";
 import { TreeProps } from "../types/tree-props";
-
-/* react-dnd-html5-backend is an optional peer dependency — only required when
-   neither dndBackend nor dndManager is provided. Lazy-require so that projects
-   using a custom backend don't need to install it at all. */
-function getDefaultBackend() {
-  // Pure-ESM module contexts (e.g. the dist/module build loaded as an ES module)
-  // don't have require(). Bundlers (webpack/vite) resolve this at build time, but
-  // unbundled ESM consumers must pass dndBackend or dndManager explicitly.
-  if (typeof require === "undefined") {
-    throw new Error(
-      "[react-arborist] Cannot auto-load react-dnd-html5-backend in a pure-ESM " +
-        "module context. Pass your backend explicitly: " +
-        "<Tree dndBackend={HTML5Backend} /> or <Tree dndManager={manager} />.",
-    );
-  }
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require("react-dnd-html5-backend").HTML5Backend;
-  } catch (err) {
-    const code = (err as { code?: string }).code;
-    if (code === "ERR_REQUIRE_ESM") {
-      throw new Error(
-        "[react-arborist] react-dnd-html5-backend is installed but is an ESM-only build " +
-          "that cannot be auto-loaded via require(). Pass your backend explicitly: " +
-          "<Tree dndBackend={HTML5Backend} /> or <Tree dndManager={manager} />.",
-      );
-    }
-    if (code !== "MODULE_NOT_FOUND") throw err;
-    throw new Error(
-      "[react-arborist] react-dnd-html5-backend is not installed. " +
-        "Either install it (`npm install react-dnd-html5-backend`) or pass a " +
-        "custom backend via the `dndBackend` prop, or share an existing " +
-        "DragDropManager via the `dndManager` prop.",
-    );
-  }
-}
+import { useDndProviderProps } from "./use-dnd-provider-props";
 
 type Props<T> = {
   treeProps: TreeProps<T>;
@@ -107,12 +72,12 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
     }
   }, [api.props.searchTerm]);
 
-  const dndProps = treeProps.dndManager
-    ? { manager: treeProps.dndManager }
-    : {
-        backend: treeProps.dndBackend ?? getDefaultBackend(),
-        options: { rootElement: api.props.dndRootElement ?? undefined },
-      };
+  const dndProps = useDndProviderProps(treeProps, api.props.dndRootElement ?? undefined);
+  if (!dndProps) {
+    // Waiting on the dynamic import() fallback for the default HTML5 backend
+    // (pure-ESM/no-require() context).
+    return null;
+  }
 
   return (
     <TreeApiContext.Provider value={api}>
