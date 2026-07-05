@@ -371,7 +371,7 @@ To act only when the empty area was clicked (and not a row), check whether the e
 <Tree
   data={data}
   onClick={(e) => {
-    const onRow = (e.target as HTMLElement).closest('[role="treeitem"]');
+    const onRow = (e.target as Element).closest('[role="treeitem"]');
     if (!onRow) {
       // clicked the empty area, not a row
     }
