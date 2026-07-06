@@ -4,6 +4,7 @@ import { useTreeApi } from "../context";
 import { NodeApi } from "../interfaces/node-api";
 import { DragItem } from "../types/dnd";
 import { TreeProps } from "../types/tree-props";
+import { isErrorWithCode } from "../utils";
 import { DropResult } from "./drop-hook";
 import { actions as dnd } from "../state/dnd-slice";
 
@@ -53,8 +54,13 @@ export function useDragHook<T>(node: NodeApi<T>): ConnectDragSource {
       (mod) => {
         if (!cancelled) preview(mod.getEmptyImage());
       },
-      () => {
-        // optional dependency not installed — native drag preview is an acceptable fallback
+      (err) => {
+        // Not-installed is expected (optional dependency) — native drag preview
+        // is an acceptable fallback. Anything else is unexpected and shouldn't
+        // be swallowed silently.
+        if (!isErrorWithCode(err, "MODULE_NOT_FOUND") && !isErrorWithCode(err, "ERR_MODULE_NOT_FOUND")) {
+          throw err;
+        }
       },
     );
     return () => {

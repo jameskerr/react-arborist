@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import type { HTML5Backend as HTML5BackendType } from "react-dnd-html5-backend";
+import type { DndProviderProps as ReactDndProviderProps } from "react-dnd";
 import { TreeProps } from "../types/tree-props";
+import { isErrorWithCode } from "../utils";
 
 const NOT_INSTALLED_MESSAGE =
   "[react-arborist] react-dnd-html5-backend is not installed. " +
@@ -8,12 +9,12 @@ const NOT_INSTALLED_MESSAGE =
   "custom backend via the `dndBackend` prop, or share an existing " +
   "DragDropManager via the `dndManager` prop.";
 
-/* Verifies the claim rather than casting: only true when `err` genuinely
-   carries a matching `.code`, so a non-object throw (e.g. `throw "oops"`)
-   can't be misread as a Node error. */
-function isErrorWithCode(err: unknown, code: string): boolean {
-  return typeof err === "object" && err !== null && "code" in err && err.code === code;
-}
+/* Derived from react-dnd (a required peer dep) instead of imported from
+   react-dnd-html5-backend (an optional peer dep) — otherwise this type-only
+   import would land in the published .d.ts and force every TypeScript
+   consumer to install html5-backend, even ones that only ever pass their own
+   dndBackend/dndManager. */
+type Backend = Extract<ReactDndProviderProps<unknown, unknown>, { backend: unknown }>["backend"];
 
 /* react-dnd-html5-backend is an optional peer dependency — only required when
    neither dndBackend nor dndManager is provided.
@@ -22,7 +23,7 @@ function isErrorWithCode(err: unknown, code: string): boolean {
    synchronous fast path when it's available, so the common Node/bundler/Jest
    case gets the backend with no async delay. Passing `dndBackend` or
    `dndManager` explicitly opts out of this auto-detection entirely. */
-function requireHTML5BackendSync(): typeof HTML5BackendType | null {
+function requireHTML5BackendSync(): Backend | null {
   if (typeof require === "undefined") return null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -37,7 +38,7 @@ function requireHTML5BackendSync(): typeof HTML5BackendType | null {
 
 export type DndProviderProps =
   | { manager: NonNullable<TreeProps<unknown>["dndManager"]> }
-  | { backend: typeof HTML5BackendType; options: { rootElement: Node | undefined } };
+  | { backend: Backend; options: { rootElement: Node | undefined } };
 
 /**
  * Resolves the props to spread onto react-dnd's <DndProvider>. Returns null
@@ -51,9 +52,9 @@ export function useDndProviderProps<T>(
 ): DndProviderProps | null {
   const needsDefaultBackend = !treeProps.dndManager && !treeProps.dndBackend;
   const syncBackend = needsDefaultBackend ? requireHTML5BackendSync() : null;
-  const [asyncBackend, setAsyncBackend] = useState<
-    { backend: typeof HTML5BackendType } | { error: Error } | null
-  >(null);
+  const [asyncBackend, setAsyncBackend] = useState<{ backend: Backend } | { error: Error } | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!needsDefaultBackend || syncBackend) return;
@@ -71,13 +72,16 @@ export function useDndProviderProps<T>(
     };
   }, [needsDefaultBackend, syncBackend]);
 
-  if (asyncBackend && "error" in asyncBackend) throw asyncBackend.error;
-
   if (treeProps.dndManager) return { manager: treeProps.dndManager };
 
   if (treeProps.dndBackend) {
     return { backend: treeProps.dndBackend, options: { rootElement: dndRootElement } };
   }
+
+  // Only surface an async-load failure once we know the default backend is
+  // actually still needed — if the caller since switched to dndBackend/
+  // dndManager (handled above), a stale load error must not block rendering.
+  if (asyncBackend && "error" in asyncBackend) throw asyncBackend.error;
 
   const html5Backend = syncBackend ?? (asyncBackend && asyncBackend.backend);
   if (!html5Backend) return null;
