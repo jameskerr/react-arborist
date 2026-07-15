@@ -45,12 +45,12 @@
   },
   "scripts": {
     "build:cjs": "tsc --outDir dist/main",
-    "build:es": "tsc --outDir dist/module --module esnext --moduleResolution bundler",
+    "build:es": "tsc --outDir dist/module --module esnext --moduleResolution bundler && node scripts/fix-esm-extensions.mjs dist/module && node -e \"require('fs').writeFileSync('dist/module/package.json', JSON.stringify({ type: 'module' }, null, 2) + '\\n')\"",
     "build": "npm-run-all clean -p 'build:**'",
     "clean": "rimraf dist",
     "prepack": "yarn build",
     "test": "jest",
-    "watch": "yarn build:es --watch"
+    "watch": "tsc --outDir dist/module --module esnext --moduleResolution bundler --watch"
   },
   "dependencies": {
     "react-window": "^1.8.11",

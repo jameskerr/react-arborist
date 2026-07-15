@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { DndProviderProps as ReactDndProviderProps } from "react-dnd";
 import { TreeProps } from "../types/tree-props";
 import { isErrorWithCode } from "../utils";
@@ -51,7 +51,13 @@ export function useDndProviderProps<T>(
   dndRootElement: Node | undefined,
 ): DndProviderProps | null {
   const needsDefaultBackend = !treeProps.dndManager && !treeProps.dndBackend;
-  const syncBackend = needsDefaultBackend ? requireHTML5BackendSync() : null;
+  // Resolved once via useMemo rather than called directly in the render body —
+  // require() is an impure side effect that would otherwise re-run on every
+  // render (twice under StrictMode/concurrent rendering).
+  const syncBackend = useMemo(
+    () => (needsDefaultBackend ? requireHTML5BackendSync() : null),
+    [needsDefaultBackend],
+  );
   const [asyncBackend, setAsyncBackend] = useState<{ backend: Backend } | { error: Error } | null>(
     null,
   );
@@ -63,8 +69,15 @@ export function useDndProviderProps<T>(
       (mod) => {
         if (!cancelled) setAsyncBackend({ backend: mod.HTML5Backend });
       },
-      () => {
-        if (!cancelled) setAsyncBackend({ error: new Error(NOT_INSTALLED_MESSAGE) });
+      (err) => {
+        if (cancelled) return;
+        // Not-installed is expected (optional dependency) — surface the actionable
+        // message. Anything else is unexpected and shouldn't be masked as "not installed".
+        if (isErrorWithCode(err, "MODULE_NOT_FOUND") || isErrorWithCode(err, "ERR_MODULE_NOT_FOUND")) {
+          setAsyncBackend({ error: new Error(NOT_INSTALLED_MESSAGE) });
+        } else {
+          setAsyncBackend({ error: err instanceof Error ? err : new Error(String(err)) });
+        }
       },
     );
     return () => {
