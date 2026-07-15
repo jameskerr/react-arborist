@@ -54,7 +54,7 @@ export function useDragHook<T>(node: NodeApi<T>): ConnectDragSource {
       (mod) => {
         if (!cancelled) preview(mod.getEmptyImage());
       },
-      (err) => {
+      (err: unknown) => {
         // Not-installed is expected (optional dependency) — native drag preview
         // is an acceptable fallback. Anything else is unexpected and shouldn't
         // be swallowed silently.

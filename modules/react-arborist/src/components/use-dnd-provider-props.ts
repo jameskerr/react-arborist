@@ -69,7 +69,7 @@ export function useDndProviderProps<T>(
       (mod) => {
         if (!cancelled) setAsyncBackend({ backend: mod.HTML5Backend });
       },
-      (err) => {
+      (err: unknown) => {
         if (cancelled) return;
         // Not-installed is expected (optional dependency) — surface the actionable
         // message. Anything else is unexpected and shouldn't be masked as "not installed".
