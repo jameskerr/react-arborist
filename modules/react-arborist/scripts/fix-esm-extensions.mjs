@@ -4,15 +4,14 @@
  * relative specifiers (e.g. `from "./components/tree"`). That's fine for
  * bundlers, but Node's native ESM resolver requires an explicit extension on
  * relative specifiers and throws ERR_MODULE_NOT_FOUND without one. This
- * rewrites the emitted dist/module/**\/*.js in place so the build that ships
- * under the `exports.import` condition resolves under plain `node`, not just
- * bundlers.
+ * rewrites the emitted dist/module/**\/*.js in place, and marks the
+ * directory as ESM, so the build that ships under the `exports.import`
+ * condition resolves under plain `node`, not just bundlers.
  */
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { readdirSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
-const distModule = resolve(process.argv[2] ?? "dist/module");
+const distModule = resolve(process.argv[2]);
 
 const SPECIFIER_RE = /((?:from|import)\s*\(?\s*["'])(\.\.?\/[^"']+)(["'])/g;
 
@@ -37,15 +36,8 @@ function fixFile(filePath) {
   if (changed) writeFileSync(filePath, fixed);
 }
 
-function walk(dir) {
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) {
-      walk(full);
-    } else if (full.endsWith(".js")) {
-      fixFile(full);
-    }
-  }
+for (const entry of readdirSync(distModule, { recursive: true })) {
+  if (entry.endsWith(".js")) fixFile(join(distModule, entry));
 }
 
-walk(distModule);
+writeFileSync(join(distModule, "package.json"), JSON.stringify({ type: "module" }, null, 2) + "\n");
