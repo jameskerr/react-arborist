@@ -55,13 +55,14 @@ export function useDragHook<T>(node: NodeApi<T>): ConnectDragSource {
         if (!cancelled) preview(mod.getEmptyImage());
       },
       (err: unknown) => {
+        if (cancelled) return;
         // Not-installed is expected (optional dependency) — native drag preview
         // is an acceptable fallback. Anything else is unexpected and shouldn't
         // be swallowed silently. Rethrow outside the promise chain so React
         // (and the runtime) see a real throw instead of an unhandled rejection.
         if (!isErrorWithCode(err, "MODULE_NOT_FOUND") && !isErrorWithCode(err, "ERR_MODULE_NOT_FOUND")) {
           queueMicrotask(() => {
-            throw err;
+            if (!cancelled) throw err;
           });
         }
       },
