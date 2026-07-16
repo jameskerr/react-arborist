@@ -10,7 +10,12 @@ export function bound(n: number, min: number, max: number) {
    carries a matching `.code`, so a non-object throw (e.g. `throw "oops"`)
    can't be misread as a Node error. */
 export function isErrorWithCode(err: unknown, code: string): boolean {
-  return typeof err === "object" && err !== null && "code" in err && err.code === code;
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code: unknown }).code === code
+  );
 }
 
 export function isItem(node: NodeApi<any> | null) {
