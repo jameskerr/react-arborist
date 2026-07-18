@@ -1,5 +1,6 @@
 ---
 type: feature
+pr: 378
 ---
 Dragging into the gap between an open folder and its first child now supports a
 horizontal slide, matching how items and closed folders already behave. Sliding
