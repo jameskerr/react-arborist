@@ -1,6 +1,6 @@
 import { XYCoord } from "react-dnd";
 import { NodeApi } from "../interfaces/node-api";
-import { bound, indexOf, isClosed, isItem, isOpenWithEmptyChildren } from "../utils";
+import { bound, indexOf, isClosed, isItem } from "../utils";
 import { DropResult } from "./drop-hook";
 
 function measureHover(el: HTMLElement, offset: XYCoord) {
@@ -150,27 +150,27 @@ export function computeDrop(args: Args): ComputedDrop {
     };
   }
 
-  /* The node above the cursor line is an open folder with no children */
-  if (isOpenWithEmptyChildren(above)) {
-    const level = bound(hoverLevel, 0, above.level + 1);
-    if (level > above.level) {
-      /* Will be the first child of the empty folder */
-      return {
-        drop: dropAt(above.id, 0),
-        cursor: lineCursor(above.rowIndex! + 1, level),
-      };
-    } else {
-      /* Will be a sibling or grandsibling of the empty folder */
-      return {
-        drop: walkUpFrom(above, level),
-        cursor: lineCursor(above.rowIndex! + 1, level),
-      };
-    }
+  /*
+   * The node above the cursor is an open folder — empty or with children.
+   * `below` is either the folder's first child (children) or its next sibling
+   * (empty), but neither pins the slide: the deep end is the folder's first
+   * child (above.level + 1) and the shallow end walks up the ancestor chain,
+   * which walkUpFrom() clamps at the root. Sliding right drops as the first
+   * child (the historical default); sliding left drops as a sibling or
+   * grandsibling of the folder (#330).
+   */
+  const level = bound(hoverLevel, 0, above.level + 1);
+  if (level > above.level) {
+    /* Will be the first child of the folder */
+    return {
+      drop: dropAt(above.id, 0),
+      cursor: lineCursor(above.rowIndex! + 1, level),
+    };
+  } else {
+    /* Will be a sibling or grandsibling of the folder */
+    return {
+      drop: walkUpFrom(above, level),
+      cursor: lineCursor(above.rowIndex! + 1, level),
+    };
   }
-
-  /* The node above the cursor is a an open folder with children */
-  return {
-    drop: dropAt(above?.id, 0),
-    cursor: lineCursor(above.rowIndex! + 1, above.level + 1),
-  };
 }
