@@ -106,11 +106,32 @@ function readChangesets() {
           `Changeset ${f}: type must be one of ${Object.keys(TYPES).join(", ")} (got "${meta.type}").`,
         );
       }
-      if (!meta.pr) fail(`Changeset ${f}: missing "pr".`);
       const body = m[2].trim();
       if (!body) fail(`Changeset ${f}: body is empty.`);
       return { type: meta.type, pr: meta.pr, credit: meta.credit, body, file: f };
     });
+}
+
+/* The PR that introduced a changeset: the commit that first added the file,
+   mapped to its pull request via the GitHub API. This is why changesets don't
+   store their own PR number — it isn't known until the PR exists, but by
+   release time the merged PR is discoverable from the commit that carried it.
+   Returns a number, or null if GitHub knows of no PR for that commit. */
+function resolvePrNumber(file, repo) {
+  const rel = path.join(".changes", file);
+  const sha = out(`git log --diff-filter=A --format=%H -1 -- ${rel}`);
+  if (!sha) return null;
+  let json;
+  try {
+    json = out(`gh api repos/${repo}/commits/${sha}/pulls --jq "[.[].number]"`);
+  } catch (e) {
+    fail(
+      `Changeset ${file}: GitHub lookup failed for commit ${sha.slice(0, 7)} ` +
+        `(${e.message.trim()}). Check gh auth/network, or add an explicit "pr:".`,
+    );
+  }
+  const numbers = JSON.parse(json || "[]");
+  return numbers.length ? numbers[0] : null;
 }
 
 /* Build the `# Version X.Y.Z` block plus the body alone (for the GH release). */
@@ -208,6 +229,28 @@ if (out(`git tag -l ${tag}`)) {
   fail(`Tag ${tag} already exists.`);
 }
 
+const remoteUrl = out(`git config --get remote.${remoteName}.url`);
+const repoMatch = remoteUrl.match(/[:/]([^/:]+)\/([^/]+?)(?:\.git)?$/);
+if (!repoMatch) fail(`Could not parse owner/repo from remote URL: ${remoteUrl}`);
+const repo = `${repoMatch[1]}/${repoMatch[2]}`;
+
+step("Resolving PR numbers");
+for (const c of changesets) {
+  if (c.pr) {
+    console.log(`  ${c.file} → #${c.pr} (explicit)`);
+    continue;
+  }
+  const pr = resolvePrNumber(c.file, repo);
+  if (!pr) {
+    fail(
+      `Changeset ${c.file}: no PR found for the commit that added it. ` +
+        `Add an explicit "pr: <number>" to its frontmatter, or apply skip-changelog if it shouldn't ship.`,
+    );
+  }
+  c.pr = pr;
+  console.log(`  ${c.file} → #${pr}`);
+}
+
 const { body: releaseNotes, block: changelogBlock } = renderSection(newVersion, changesets);
 console.log(
   `\nRelease notes (assembled from ${changesets.length} changeset(s)):\n${releaseNotes}\n`,
@@ -253,10 +296,6 @@ step(`Pushing commit + tag to ${remoteName}`);
 run(`git push ${remoteName} ${branch} ${tag}`);
 
 step("Creating GitHub release");
-const remoteUrl = out(`git config --get remote.${remoteName}.url`);
-const repoMatch = remoteUrl.match(/[:/]([^/:]+)\/([^/]+?)(?:\.git)?$/);
-if (!repoMatch) fail(`Could not parse owner/repo from remote URL: ${remoteUrl}`);
-const repo = `${repoMatch[1]}/${repoMatch[2]}`;
 const notesPath = path.join(os.tmpdir(), `release-notes-${tag}.md`);
 if (flags.preview) {
   console.log(`  [preview] write notes to ${notesPath}`);
