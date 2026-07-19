@@ -26,7 +26,7 @@ Other notable files:
 
 ## Tooling
 
-- Node: pinned by `.node-version` at the repo root (currently `24.12.0`); use `fnm` (or any tool that reads `.node-version`) to match locally. Note that CI's publish workflow runs on Node `20.x` — kept separate because the published package needs to load on older Node.
+- Node: pinned by `.node-version` at the repo root (currently `24.12.0`); use `fnm` (or any tool that reads `.node-version`) to match locally — that's enough for everyday build/test. CI's publish workflow (`.github/workflows/publish.yml`) resolves Node via the range `^24.15.0` instead, because it installs `npm@12` for OIDC Trusted Publishing and that npm needs Node `>=24.15.0`; the extra floor only matters when running the publish steps, not for local dev. (The Node version that runs `npm publish` doesn't affect what Node versions the package loads on — that's set by the build target.)
 - Package manager: Yarn 4.0.2 (`packageManager` field in root `package.json`).
 - Lint: `oxlint` (`yarn lint`, `yarn lint:fix`).
 - Format: `oxfmt` (`yarn fmt`, `yarn fmt:check`).
