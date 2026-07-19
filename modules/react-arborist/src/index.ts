@@ -9,6 +9,7 @@ export * from "./types/state";
 export * from "./interfaces/node-api";
 export * from "./interfaces/tree-api";
 export * from "./data/simple-tree";
+export { adjustMoveIndex } from "./data/adjust-move-index";
 export * from "./hooks/use-simple-tree";
 export { getTreeLinePrefix } from "./utils";
 export type { TreeLineChars } from "./utils";
