@@ -142,6 +142,26 @@ function App() {
 }
 ```
 
+#### The `onMove` index
+
+`onMove`'s `index` is a **pre-removal slot**: it counts positions in the destination parent's child list _as shown on screen_, with the dragged rows still in place. If your handler removes the dragged rows before inserting them — the natural way to reorder an array — every dragged row that started before the drop slot shifts your target one place to the left, so dragging a row to just below itself would jump it past its neighbor (issue [#247](https://github.com/jameskerr/react-arborist/issues/247)).
+
+`SimpleTree` / `useSimpleTree` insert before removing, so they need no adjustment. If you manage the data yourself, use the exported `adjustMoveIndex` helper:
+
+```jsx
+import { adjustMoveIndex } from "react-arborist";
+
+const onMove = ({ dragIds, index }) => {
+  const to = adjustMoveIndex({ index, dragIds, siblingIds: data.map((d) => d.id) });
+  const dragged = data.filter((d) => dragIds.includes(d.id));
+  const rest = data.filter((d) => !dragIds.includes(d.id));
+  rest.splice(to, 0, ...dragged);
+  setData(rest);
+};
+```
+
+Pass the destination parent's current child ids in display order (for a root-level move, that's your top-level data's ids). Ids that aren't among them — rows moving in from another parent — don't shift anything.
+
 ### Tree Filtering
 
 Providing a non-empty _searchTerm_ will only show nodes that match. If a child matches, all its parents also match. Internal nodes are opened when filtering. You can provide your own _searchMatch_ function, or use the default.
