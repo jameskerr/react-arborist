@@ -28,7 +28,7 @@ export function reducer(
         destinationIndex: null,
         selectedIds: [],
       };
-    case "DND_HOVERING":
+    case "DND_DESTINATION":
       if (action.parentId !== state.destinationParentId || action.index != state.destinationIndex) {
         return {
           ...state,

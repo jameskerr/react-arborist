@@ -338,3 +338,61 @@ describe("scrollToOffset / scrollOffset set and read the vertical position (#194
     expect(api.scrollOffset).toBe(0);
   });
 });
+
+describe("tree.hover() keeps the destination consistent with canDrop (#247)", () => {
+  // box(0) > slider(1), folder2(0) > child2(1)
+  const data = [
+    { id: "box", children: [{ id: "slider" }] },
+    { id: "folder2", children: [{ id: "child2" }] },
+  ];
+
+  test("a droppable line hover records the destination and shows the cursor", () => {
+    const api = setupApi({ data });
+    api.dispatch(dnd.dragStart("slider", ["slider"]));
+    // Drop slider as a sibling at the root — a valid line drop.
+    api.hover({ parentId: null, index: 2 }, { type: "line", index: 2, level: 0 });
+    expect(api.canDrop()).toBe(true);
+    expect(api.state.nodes.drag.destinationIndex).toBe(2);
+    expect(api.state.dnd.cursor).toEqual({ type: "line", index: 2, level: 0 });
+  });
+
+  test("a droppable folder hover highlights it via willReceiveDrop", () => {
+    const api = setupApi({ data });
+    api.dispatch(dnd.dragStart("slider", ["slider"]));
+    // Drop slider INTO folder2 (index null → highlight).
+    api.hover({ parentId: "folder2", index: null }, { type: "highlight", id: "folder2" });
+    expect(api.canDrop()).toBe(true);
+    expect(api.willReceiveDrop("folder2")).toBe(true);
+    expect(api.dragDestinationParent?.id).toBe("folder2");
+    expect(api.state.dnd.cursor).toEqual({ type: "highlight", id: "folder2" });
+  });
+
+  test("a can't-drop hover records no destination and hides the cursor", () => {
+    const api = setupApi({ data });
+    // A folder can't be dropped into its own subtree.
+    api.dispatch(dnd.dragStart("box", ["box"]));
+    api.hover({ parentId: "box", index: null }, { type: "highlight", id: "box" });
+
+    expect(api.canDrop()).toBe(false);
+    // The consumer-facing destination and cursor all agree: "no drop here".
+    expect(api.willReceiveDrop("box")).toBe(false);
+    expect(api.dragDestinationParent).toBe(null);
+    expect(api.state.nodes.drag.destinationParentId).toBe(null);
+    expect(api.state.dnd.cursor).toEqual({ type: "none" });
+    // But the drop guard still sees the real target, so a release is rejected
+    // rather than falling back to a root drop.
+    expect(api.state.dnd.parentId).toBe("box");
+  });
+
+  test("moving from a droppable to a can't-drop hover clears the stale destination", () => {
+    const api = setupApi({ data });
+    api.dispatch(dnd.dragStart("box", ["box"]));
+    // Valid: drop box INTO folder2.
+    api.hover({ parentId: "folder2", index: null }, { type: "highlight", id: "folder2" });
+    expect(api.willReceiveDrop("folder2")).toBe(true);
+    // Then slide into box's own subtree, where the drop is invalid.
+    api.hover({ parentId: "box", index: null }, { type: "highlight", id: "box" });
+    expect(api.willReceiveDrop("folder2")).toBe(false);
+    expect(api.dragDestinationParent).toBe(null);
+  });
+});
