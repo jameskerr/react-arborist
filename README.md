@@ -811,6 +811,10 @@ _tree_.**isFiltered** : _boolean_
 
 Returns true if the _searchTerm_ prop is not an empty string when trimmed.
 
+_tree_.**filteredCount** : _number_
+
+Returns how many nodes match the current _searchTerm_, counted across the whole tree regardless of which folders are open. Returns 0 when there is no active search. Useful for rendering a match count or a "no results" message (`isFiltered && filteredCount === 0`). Matches are determined by the same predicate as filtering, so with the default matcher a folder can count when one of its descendants matches; pass a _searchMatch_ prop to control this.
+
 _tree_.**props** : _TreeProps_
 
 Returns all the props that were passed to the _\<Tree\>_ component.

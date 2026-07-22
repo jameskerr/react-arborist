@@ -3,6 +3,7 @@ import { rootReducer } from "../state/root-reducer";
 import { actions as dnd } from "../state/dnd-slice";
 import { TreeProps } from "../types/tree-props";
 import { TreeApi } from "./tree-api";
+import { NodeApi } from "./node-api";
 
 function setupApi(props: TreeProps<any>) {
   const store = createStore(rootReducer);
@@ -143,6 +144,47 @@ describe("custom idAccessor flows through drag-and-drop onMove (#170)", () => {
     expect(onMove).toHaveBeenCalledWith(
       expect.objectContaining({ dragIds: ["sibling"], parentId: null, index: 0 }),
     );
+  });
+});
+
+describe("tree.filteredCount reports how many nodes match the search (#112, #256)", () => {
+  // apple/apricot sit under a fruit folder; banana is a sibling leaf.
+  const data = [
+    { id: "fruit", children: [{ id: "apple" }, { id: "apricot" }] },
+    { id: "banana" },
+  ];
+  // Matches a node by its own id only, so folders never count just because a
+  // child matched — isolating "true match" from "ancestor kept for structure".
+  const matchById = (node: NodeApi<any>, term: string) => node.id.includes(term);
+
+  test("is 0 when there is no active search term", () => {
+    expect(setupApi({ data }).filteredCount).toBe(0);
+    // Whitespace-only terms are not a real search, matching isFiltered.
+    expect(setupApi({ data, searchTerm: "   " }).filteredCount).toBe(0);
+  });
+
+  test("counts only matching nodes, not the ancestors kept for structure", () => {
+    // "apple" and "apricot" match "ap"; the "fruit" parent is shown to keep the
+    // tree intact but is not itself a match under an id-only predicate.
+    const api = setupApi({ data, searchTerm: "ap", searchMatch: matchById });
+    expect(api.filteredCount).toBe(2);
+  });
+
+  test("counts matches even inside collapsed folders", () => {
+    // filteredCount walks the whole tree, so open/closed state doesn't change it.
+    const api = setupApi({ data, searchTerm: "apple", searchMatch: matchById });
+    api.close("fruit");
+    expect(api.filteredCount).toBe(1);
+  });
+
+  test("is 0 when the search term matches nothing", () => {
+    expect(setupApi({ data, searchTerm: "zzz" }).filteredCount).toBe(0);
+  });
+
+  test("stays consistent with the default matcher, which also matches a folder whose descendant matches", () => {
+    // The default matcher stringifies each node's whole data object, children
+    // included, so "fruit" counts alongside "apple" and "apricot" for "ap".
+    expect(setupApi({ data, searchTerm: "ap" }).filteredCount).toBe(3);
   });
 });
 

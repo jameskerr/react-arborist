@@ -28,6 +28,10 @@ export class TreeApi<T> {
   static editPromise: null | ((args: EditResult) => void);
   root: NodeApi<T>;
   visibleNodes: NodeApi<T>[];
+  /* Number of nodes matching the current searchTerm (0 when not filtered).
+     Computed alongside visibleNodes so reading it never re-traverses the tree.
+     See the filteredCount getter for the consumer-facing contract. */
+  private matchCount: number = 0;
   visibleStartIndex: number = 0;
   visibleStopIndex: number = 0;
   idToIndex: { [id: string]: number };
@@ -42,7 +46,9 @@ export class TreeApi<T> {
   ) {
     /* Changes here must also be made in update() */
     this.root = createRoot<T>(this);
-    this.visibleNodes = createList<T>(this);
+    const { list: visibleNodes, matchCount } = createList<T>(this);
+    this.visibleNodes = visibleNodes;
+    this.matchCount = matchCount;
     this.idToIndex = createIndex(this.visibleNodes);
   }
 
@@ -50,7 +56,9 @@ export class TreeApi<T> {
   update(props: TreeProps<T>) {
     this.props = props;
     this.root = createRoot<T>(this);
-    this.visibleNodes = createList<T>(this);
+    const { list: visibleNodes, matchCount } = createList<T>(this);
+    this.visibleNodes = visibleNodes;
+    this.matchCount = matchCount;
     this.idToIndex = createIndex(this.visibleNodes);
     this.rowOffsets = null;
     /* Variable-height mode renders a VariableSizeList, which caches item
@@ -753,6 +761,15 @@ export class TreeApi<T> {
 
   get isFiltered() {
     return !!this.props.searchTerm?.trim();
+  }
+
+  /* The number of nodes matching the current search term, counted across the
+     whole tree regardless of which folders are open. Returns 0 when there is no
+     active search. Consumers use this to render match counts or a "no results"
+     message (#112, #256). The count is computed once when the visible list is
+     built (see createList), so reading it never re-traverses the tree. */
+  get filteredCount() {
+    return this.matchCount;
   }
 
   get hasFocus() {
