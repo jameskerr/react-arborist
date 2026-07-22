@@ -73,11 +73,6 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
   }, [api.props.searchTerm]);
 
   const dndProps = useDndProviderProps(treeProps, api.props.dndRootElement ?? undefined);
-  if (!dndProps) {
-    // Waiting on the dynamic import() fallback for the default HTML5 backend
-    // (pure-ESM/no-require() context).
-    return null;
-  }
 
   return (
     <TreeApiContext.Provider value={api}>

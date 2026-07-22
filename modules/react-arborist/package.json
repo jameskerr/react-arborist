@@ -24,9 +24,6 @@
     "src",
     "dist"
   ],
-  "engines": {
-    "node": ">=22"
-  },
   "sideEffects": false,
   "main": "dist/main/index.js",
   "module": "dist/module/index.js",
@@ -82,9 +79,7 @@
     "react-dnd-html5-backend": "^16",
     "react-dom": ">= 16.14"
   },
-  "peerDependenciesMeta": {
-    "react-dnd-html5-backend": {
-      "optional": true
-    }
+  "engines": {
+    "node": ">=22"
   }
 }

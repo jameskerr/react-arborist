@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { ConnectDragSource, useDrag } from "react-dnd";
+import { getEmptyImage } from "react-dnd-html5-backend";
 import { useTreeApi } from "../context";
 import { NodeApi } from "../interfaces/node-api";
 import { DragItem } from "../types/dnd";
 import { TreeProps } from "../types/tree-props";
-import { isErrorWithCode } from "../utils";
 import { DropResult } from "./drop-hook";
 import { actions as dnd } from "../state/dnd-slice";
 
@@ -45,31 +45,7 @@ export function useDragHook<T>(node: NodeApi<T>): ConnectDragSource {
   );
 
   useEffect(() => {
-    // Suppress the browser's ghost-image only when html5-backend is installed.
-    // Custom-backend users may omit html5-backend; the fallback is the native drag preview.
-    // A one-tick async delay is imperceptible for a cosmetic preview, so there's
-    // no need for a require() fast path here — always load via import().
-    let cancelled = false;
-    import("react-dnd-html5-backend").then(
-      (mod) => {
-        if (!cancelled) preview(mod.getEmptyImage());
-      },
-      (err: unknown) => {
-        if (cancelled) return;
-        // Not-installed is expected (optional dependency) — native drag preview
-        // is an acceptable fallback. Anything else is unexpected and shouldn't
-        // be swallowed silently. Rethrow outside the promise chain so React
-        // (and the runtime) see a real throw instead of an unhandled rejection.
-        if (!isErrorWithCode(err, "MODULE_NOT_FOUND") && !isErrorWithCode(err, "ERR_MODULE_NOT_FOUND")) {
-          queueMicrotask(() => {
-            if (!cancelled) throw err;
-          });
-        }
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
+    preview(getEmptyImage());
   }, [preview]);
 
   return ref;

@@ -13,5 +13,6 @@ This fixes a global singleton conflict (#319) where apps that also used react-dn
 ended up with two independent copies of the library, causing drag-and-drop to silently
 break or throw "Cannot have two HTML5 backends at the same time."
 
-`react-dnd-html5-backend` is optional when a custom `dndBackend` or `dndManager` prop
-is provided. Requires react-dnd **v16** (`^16`) and Node.js **≥ 22**.
+Requires react-dnd **v16** (`^16`), `react-dnd-html5-backend` **v16** (`^16`), and
+Node.js **≥ 22**. Both peers are required (html5-backend is tree-shaken when you
+pass your own `dndBackend` / `dndManager`).

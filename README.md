@@ -26,7 +26,8 @@ Here is a Gmail sidebar clone built with react-arborist.
 
 ## Installation
 
-react-arborist requires `react-dnd` as a peer dependency. Install both together:
+react-arborist requires `react-dnd` and `react-dnd-html5-backend` as peer
+dependencies. Install them together:
 
 ```bash
 npm install react-arborist react-dnd react-dnd-html5-backend
@@ -35,9 +36,6 @@ npm install react-arborist react-dnd react-dnd-html5-backend
 ```bash
 yarn add react-arborist react-dnd react-dnd-html5-backend
 ```
-
-`react-dnd-html5-backend` is optional if you supply your own backend or manager via the
-`dndBackend` / `dndManager` props (see [react-dnd compatibility](#react-dnd-compatibility) below).
 
 ## Examples
 
@@ -433,19 +431,10 @@ import { TouchBackend } from "react-dnd-touch-backend";
 <Tree data={data} dndBackend={TouchBackend}>{Node}</Tree>
 ```
 
-Passing `dndBackend` or `dndManager` explicitly opts out of the default
-`react-dnd-html5-backend` auto-loading described below.
-
-### How the default backend is loaded
-
-When neither `dndBackend` nor `dndManager` is provided, `<Tree>` auto-loads
-`react-dnd-html5-backend` for you. Dynamic `import()` is the default loading
-path — it works in Node, bundlers, and pure-ESM runtimes alike. As a fast
-path, `require()` is tried first wherever it's available (Node, bundlers,
-Jest), so the common case gets the backend synchronously with no async delay;
-`import()` only kicks in when `require()` isn't available or the installed
-build is ESM-only. In that fallback case, `<Tree>` renders nothing for one
-tick while the backend loads.
+Passing `dndBackend` or `dndManager` opts out of the default `HTML5Backend`.
+Custom-backend / `dndManager` users still need `react-dnd-html5-backend`
+installed as a peer (it's small and tree-shaken from the runtime bundle when
+unused).
 
 ### react-dnd v16 and Jest
 
