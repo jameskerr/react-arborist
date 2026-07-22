@@ -3,7 +3,6 @@ import { useTreeApi } from "../context";
 import { DragItem } from "../types/dnd";
 import { computeDrop } from "./compute-drop";
 import { DropResult } from "./drop-hook";
-import { actions as dnd } from "../state/dnd-slice";
 
 export function useOuterDrop() {
   const tree = useTreeApi();
@@ -28,13 +27,7 @@ export function useOuterDrop() {
           prevNode: tree.visibleNodes[tree.visibleNodes.length - 1],
           nextNode: null,
         });
-        if (drop) tree.dispatch(dnd.hovering(drop.parentId, drop.index));
-
-        if (m.canDrop()) {
-          if (cursor) tree.showCursor(cursor);
-        } else {
-          tree.hideCursor();
-        }
+        tree.hover(drop, cursor);
       },
       drop: (_item, m) => {
         if (!m.isOver({ shallow: true })) return null;

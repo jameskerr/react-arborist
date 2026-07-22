@@ -18,6 +18,7 @@ import { actions as dnd } from "../state/dnd-slice";
 import { DefaultDragPreview } from "../components/default-drag-preview";
 import { DefaultContainer } from "../components/default-container";
 import { Cursor } from "../dnd/compute-drop";
+import type { DropResult } from "../dnd/drop-hook";
 import { Store } from "redux";
 import { createList } from "../data/create-list";
 import { createIndex } from "../data/create-index";
@@ -570,6 +571,25 @@ export class TreeApi<T> {
       return !isDisabled;
     } else {
       return true;
+    }
+  }
+
+  /* Called by the drop hooks on every hover. Records the computed target for
+     the drop guard (canDrop() and drop() read state.dnd.parentId), then — only
+     when that target is actually droppable — surfaces it to consumers
+     (willReceiveDrop, dragDestinationParent) and shows the cursor. When it
+     isn't droppable, the consumer-facing destination and the cursor are both
+     cleared so they never disagree with canDrop() (#247); the guard still sees
+     the real target, so releasing over an invalid spot is rejected rather than
+     falling back to a root drop. */
+  hover(drop: DropResult | null, cursor: Cursor | null) {
+    if (drop) this.dispatch(dnd.hovering(drop.parentId, drop.index));
+    if (drop && this.canDrop()) {
+      this.dispatch(dnd.setDestination(drop.parentId, drop.index));
+      if (cursor) this.showCursor(cursor);
+    } else {
+      this.dispatch(dnd.setDestination(null, null));
+      this.hideCursor();
     }
   }
 

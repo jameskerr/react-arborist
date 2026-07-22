@@ -25,6 +25,12 @@ export const actions = {
   hovering(parentId: string | null, index: number | null) {
     return { type: "DND_HOVERING" as const, parentId, index };
   },
+  /* The consumer-facing destination (willReceiveDrop / dragDestinationParent).
+     Dispatched by tree.hover() only when the target is actually droppable, so
+     it never points somewhere canDrop()/the cursor forbids (#247). */
+  setDestination(parentId: string | null, index: number | null) {
+    return { type: "DND_DESTINATION" as const, parentId, index };
+  },
 };
 
 /* Reducer */
