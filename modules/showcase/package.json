@@ -11,15 +11,13 @@
   },
   "dependencies": {
     "clsx": "^2.0.0",
-    "nanoid": "^5.0.4",
     "next": "^15.5.16",
     "react": "^18.2.0",
     "react-arborist": "workspace:*",
-    "react-dnd": "^14.0.3",
-    "react-dnd-html5-backend": "^14.0.3",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.2.0",
     "react-icons": "^4.12.0",
-    "tree-model-improved": "^2.0.1",
     "use-resize-observer": "^9.1.0"
   },
   "devDependencies": {

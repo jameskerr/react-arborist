@@ -28,18 +28,28 @@
   "main": "dist/main/index.js",
   "module": "dist/module/index.js",
   "types": "dist/module/index.d.ts",
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./dist/main/index.d.ts",
+        "default": "./dist/main/index.js"
+      },
+      "import": {
+        "types": "./dist/module/index.d.ts",
+        "default": "./dist/module/index.js"
+      }
+    }
+  },
   "scripts": {
     "build:cjs": "tsc --outDir dist/main",
-    "build:es": "tsc --outDir dist/module --module es2022 --moduleResolution node",
+    "build:es": "tsc --outDir dist/module --module esnext --moduleResolution bundler && node scripts/fix-esm-extensions.mjs dist/module",
     "build": "npm-run-all clean -p 'build:**'",
     "clean": "rimraf dist",
     "prepack": "yarn build",
     "test": "jest",
-    "watch": "yarn build:es --watch"
+    "watch": "tsc --outDir dist/module --module esnext --moduleResolution bundler --watch"
   },
   "dependencies": {
-    "react-dnd": "^14.0.3",
-    "react-dnd-html5-backend": "^14.0.3",
     "react-window": "^1.8.11",
     "redux": "^5.0.0",
     "use-sync-external-store": "^1.2.0"
@@ -56,6 +66,8 @@
     "jest-environment-jsdom": "^29.7.0",
     "npm-run-all": "^4.1.5",
     "react": "^18.2.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.2.0",
     "rimraf": "^5.0.5",
     "ts-jest": "^29.1.1",
@@ -63,6 +75,11 @@
   },
   "peerDependencies": {
     "react": ">= 16.14",
+    "react-dnd": "^16",
+    "react-dnd-html5-backend": "^16",
     "react-dom": ">= 16.14"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
