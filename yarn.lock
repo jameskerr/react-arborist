@@ -8744,9 +8744,6 @@ __metadata:
     react-dnd: ^16
     react-dnd-html5-backend: ^16
     react-dom: ">= 16.14"
-  peerDependenciesMeta:
-    react-dnd-html5-backend:
-      optional: true
   languageName: unknown
   linkType: soft
 
