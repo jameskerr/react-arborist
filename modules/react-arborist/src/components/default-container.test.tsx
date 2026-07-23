@@ -120,3 +120,48 @@ test("disableDeselectOnClick keeps the selection when empty space is clicked (#2
   await click(ref.current!.listEl.current!);
   expect(a.getAttribute("aria-selected")).toBe("true");
 });
+
+/* #257: an <input> rendered inside the tree (e.g. in a modal) must still
+   receive Space keystrokes. The container's keydown handler calls
+   preventDefault on Space to toggle/select, which would otherwise swallow the
+   character as the event bubbles up from the nested input. */
+test("does not preventDefault Space typed into a nested input (#257)", () => {
+  render(
+    <Tree<Datum> data={data} openByDefault>
+      {() => (
+        <div>
+          <input aria-label="modal-input" />
+        </div>
+      )}
+    </Tree>,
+  );
+  const [input] = screen.getAllByLabelText("modal-input");
+
+  const notPrevented = fireEvent.keyDown(input, { key: " ", code: "Space" });
+  // fireEvent returns false when a listener called preventDefault.
+  expect(notPrevented).toBe(true);
+});
+
+test("does not preventDefault Space typed into a nested contenteditable (#257)", () => {
+  render(
+    <Tree<Datum> data={data} openByDefault>
+      {() => (
+        <div>
+          <div aria-label="editable" contentEditable suppressContentEditableWarning />
+        </div>
+      )}
+    </Tree>,
+  );
+  const [editable] = screen.getAllByLabelText("editable");
+
+  const notPrevented = fireEvent.keyDown(editable, { key: " ", code: "Space" });
+  expect(notPrevented).toBe(true);
+});
+
+test("still calls preventDefault on Space typed on the tree container itself (#257)", () => {
+  render(<Tree<Datum> data={data} openByDefault />);
+  const tree = screen.getByRole("tree");
+
+  const notPrevented = fireEvent.keyDown(tree, { key: " ", code: "Space" });
+  expect(notPrevented).toBe(false);
+});

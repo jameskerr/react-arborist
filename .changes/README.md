@@ -16,7 +16,6 @@ Create `.changes/<short-slug>.md` (the slug is yours to choose; e.g.
 ```markdown
 ---
 type: fix
-pr: 303
 ---
 Mouse multi-selection now responds to Ctrl+Click and Ctrl+A on Windows/Linux,
 in addition to the existing Cmd (Meta) shortcuts on macOS.
@@ -27,11 +26,20 @@ in addition to the existing Cmd (Meta) shortcuts on macOS.
 | Field    | Required | Meaning                                                                 |
 | -------- | -------- | ----------------------------------------------------------------------- |
 | `type`   | yes      | `breaking`, `feature`, or `fix`. Picks the changelog subsection.        |
-| `pr`     | yes      | This PR's number. Rendered as the trailing `(#NNN)`.                    |
+| `pr`     | no       | Override the trailing `(#NNN)`. Normally omitted — see below.           |
 | `credit` | no       | An earlier PR this supersedes. Rendered as `(#NNN, originally #MMM)`.   |
 
 The body (everything after the closing `---`) is the changelog bullet text and
 may span multiple lines.
+
+### The PR number is derived, not written
+
+You don't set `pr`. A PR's number isn't known until the PR exists, but the
+changeset ships inside that PR — so at release time `bin/release.mjs` finds the
+commit that added each changeset file and asks GitHub which PR it belongs to,
+rendering that as the trailing `(#NNN)`. Set `pr:` only to override this (e.g.
+a changeset committed straight to `main`, which has no PR to find). Mention the
+_issue_ being fixed in the body text, not here.
 
 ### How `type` maps to the release
 

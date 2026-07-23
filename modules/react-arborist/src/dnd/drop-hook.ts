@@ -4,7 +4,6 @@ import { useTreeApi } from "../context";
 import { NodeApi } from "../interfaces/node-api";
 import { DragItem } from "../types/dnd";
 import { computeDrop } from "./compute-drop";
-import { actions as dnd } from "../state/dnd-slice";
 
 export type DropResult = {
   parentId: string | null;
@@ -31,13 +30,7 @@ export function useDropHook(
           prevNode: node.prev,
           nextNode: node.next,
         });
-        if (drop) tree.dispatch(dnd.hovering(drop.parentId, drop.index));
-
-        if (m.canDrop()) {
-          if (cursor) tree.showCursor(cursor);
-        } else {
-          tree.hideCursor();
-        }
+        tree.hover(drop, cursor);
       },
       drop: (_, m) => {
         if (!m.canDrop()) return null;

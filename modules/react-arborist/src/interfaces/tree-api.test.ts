@@ -41,9 +41,7 @@ describe("tree.drop() fires onMove (#313)", () => {
     api.dispatch(dnd.dragStart("child", ["child"]));
     api.dispatch(dnd.hovering("folder", null));
     api.drop();
-    expect(onMove).toHaveBeenCalledWith(
-      expect.objectContaining({ parentId: "folder", index: 0 }),
-    );
+    expect(onMove).toHaveBeenCalledWith(expect.objectContaining({ parentId: "folder", index: 0 }));
   });
 });
 
@@ -68,9 +66,7 @@ describe("custom idAccessor is honored when methods receive raw data (#347)", ()
     const onDelete = jest.fn();
     const api = setupApi({ data: uuidData, idAccessor: "uuid", onDelete });
     api.delete(uuidData[0]);
-    expect(onDelete).toHaveBeenCalledWith(
-      expect.objectContaining({ ids: ["a"] }),
-    );
+    expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ ids: ["a"] }));
   });
 
   test("create() focuses the new node by its accessor-derived id", async () => {
@@ -90,6 +86,63 @@ describe("custom idAccessor is honored when methods receive raw data (#347)", ()
     });
     api.select(fnData[1]);
     expect(api.selectedIds.has("y")).toBe(true);
+  });
+
+  test("selectContiguous resolves nodes to accessor-derived ids", () => {
+    // selectContiguous feeds NodeApi lists to the selection slice, which stores
+    // ids. Those must be the accessor-derived ids, not `undefined` from a missing
+    // `.id` — guards the string-only selection slice against a custom accessor.
+    const api = setupApi({
+      data: [{ uuid: "a" }, { uuid: "b" }, { uuid: "c" }, { uuid: "d" }],
+      idAccessor: "uuid",
+    });
+    api.select("a");
+    api.selectContiguous("c");
+    expect([...api.selectedIds].sort()).toEqual(["a", "b", "c"]);
+  });
+});
+
+describe("custom idAccessor flows through drag-and-drop onMove (#170)", () => {
+  // Data keyed by `uuid` instead of `id`, with a folder to reorder into. The
+  // drag hook and computeDrop only ever see `node.id`, which createRoot derives
+  // via the accessor — so onMove should report uuid values, never `undefined`.
+  const uuidData = [{ uuid: "folder", children: [{ uuid: "child" }] }, { uuid: "sibling" }];
+
+  test("dropping onto a folder reports accessor-derived dragIds and parentId", () => {
+    const onMove = jest.fn();
+    const api = setupApi({ data: uuidData, idAccessor: "uuid", onMove });
+    const [folder, sibling] = api.root.children!;
+    // Sanity: node ids come from the accessor, not a missing `.id`.
+    expect([folder.id, sibling.id]).toEqual(["folder", "sibling"]);
+
+    // Drag "sibling" onto the folder, exactly as the drag hook + computeDrop do:
+    // both feed `node.id` into the dnd state that tree.drop() reads back.
+    api.dispatch(dnd.dragStart(sibling.id, [sibling.id]));
+    api.dispatch(dnd.hovering(folder.id, null));
+    api.drop();
+
+    expect(onMove).toHaveBeenCalledTimes(1);
+    const args = onMove.mock.calls[0][0];
+    expect(args).toEqual(
+      expect.objectContaining({ dragIds: ["sibling"], parentId: "folder", index: 0 }),
+    );
+    expect(args.parentNode?.id).toBe("folder");
+  });
+
+  test("reordering at the root reports accessor-derived ids with parentId null", () => {
+    const onMove = jest.fn();
+    const api = setupApi({ data: uuidData, idAccessor: "uuid", onMove });
+    const sibling = api.root.children![1];
+
+    // Reorder "sibling" above "folder" at the root; computeDrop reports the root
+    // id, which tree.drop() maps back to null.
+    api.dispatch(dnd.dragStart(sibling.id, [sibling.id]));
+    api.dispatch(dnd.hovering(api.root.id, 0));
+    api.drop();
+
+    expect(onMove).toHaveBeenCalledWith(
+      expect.objectContaining({ dragIds: ["sibling"], parentId: null, index: 0 }),
+    );
   });
 });
 
@@ -283,5 +336,63 @@ describe("scrollToOffset / scrollOffset set and read the vertical position (#194
   test("scrollOffset is 0 before the list element mounts", () => {
     const { api } = setup();
     expect(api.scrollOffset).toBe(0);
+  });
+});
+
+describe("tree.hover() keeps the destination consistent with canDrop (#247)", () => {
+  // box(0) > slider(1), folder2(0) > child2(1)
+  const data = [
+    { id: "box", children: [{ id: "slider" }] },
+    { id: "folder2", children: [{ id: "child2" }] },
+  ];
+
+  test("a droppable line hover records the destination and shows the cursor", () => {
+    const api = setupApi({ data });
+    api.dispatch(dnd.dragStart("slider", ["slider"]));
+    // Drop slider as a sibling at the root — a valid line drop.
+    api.hover({ parentId: null, index: 2 }, { type: "line", index: 2, level: 0 });
+    expect(api.canDrop()).toBe(true);
+    expect(api.state.nodes.drag.destinationIndex).toBe(2);
+    expect(api.state.dnd.cursor).toEqual({ type: "line", index: 2, level: 0 });
+  });
+
+  test("a droppable folder hover highlights it via willReceiveDrop", () => {
+    const api = setupApi({ data });
+    api.dispatch(dnd.dragStart("slider", ["slider"]));
+    // Drop slider INTO folder2 (index null → highlight).
+    api.hover({ parentId: "folder2", index: null }, { type: "highlight", id: "folder2" });
+    expect(api.canDrop()).toBe(true);
+    expect(api.willReceiveDrop("folder2")).toBe(true);
+    expect(api.dragDestinationParent?.id).toBe("folder2");
+    expect(api.state.dnd.cursor).toEqual({ type: "highlight", id: "folder2" });
+  });
+
+  test("a can't-drop hover records no destination and hides the cursor", () => {
+    const api = setupApi({ data });
+    // A folder can't be dropped into its own subtree.
+    api.dispatch(dnd.dragStart("box", ["box"]));
+    api.hover({ parentId: "box", index: null }, { type: "highlight", id: "box" });
+
+    expect(api.canDrop()).toBe(false);
+    // The consumer-facing destination and cursor all agree: "no drop here".
+    expect(api.willReceiveDrop("box")).toBe(false);
+    expect(api.dragDestinationParent).toBe(null);
+    expect(api.state.nodes.drag.destinationParentId).toBe(null);
+    expect(api.state.dnd.cursor).toEqual({ type: "none" });
+    // But the drop guard still sees the real target, so a release is rejected
+    // rather than falling back to a root drop.
+    expect(api.state.dnd.parentId).toBe("box");
+  });
+
+  test("moving from a droppable to a can't-drop hover clears the stale destination", () => {
+    const api = setupApi({ data });
+    api.dispatch(dnd.dragStart("box", ["box"]));
+    // Valid: drop box INTO folder2.
+    api.hover({ parentId: "folder2", index: null }, { type: "highlight", id: "folder2" });
+    expect(api.willReceiveDrop("folder2")).toBe(true);
+    // Then slide into box's own subtree, where the drop is invalid.
+    api.hover({ parentId: "box", index: null }, { type: "highlight", id: "box" });
+    expect(api.willReceiveDrop("folder2")).toBe(false);
+    expect(api.dragDestinationParent).toBe(null);
   });
 });

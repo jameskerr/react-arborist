@@ -26,7 +26,7 @@ Other notable files:
 
 ## Tooling
 
-- Node: pinned by `.node-version` at the repo root (currently `24.12.0`); use `fnm` (or any tool that reads `.node-version`) to match locally. Note that CI's publish workflow runs on Node `20.x` — kept separate because the published package needs to load on older Node.
+- Node: pinned by `.node-version` at the repo root (currently `24.12.0`); use `fnm` (or any tool that reads `.node-version`) to match locally — that's enough for everyday build/test. CI's publish workflow (`.github/workflows/publish.yml`) resolves Node via the range `^24.15.0` instead, because it installs `npm@12` for OIDC Trusted Publishing and that npm needs Node `>=24.15.0`; the extra floor only matters when running the publish steps, not for local dev. (The Node version that runs `npm publish` doesn't affect what Node versions the package loads on — that's set by the build target.)
 - Package manager: Yarn 4.0.2 (`packageManager` field in root `package.json`).
 - Lint: `oxlint` (`yarn lint`, `yarn lint:fix`).
 - Format: `oxfmt` (`yarn fmt`, `yarn fmt:check`).
@@ -90,7 +90,7 @@ Agents should **not** run `yarn release` themselves — it pushes tags, mutates 
 Create `.changes/<short-slug>.md` (slug is free-form; name it after the change, e.g. `313-drop-bottom-of-list.md`). `.changes/README.md` has the full format; the parts that trip agents up:
 
 - **`type`** (required): one of `breaking`, `feature`, `fix`. This both files the entry under the matching `CHANGELOG.md` heading and sets the release bump (`breaking` → major, `feature` → minor, `fix` → patch; the release takes the largest across all pending entries).
-- **`pr`** (required): *this PR's own* number, rendered as the trailing `(#NNN)`. You can't know it until the PR exists, so the order is: write the changeset with your best-guess number, open the PR, then read the real number from `gh pr view` and correct the field in a follow-up commit if the guess was wrong. Never leave an unverified number.
+- **`pr`** (optional, normally omitted): the trailing `(#NNN)`. Don't set it — you can't know a PR's number until the PR exists, and you don't need to. At release time `bin/release.mjs` finds the commit that added the changeset file and asks GitHub (`gh api .../commits/{sha}/pulls`) which PR it belongs to, filling the number in automatically. Set `pr:` only to override the lookup, e.g. for a changeset committed straight to `main` with no PR to find (the release fails with a clear message telling you to add it in that case).
 - **`credit`** (optional): the number of an *earlier PR this one supersedes*, rendered as `(#NNN, originally #MMM)`. The repo has a long tail of stale PRs; use `credit` to attribute the original author when you carry someone else's PR across the line. **It is not for the issue you're fixing** — an issue number here renders as if it were a superseded PR, which is wrong. Reference the fixed issue in the body text instead.
 - **Body** (everything after the closing `---`): the changelog bullet text. Mention the issue being fixed here (e.g. "... again (issue #313).").
 

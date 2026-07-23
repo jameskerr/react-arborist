@@ -1,3 +1,63 @@
+# Version 3.15.1
+
+**Fixes**
+
+- Fixed the drag destination (`willReceiveDrop`, `dragDestinationParent`) reporting
+a parent the cursor forbids. The hover handlers recorded a destination on every
+hover — even where `canDrop()` was false — so dragging a folder toward its own
+subtree left the reported parent pointing at that folder while the cursor said
+"no drop." The consumer-facing destination and the cursor are now both gated on
+`canDrop()` and stay consistent; releasing over an invalid spot is still rejected
+rather than falling back to a root drop (the parentId half of issue #247). (#382)
+
+# Version 3.15.0
+
+**Features**
+
+- Added an `adjustMoveIndex` helper for custom `onMove` handlers. `onMove`'s
+`index` is a pre-removal slot (it counts the destination rows as displayed,
+with the dragged rows still in place), which trips up handlers that splice the
+dragged rows out before inserting them — dragging a row just below itself would
+jump it past its neighbor. `adjustMoveIndex({ index, dragIds, siblingIds })`
+returns the index to insert at after removal. `SimpleTree`/`useSimpleTree` are
+unaffected; they already insert before removing (issue #247). (#381)
+
+# Version 3.14.0
+
+**Features**
+
+- Dragging into the gap between an open folder and its first child now supports a
+horizontal slide, matching how items and closed folders already behave. Sliding
+right still drops the node as the folder's first child (the previous behavior);
+sliding left drops it as a sibling — or grandsibling — of the folder, bounded by
+the folder's ancestor chain. `computeDrop` previously hard-coded this gap to
+"first child," so the level was pinned and the slide never engaged (issue #330). (#378)
+
+# Version 3.13.2
+
+**Fixes**
+
+- Inputs rendered inside the tree (e.g. an `<input>` in a modal) can now receive
+Space characters again. The tree's keyboard handler no longer intercepts
+keystrokes that originate from a nested form field or contenteditable element. (#377)
+
+# Version 3.13.1
+
+**Fixes**
+
+- `NodeApi` action methods (`toggle`, `select`, `activate`, `focus`, `edit`, etc.)
+are now bound to the node, so passing them as callbacks — e.g.
+`<Toggle onClick={node.toggle} />` — no longer throws "Cannot read properties of
+undefined (reading 'tree')" when invoked detached. (#374)
+
+# Version 3.13.0
+
+**Features**
+
+- `useSimpleTree` now accepts an `onChange` option, called with the full data
+array after any internal move/create/rename/delete — a single place to persist
+the whole tree without wiring up each handler yourself. (#373)
+
 # Version 3.12.0
 
 **Features**

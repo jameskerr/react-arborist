@@ -1,0 +1,16 @@
+# Netlify build configuration for the react-arborist showcase (the demo site).
+#
+# The showcase resolves `react-arborist` through the monorepo workspace, which
+# is served from the library's built `dist/` output. That `dist/` is gitignored
+# (not committed), so every deploy must rebuild the library *before* building
+# the showcase. Otherwise the demo can be built against a stale, cached copy of
+# the library and ship an old version of react-arborist (#314).
+#
+# Versioning the build here (rather than only in the Netlify dashboard) keeps it
+# reviewable and guarantees the lib is rebuilt on every deploy. Note: for this
+# file to take effect, the site's "Base directory" in Netlify must be the repo
+# root (leave it blank) so Netlify reads this netlify.toml.
+
+[build]
+  command = "yarn build-lib && yarn workspace showcase build"
+  publish = "modules/showcase/out"
