@@ -1,6 +1,5 @@
 ---
 type: breaking
-pr: 371
 ---
 `react-dnd` and `react-dnd-html5-backend` are now **peer dependencies** instead of
 bundled dependencies. Install them alongside react-arborist:
