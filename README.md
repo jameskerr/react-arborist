@@ -164,7 +164,7 @@ Pass the destination parent's current child ids in display order (for a root-lev
 
 ### Tree Filtering
 
-Providing a non-empty _searchTerm_ will only show nodes that match. If a child matches, all its parents are shown too, so the tree keeps its structure. Internal nodes are opened when filtering. You can provide your own _searchMatch_ function, or use the default, which searches the values of each node's own data — not its children's.
+Providing a non-empty _searchTerm_ will only show nodes that match. If a child matches, all its parents are shown too, so the tree keeps its structure. Internal nodes are opened when filtering. You can provide your own _searchMatch_ function, or use the default, which searches a node's own data, excluding its children. The default is deliberately loose: it JSON-stringifies the data's values and looks for the term anywhere in the result, so a term can also hit the keys of a nested object. Pass _searchMatch_ when you want to match specific fields.
 
 ```jsx
 function App() {
