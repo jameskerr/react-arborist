@@ -164,7 +164,7 @@ Pass the destination parent's current child ids in display order (for a root-lev
 
 ### Tree Filtering
 
-Providing a non-empty _searchTerm_ will only show nodes that match. If a child matches, all its parents also match. Internal nodes are opened when filtering. You can provide your own _searchMatch_ function, or use the default.
+Providing a non-empty _searchTerm_ will only show nodes that match. If a child matches, all its parents are shown too, so the tree keeps its structure. Internal nodes are opened when filtering. You can provide your own _searchMatch_ function, or use the default, which searches the values of each node's own data — not its children's.
 
 ```jsx
 function App() {
@@ -813,7 +813,7 @@ Returns true if the _searchTerm_ prop is not an empty string when trimmed.
 
 _tree_.**filteredCount** : _number_
 
-Returns how many nodes match the current _searchTerm_, counted across the whole tree regardless of which folders are open. Returns 0 when there is no active search. Useful for rendering a match count or a "no results" message (`isFiltered && filteredCount === 0`). Matches are determined by the same predicate as filtering, so with the default matcher a folder can count when one of its descendants matches; pass a _searchMatch_ prop to control this.
+Returns how many nodes match the current _searchTerm_, counted across the whole tree regardless of which folders are open. Returns 0 when there is no active search. Useful for rendering a match count or a "no results" message (`isFiltered && filteredCount === 0`). Ancestors that appear in the filtered list only to keep the tree's structure intact are not counted. Matches are determined by the same predicate as filtering, so a _searchMatch_ prop changes what counts.
 
 _tree_.**props** : _TreeProps_
 

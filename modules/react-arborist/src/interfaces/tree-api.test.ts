@@ -149,10 +149,7 @@ describe("custom idAccessor flows through drag-and-drop onMove (#170)", () => {
 
 describe("tree.filteredCount reports how many nodes match the search (#112, #256)", () => {
   // apple/apricot sit under a fruit folder; banana is a sibling leaf.
-  const data = [
-    { id: "fruit", children: [{ id: "apple" }, { id: "apricot" }] },
-    { id: "banana" },
-  ];
+  const data = [{ id: "fruit", children: [{ id: "apple" }, { id: "apricot" }] }, { id: "banana" }];
   // Matches a node by its own id only, so folders never count just because a
   // child matched — isolating "true match" from "ancestor kept for structure".
   const matchById = (node: NodeApi<any>, term: string) => node.id.includes(term);
@@ -174,6 +171,10 @@ describe("tree.filteredCount reports how many nodes match the search (#112, #256
     // filteredCount walks the whole tree, so open/closed state doesn't change it.
     const api = setupApi({ data, searchTerm: "apple", searchMatch: matchById });
     api.close("fruit");
+    // close() only redraws; the provider rebuilds the list on open-state change,
+    // so update() here is what actually re-counts against the collapsed tree.
+    api.update(api.props);
+    expect(api.visibleNodes.map((n) => n.id)).toEqual(["fruit"]);
     expect(api.filteredCount).toBe(1);
   });
 
@@ -181,10 +182,17 @@ describe("tree.filteredCount reports how many nodes match the search (#112, #256
     expect(setupApi({ data, searchTerm: "zzz" }).filteredCount).toBe(0);
   });
 
-  test("stays consistent with the default matcher, which also matches a folder whose descendant matches", () => {
-    // The default matcher stringifies each node's whole data object, children
-    // included, so "fruit" counts alongside "apple" and "apricot" for "ap".
-    expect(setupApi({ data, searchTerm: "ap" }).filteredCount).toBe(3);
+  test("does not count ancestors under the default matcher", () => {
+    // The default matcher searches a node's own fields, skipping its children,
+    // so "fruit" is shown to keep the tree intact but doesn't inflate the count.
+    const api = setupApi({ data, searchTerm: "ap" });
+    expect(api.visibleNodes.map((n) => n.id)).toEqual(["fruit", "apple", "apricot"]);
+    expect(api.filteredCount).toBe(2);
+  });
+
+  test("the default matcher ignores keys nested in the children data", () => {
+    // Stringifying children leaked their keys, so every folder matched "id".
+    expect(setupApi({ data, searchTerm: "id" }).filteredCount).toBe(0);
   });
 });
 
