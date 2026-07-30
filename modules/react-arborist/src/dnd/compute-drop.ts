@@ -26,9 +26,10 @@ function getNodesAroundCursor(
   hover: HoverData,
 ): [NodeApi | null, NodeApi | null] {
   if (!node) {
-    // We're hovering over the empty part of the list, not over an item,
-    // Put the cursor below the last item which is "prev"
-    return [prev, null];
+    // We're hovering over an empty part of the list. Outer drop targets pass
+    // the nearest visible nodes so top padding can resolve before the first
+    // item while the empty area below the rows still resolves after the last.
+    return [prev, next];
   }
   if (node.isInternal) {
     if (hover.atTop) {
@@ -49,11 +50,13 @@ function getNodesAroundCursor(
 
 type Args = {
   element: HTMLElement;
+  initialOffset?: XYCoord | null;
   offset: XYCoord;
   indent: number;
   node: NodeApi | null;
   prevNode: NodeApi | null;
   nextNode: NodeApi | null;
+  sourceLevel?: number | null;
 };
 
 export type ComputedDrop = {
@@ -101,13 +104,33 @@ export type NoCursor = ReturnType<typeof noCursor>;
 export type HighlightCursor = ReturnType<typeof highlightCursor>;
 export type Cursor = LineCursor | NoCursor | HighlightCursor;
 
+export function isTopPaddingDrop(
+  element: HTMLElement,
+  offset: XYCoord,
+  paddingTop: number,
+  scrollOffset: number,
+): boolean {
+  const rect = element.getBoundingClientRect();
+  const visiblePadding = Math.max(0, paddingTop - scrollOffset);
+  return visiblePadding > 0 && offset.y < rect.top + visiblePadding;
+}
+
 /**
  * This is the most complex, tricky function in the whole repo.
  */
 export function computeDrop(args: Args): ComputedDrop {
   const hover = measureHover(args.element, args.offset);
   const indent = args.indent;
-  const hoverLevel = Math.round(Math.max(0, hover.x - indent) / indent);
+  /*
+   * A custom node renderer may expose its whole row as the drag source. In that
+   * case the absolute pointer x-position reflects where the row was grabbed,
+   * not a deliberate request to change hierarchy. Anchor the level to the
+   * dragged node and only change it after real horizontal pointer movement.
+   */
+  const hoverLevel =
+    args.initialOffset && args.sourceLevel != null
+      ? Math.round(Math.max(0, args.sourceLevel + (args.offset.x - args.initialOffset.x) / indent))
+      : Math.round(Math.max(0, hover.x - indent) / indent);
   const { node, nextNode, prevNode } = args;
   const [above, below] = getNodesAroundCursor(node, prevNode, nextNode, hover);
 

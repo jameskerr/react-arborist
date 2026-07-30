@@ -3,7 +3,7 @@ import { rootReducer } from "../state/root-reducer";
 import { ROOT_ID } from "../data/create-root";
 import { TreeProps } from "../types/tree-props";
 import { TreeApi } from "../interfaces/tree-api";
-import { computeDrop } from "./compute-drop";
+import { computeDrop, isTopPaddingDrop } from "./compute-drop";
 
 const ROW = 40; // height; top edge at y<10, middle 10..30, bottom edge y>30
 const INDENT = 24;
@@ -42,6 +42,30 @@ function hover(api: TreeApi<any>, id: string, x: number, y: number) {
   });
 }
 
+function hoverFromGrabPoint(
+  api: TreeApi<any>,
+  id: string,
+  initialX: number,
+  x: number,
+  y: number,
+  sourceLevel: number,
+) {
+  const node = api.get(id)!;
+  const element = {
+    getBoundingClientRect: () => ({ x: 0, y: 0, height: ROW }),
+  } as unknown as HTMLElement;
+  return computeDrop({
+    element,
+    initialOffset: { x: initialX, y },
+    offset: { x, y },
+    indent: api.indent,
+    node,
+    prevNode: node.prev,
+    nextNode: node.next,
+    sourceLevel,
+  });
+}
+
 const AT_TOP = 5;
 const MIDDLE = 20;
 const AT_BOTTOM = 35;
@@ -65,6 +89,54 @@ const data = [
 ];
 
 describe("computeDrop", () => {
+  test("distinguishes visible top padding from the bottom outer drop zone", () => {
+    const element = {
+      getBoundingClientRect: () => ({ top: 100 }),
+    } as HTMLElement;
+
+    expect(isTopPaddingDrop(element, { x: 20, y: 107 }, 8, 0)).toBe(true);
+    expect(isTopPaddingDrop(element, { x: 20, y: 108 }, 8, 0)).toBe(false);
+    expect(isTopPaddingDrop(element, { x: 20, y: 106 }, 8, 1)).toBe(true);
+    expect(isTopPaddingDrop(element, { x: 20, y: 107 }, 8, 1)).toBe(false);
+    expect(isTopPaddingDrop(element, { x: 20, y: 100 }, 8, 8)).toBe(false);
+  });
+
+  test("drops before the first node when the outer target supplies it as the next node", () => {
+    const api = setupApi({ data });
+    const first = api.get("a")!;
+    const result = computeDrop({
+      element: {
+        getBoundingClientRect: () => ({ height: 200, x: 0, y: 0 }),
+      } as HTMLElement,
+      indent: api.indent,
+      nextNode: first,
+      node: null,
+      offset: { x: 20, y: 70 },
+      prevNode: null,
+    });
+
+    expect(result.drop).toEqual({ parentId: ROOT_ID, index: 0 });
+    expect(result.cursor).toEqual({ type: "line", index: 0, level: 0 });
+  });
+
+  describe("whole-row drag sources", () => {
+    test("uses horizontal movement from the grab point instead of its absolute x-position", () => {
+      const api = setupApi({ data });
+
+      const verticalOnly = hoverFromGrabPoint(api, "F", 300, 300, AT_BOTTOM, 0);
+      expect(verticalOnly.drop).toEqual({ parentId: ROOT_ID, index: 2 });
+      expect(verticalOnly.cursor).toEqual({ type: "line", index: 2, level: 0 });
+
+      const nestedVerticalOnly = hoverFromGrabPoint(api, "G", 300, 300, AT_BOTTOM, 1);
+      expect(nestedVerticalOnly.drop).toEqual({ parentId: "F", index: 1 });
+      expect(nestedVerticalOnly.cursor).toEqual({ type: "line", index: 3, level: 1 });
+
+      const deliberateIndent = hoverFromGrabPoint(api, "F", 300, 313, AT_BOTTOM, 0);
+      expect(deliberateIndent.drop).toEqual({ parentId: "F", index: 0 });
+      expect(deliberateIndent.cursor).toEqual({ type: "line", index: 2, level: 1 });
+    });
+  });
+
   describe("existing branches (regression net)", () => {
     test("middle of a folder drops into it and highlights the row", () => {
       const api = setupApi({ data });

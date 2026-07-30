@@ -1,7 +1,7 @@
 import { useDrop } from "react-dnd";
 import { useTreeApi } from "../context";
 import { DragItem } from "../types/dnd";
-import { computeDrop } from "./compute-drop";
+import { computeDrop, isTopPaddingDrop } from "./compute-drop";
 import { DropResult } from "./drop-hook";
 
 export function useOuterDrop() {
@@ -19,13 +19,20 @@ export function useOuterDrop() {
         if (!m.isOver({ shallow: true })) return;
         const offset = m.getClientOffset();
         if (!tree.listEl.current || !offset) return;
+        const paddingTop = tree.props.padding ?? tree.props.paddingTop ?? 0;
+        const firstNode = tree.visibleNodes[0] ?? null;
+        const hoveringTopPadding =
+          firstNode != null &&
+          isTopPaddingDrop(tree.listEl.current, offset, paddingTop, tree.scrollOffset);
         const { cursor, drop } = computeDrop({
           element: tree.listEl.current,
+          initialOffset: m.getInitialClientOffset(),
           offset: offset,
           indent: tree.indent,
           node: null,
-          prevNode: tree.visibleNodes[tree.visibleNodes.length - 1],
-          nextNode: null,
+          prevNode: hoveringTopPadding ? null : tree.visibleNodes[tree.visibleNodes.length - 1],
+          nextNode: hoveringTopPadding ? firstNode : null,
+          sourceLevel: tree.dragNode?.level,
         });
         tree.hover(drop, cursor);
       },

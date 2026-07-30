@@ -24,11 +24,13 @@ export function useDropHook(
         if (!el.current || !offset) return;
         const { cursor, drop } = computeDrop({
           element: el.current,
+          initialOffset: m.getInitialClientOffset(),
           offset: offset,
           indent: tree.indent,
           node: node,
           prevNode: node.prev,
           nextNode: node.next,
+          sourceLevel: tree.dragNode?.level,
         });
         tree.hover(drop, cursor);
       },
