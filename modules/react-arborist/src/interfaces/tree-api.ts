@@ -22,6 +22,7 @@ import type { DropResult } from "../dnd/drop-hook";
 import { Store } from "redux";
 import { createList } from "../data/create-list";
 import { createIndex } from "../data/create-index";
+import { DEFAULT_HEIGHT } from "../hooks/use-tree-height";
 
 const { safeRun } = utils;
 export class TreeApi<T> {
@@ -37,6 +38,12 @@ export class TreeApi<T> {
   idToIndex: { [id: string]: number };
   /* Memoized prefix-sum of row heights; only used for variable heights. */
   private rowOffsets: number[] | null = null;
+  /* Notified when redrawList() invalidates the row heights. */
+  private redrawListeners = new Set<() => void>();
+  /* Height resolved by the container, in pixels. Null until it renders — a
+     custom renderContainer never sets it, so the height getter falls back to
+     the prop. */
+  private pixelHeight: number | null = null;
 
   constructor(
     public store: Store<RootState, Actions>,
@@ -94,8 +101,27 @@ export class TreeApi<T> {
     return this.props.width ?? 300;
   }
 
-  get height() {
-    return this.props.height ?? 500;
+  /**
+   * The tree's height in pixels. When the height prop is a CSS value the
+   * container measures the element and reports the result here, so this is
+   * always a number the virtualized list can use. It is 0 until the first
+   * measurement lands.
+   */
+  get height(): number {
+    if (this.pixelHeight !== null) return this.pixelHeight;
+    return typeof this.props.height === "number" ? this.props.height : DEFAULT_HEIGHT;
+  }
+
+  /* Called by the container each render with the height it resolved. */
+  setPixelHeight(height: number) {
+    this.pixelHeight = height;
+  }
+
+  /** The pixel height of every visible row together, padding props included. */
+  get contentHeight(): number {
+    const top = this.props.padding ?? this.props.paddingTop ?? 0;
+    const bottom = this.props.padding ?? this.props.paddingBottom ?? 0;
+    return this.rowTopPosition(this.visibleNodes.length) + top + bottom;
   }
 
   get indent() {
@@ -150,7 +176,20 @@ export class TreeApi<T> {
     if (list && "resetAfterIndex" in list) {
       list.resetAfterIndex(Math.max(0, afterIndex));
     }
+    this.redrawListeners.forEach((listener) => listener());
   };
+
+  /**
+   * Subscribe to redrawList(). It force-updates the list alone, so anything
+   * else that renders from the row heights — the container, when the tree is
+   * sized by its content — has to hear about it. Returns an unsubscribe.
+   */
+  onRedraw(listener: () => void) {
+    this.redrawListeners.add(listener);
+    return () => {
+      this.redrawListeners.delete(listener);
+    };
+  }
 
   /** Lazily-built prefix sum where offsets[i] is the top of row i. */
   private getRowOffsets(): number[] {

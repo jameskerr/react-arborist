@@ -265,19 +265,42 @@ function App() {
 
 ### Dynamic sizing
 
-You can add a ref to it with this package [Pmndrs/react-use-measure](https://github.com/pmndrs/react-use-measure)
- 
-That hook will measure the boundaries (for instance width, height, top, left) of a view you reference. Then you pass the width and the height to the Tree.
+The _height_ prop takes a number of pixels, any CSS value, or `"auto"`. Pass a CSS
+value and the tree sizes itself with CSS, measures the result, and hands the
+pixels to the virtualized list — so a tree can fill its parent without a resize
+observer of your own.
 
-```js
-import useMeasure from "react-use-measure";
-
-const [ref, bounds] = useMeasure();
- 
-<div className="parent" ref={ref}>
-  <Tree height={bounds.height} width={bounds.width} />
+```jsx
+/* Fills the parent, and follows it when it resizes. */
+<div className="parent" style={{ height: 400 }}>
+  <Tree height="100%" width="100%" />
 </div>
 ```
+
+A percentage height only resolves when the parent has a definite height. Inside a
+flex column, that means giving the parent `flex: 1; min-height: 0`. If a tree
+renders nothing and `tree.height` reads 0, that's the reason. Any CSS value works,
+so `height="50vh"` or `height="calc(100% - 2rem)"` are fine too — as is a bare
+number in a string, `height="400"`, which is read as pixels.
+
+Pass `"auto"` to grow the tree to fit its rows, letting the page scroll instead
+of the tree. Every visible row renders in this mode, so keep it for small trees —
+or add _maxHeight_, which caps the growth and keeps the list virtualized:
+
+```jsx
+/* As tall as its rows, up to 400px. */
+<Tree height="auto" maxHeight={400} />
+
+/* As tall as its rows, or its parent, whichever is shorter. */
+<Tree height="auto" maxHeight="100%" />
+```
+
+_maxHeight_ takes pixels or a CSS value as well, and implies `height="auto"` when
+_height_ is left out. A numeric _height_ is used as-is: those trees measure
+nothing, exactly as before.
+
+Auto sizing is the work of the default container, so a tree with a custom
+_renderContainer_ still needs a pixel height.
 
 ## API Reference
 
@@ -317,10 +340,11 @@ interface TreeProps<T> {
   renderContainer?: ElementType<{}>;
 
   /* Sizes */
-  rowHeight?: number;
+  rowHeight?: number | RowHeightAccessor<T>;
   overscanCount?: number;
   width?: number | string;
-  height?: number;
+  height?: number | string;
+  maxHeight?: number | string;
   indent?: number;
   paddingTop?: number;
   paddingBottom?: number;

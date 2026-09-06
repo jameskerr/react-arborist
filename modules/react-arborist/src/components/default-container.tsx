@@ -4,6 +4,7 @@ import { focusNextElement, focusPrevElement } from "../utils";
 import { ListOuterElement } from "./list-outer-element";
 import { ListInnerElement } from "./list-inner-element";
 import { RowContainer } from "./row-container";
+import { useTreeHeight } from "../hooks/use-tree-height";
 
 let focusSearchTerm = "";
 let timeoutId: any = null;
@@ -16,14 +17,19 @@ let timeoutId: any = null;
 export function DefaultContainer() {
   useDataUpdates();
   const tree = useTreeApi();
+  /* The element carries the height prop as CSS; the list inside it gets the
+     pixel height that resolves to (tree.height). */
+  const { ref, plan } = useTreeHeight(tree);
   return (
     <div
+      ref={ref}
       role="tree"
       aria-label={tree.props["aria-label"]}
       aria-labelledby={tree.props["aria-labelledby"]}
       aria-multiselectable={!tree.props.disableMultiSelection || undefined}
       style={{
-        height: tree.height,
+        height: plan.cssHeight,
+        maxHeight: plan.cssMaxHeight,
         width: tree.width,
         minHeight: 0,
         minWidth: 0,

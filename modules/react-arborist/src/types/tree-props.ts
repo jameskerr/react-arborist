@@ -32,7 +32,13 @@ export interface TreeProps<T> {
   rowHeight?: number | RowHeightAccessor<T>;
   overscanCount?: number;
   width?: number | string;
-  height?: number;
+  /* A number is a pixel height. A CSS value ("100%", "50vh", "calc(100% - 2rem)")
+     sizes the tree element with CSS and measures the result, so the tree can fill
+     its parent. "auto" grows the tree to fit its rows; pair it with maxHeight to
+     cap the growth and keep the list virtualized. Defaults to 500. */
+  height?: number | string;
+  /* Caps the tree's height. Takes a number of pixels or a CSS value. */
+  maxHeight?: number | string;
   indent?: number;
   paddingTop?: number;
   paddingBottom?: number;

@@ -63,6 +63,19 @@ const Home: NextPage = () => {
             </div>
           </Link>
 
+          <Link href="/auto-height" legacyBehavior>
+            <div className={styles.demoCard}>
+              <div className={`${styles.demoCardImage} cities`}></div>
+              <b>Sizing</b>
+              <h2>Auto Height</h2>
+              <p>
+                In this demo, we size trees with a CSS height so they fill their parent, and with
+                height=&quot;auto&quot; so they grow to fit their rows.
+              </p>
+              <Link href="/auto-height">View Demo</Link>
+            </div>
+          </Link>
+
           <Link href="/drag-out" legacyBehavior>
             <div className={styles.demoCard}>
               <div className={`${styles.demoCardImage} cities`}></div>
