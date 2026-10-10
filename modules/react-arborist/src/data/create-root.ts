@@ -1,5 +1,5 @@
-import { NodeApi } from "../interfaces/node-api";
-import { TreeApi } from "../interfaces/tree-api";
+import { NodeApi } from "../interfaces/node-api.js";
+import { TreeApi } from "../interfaces/tree-api.js";
 
 export const ROOT_ID = "__REACT_ARBORIST_INTERNAL_ROOT__";
 

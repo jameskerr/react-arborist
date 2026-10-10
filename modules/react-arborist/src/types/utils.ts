@@ -1,5 +1,5 @@
 import { AnyAction } from "redux";
-import { NodeApi } from "../interfaces/node-api";
+import { NodeApi } from "../interfaces/node-api.js";
 
 export interface IdObj {
   id: string;

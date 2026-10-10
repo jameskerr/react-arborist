@@ -1,9 +1,9 @@
 import { RefObject } from "react";
 import { ConnectDropTarget, useDrop } from "react-dnd";
-import { useTreeApi } from "../context";
-import { NodeApi } from "../interfaces/node-api";
-import { DragItem } from "../types/dnd";
-import { computeDrop } from "./compute-drop";
+import { useTreeApi } from "../context.js";
+import { NodeApi } from "../interfaces/node-api.js";
+import { DragItem } from "../types/dnd.js";
+import { computeDrop } from "./compute-drop.js";
 
 export type DropResult = {
   parentId: string | null;

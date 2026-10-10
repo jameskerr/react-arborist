@@ -1,6 +1,6 @@
 import React from "react";
-import { useTreeApi } from "../context";
-import { DefaultContainer } from "./default-container";
+import { useTreeApi } from "../context.js";
+import { DefaultContainer } from "./default-container.js";
 
 export function TreeContainer() {
   const tree = useTreeApi();

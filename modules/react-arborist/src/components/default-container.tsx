@@ -1,9 +1,9 @@
 import { FixedSizeList, VariableSizeList } from "react-window";
-import { useDataUpdates, useTreeApi } from "../context";
-import { focusNextElement, focusPrevElement } from "../utils";
-import { ListOuterElement } from "./list-outer-element";
-import { ListInnerElement } from "./list-inner-element";
-import { RowContainer } from "./row-container";
+import { useDataUpdates, useTreeApi } from "../context.js";
+import { focusNextElement, focusPrevElement } from "../utils.js";
+import { ListOuterElement } from "./list-outer-element.js";
+import { ListInnerElement } from "./list-inner-element.js";
+import { RowContainer } from "./row-container.js";
 
 let focusSearchTerm = "";
 let timeoutId: any = null;

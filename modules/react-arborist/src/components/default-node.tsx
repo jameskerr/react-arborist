@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { NodeRendererProps } from "../types/renderers";
+import { NodeRendererProps } from "../types/renderers.js";
 
 export function DefaultNode<T>(props: NodeRendererProps<T>) {
   return (

@@ -1,5 +1,5 @@
-import { NodeApi } from "../interfaces/node-api";
-import { IdObj } from "./utils";
+import { NodeApi } from "../interfaces/node-api.js";
+import { IdObj } from "./utils.js";
 
 // Returns the newly created row data, whose id is read via idAccessor. `IdObj`
 // is kept for back-compat with handlers that return a bare `{ id }` (#347).

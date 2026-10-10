@@ -1,6 +1,6 @@
 import React from "react";
-import { TreeApi } from "./tree-api";
-import { ROOT_ID } from "../data/create-root";
+import { TreeApi } from "./tree-api.js";
+import { ROOT_ID } from "../data/create-root.js";
 
 type Params<T> = {
   id: string;

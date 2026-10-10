@@ -24,6 +24,7 @@
     "src",
     "dist"
   ],
+  "type": "module",
   "sideEffects": false,
   "main": "dist/module/index.js",
   "module": "dist/module/index.js",
@@ -36,14 +37,11 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build:es": "tsc --outDir dist/module --module esnext --moduleResolution bundler && node scripts/fix-esm-extensions.mjs dist/module",
-    "build": "npm-run-all clean -p 'build:**'",
+    "build": "rimraf dist && tsc",
     "clean": "rimraf dist",
     "prepack": "yarn build",
     "test": "jest",
-    "watch": "yarn build:es && npm-run-all -p watch:tsc watch:esm-extensions",
-    "watch:tsc": "tsc --outDir dist/module --module esnext --moduleResolution bundler --watch",
-    "watch:esm-extensions": "node scripts/fix-esm-extensions.mjs dist/module --watch"
+    "watch": "tsc --watch"
   },
   "dependencies": {
     "@types/react-window": "^1.8.8",

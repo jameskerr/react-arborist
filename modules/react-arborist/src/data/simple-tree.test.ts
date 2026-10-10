@@ -1,4 +1,4 @@
-import { SimpleTree } from "./simple-tree";
+import { SimpleTree } from "./simple-tree.js";
 
 describe("SimpleTree with default accessors", () => {
   const data = () => [

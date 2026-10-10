@@ -1,6 +1,6 @@
-import { ActionTypes } from "../types/utils";
-import { actions as dnd } from "./dnd-slice";
-import { initialState } from "./initial";
+import { ActionTypes } from "../types/utils.js";
+import { actions as dnd } from "./dnd-slice.js";
+import { initialState } from "./initial.js";
 
 /* Types */
 

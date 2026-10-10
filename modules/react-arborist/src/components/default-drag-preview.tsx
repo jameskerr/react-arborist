@@ -1,7 +1,7 @@
 import React, { CSSProperties, memo } from "react";
 import { XYCoord } from "react-dnd";
-import { useTreeApi } from "../context";
-import { DragPreviewProps } from "../types/renderers";
+import { useTreeApi } from "../context.js";
+import { DragPreviewProps } from "../types/renderers.js";
 
 const layerStyles: CSSProperties = {
   position: "fixed",

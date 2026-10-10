@@ -29,9 +29,9 @@
 import { render, screen } from "@testing-library/react";
 import { DndProvider, useDragDropManager } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { getDndProviderProps } from "../components/get-dnd-provider-props";
-import { Tree } from "../components/tree";
-import { TreeProps } from "../types/tree-props";
+import { getDndProviderProps } from "../components/get-dnd-provider-props.js";
+import { Tree } from "../components/tree.js";
+import { TreeProps } from "../types/tree-props.js";
 
 /* ------------------------------------------------------------------ */
 /* Shared fixtures                                                       */

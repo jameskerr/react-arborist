@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { ConnectDragSource, useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
-import { useTreeApi } from "../context";
-import { NodeApi } from "../interfaces/node-api";
-import { DragItem } from "../types/dnd";
-import { TreeProps } from "../types/tree-props";
-import { DropResult } from "./drop-hook";
-import { actions as dnd } from "../state/dnd-slice";
+import { useTreeApi } from "../context.js";
+import { NodeApi } from "../interfaces/node-api.js";
+import { DragItem } from "../types/dnd.js";
+import { TreeProps } from "../types/tree-props.js";
+import { DropResult } from "./drop-hook.js";
+import { actions as dnd } from "../state/dnd-slice.js";
 
 /* The react-dnd item type a row's drag source broadcasts. The dragType prop
    can be a fixed string or a per-node function; it defaults to "NODE". */

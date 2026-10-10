@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { useSimpleTree } from "./use-simple-tree";
+import { useSimpleTree } from "./use-simple-tree.js";
 
 /* onCreate has to write a new node's id (and a folder's children) under a key
    the accessors will read back. A function accessor can't be inverted to a key,

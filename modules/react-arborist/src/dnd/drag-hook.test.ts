@@ -1,5 +1,5 @@
-import { NodeApi } from "../interfaces/node-api";
-import { canDragNode, dragTypeForNode } from "./drag-hook";
+import { NodeApi } from "../interfaces/node-api.js";
+import { canDragNode, dragTypeForNode } from "./drag-hook.js";
 
 /* dragTypeForNode only reads node.data when dragType is a function, so a
    minimal stub stands in for a real NodeApi. */

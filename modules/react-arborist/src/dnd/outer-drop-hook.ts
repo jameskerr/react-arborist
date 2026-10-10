@@ -1,8 +1,8 @@
 import { useDrop } from "react-dnd";
-import { useTreeApi } from "../context";
-import { DragItem } from "../types/dnd";
-import { computeDrop } from "./compute-drop";
-import { DropResult } from "./drop-hook";
+import { useTreeApi } from "../context.js";
+import { DragItem } from "../types/dnd.js";
+import { computeDrop } from "./compute-drop.js";
+import { DropResult } from "./drop-hook.js";
 
 export function useOuterDrop() {
   const tree = useTreeApi();

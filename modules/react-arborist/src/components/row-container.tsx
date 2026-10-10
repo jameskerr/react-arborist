@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { useDataUpdates, useNodesContext, useTreeApi } from "../context";
-import { useDragHook } from "../dnd/drag-hook";
-import { useDropHook } from "../dnd/drop-hook";
-import { useFreshNode } from "../hooks/use-fresh-node";
+import { useDataUpdates, useNodesContext, useTreeApi } from "../context.js";
+import { useDragHook } from "../dnd/drag-hook.js";
+import { useDropHook } from "../dnd/drop-hook.js";
+import { useFreshNode } from "../hooks/use-fresh-node.js";
 
 type Props = {
   style: React.CSSProperties;

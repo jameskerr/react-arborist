@@ -1,5 +1,5 @@
-import { TreeProps } from "../types/tree-props";
-import { useSimpleTree } from "./use-simple-tree";
+import { TreeProps } from "../types/tree-props.js";
+import { useSimpleTree } from "./use-simple-tree.js";
 
 export function useValidatedProps<T>(props: TreeProps<T>): TreeProps<T> {
   if (props.initialData && props.data) {

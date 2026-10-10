@@ -9,13 +9,13 @@ import {
 import { FixedSizeList, VariableSizeList } from "react-window";
 import { createStore, Store } from "redux";
 import { DndProvider } from "react-dnd";
-import { DataUpdatesContext, DndContext, NodesContext, TreeApiContext } from "../context";
-import { TreeApi } from "../interfaces/tree-api";
-import { initialState } from "../state/initial";
-import { Actions, rootReducer, RootState } from "../state/root-reducer";
-import { actions as visibility } from "../state/open-slice";
-import { TreeProps } from "../types/tree-props";
-import { getDndProviderProps } from "./get-dnd-provider-props";
+import { DataUpdatesContext, DndContext, NodesContext, TreeApiContext } from "../context.js";
+import { TreeApi } from "../interfaces/tree-api.js";
+import { initialState } from "../state/initial.js";
+import { Actions, rootReducer, RootState } from "../state/root-reducer.js";
+import { actions as visibility } from "../state/open-slice.js";
+import { TreeProps } from "../types/tree-props.js";
+import { getDndProviderProps } from "./get-dnd-provider-props.js";
 
 type Props<T> = {
   treeProps: TreeProps<T>;

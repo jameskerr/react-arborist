@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
-import { useTreeApi } from "../context";
-import { Cursor } from "./cursor";
+import { useTreeApi } from "../context.js";
+import { Cursor } from "./cursor.js";
 
 export const ListOuterElement = forwardRef(function Outer(
   props: React.HTMLProps<HTMLDivElement>,

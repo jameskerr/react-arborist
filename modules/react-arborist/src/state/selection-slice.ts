@@ -1,5 +1,5 @@
-import { ActionTypes } from "../types/utils";
-import { initialState } from "./initial";
+import { ActionTypes } from "../types/utils.js";
+import { initialState } from "./initial.js";
 
 /* Types */
 export type SelectionState = {

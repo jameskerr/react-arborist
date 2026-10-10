@@ -100,4 +100,5 @@ To sanity-check an entry before it ships, **commit it first**, then run `yarn re
 
 - Commit messages: short imperative subject; no required prefix. Look at recent `git log` for tone.
 - PRs: when a change supersedes an older PR (this repo has a long tail), attribute the original author via the changeset's `credit` field — see "Adding a changeset". `credit` is for a prior PR, never the issue being fixed.
+- Relative imports in `modules/react-arborist/src` name the emitted file: `./tree.js` (even from a `.tsx`), `./dir/index.js` for a directory. The library compiles with `module: nodenext`, so tsc emits Node-valid ESM as-is and `yarn build` fails on an extensionless import (TS2835). Jest maps the `.js` back to the source file.
 - Don't add comments that just restate the code. Don't add backwards-compat shims for code that hasn't shipped yet.

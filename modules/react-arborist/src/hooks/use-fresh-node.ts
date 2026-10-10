@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useTreeApi } from "../context";
+import { useTreeApi } from "../context.js";
 
 export function useFreshNode<T>(index: number) {
   const tree = useTreeApi<T>();

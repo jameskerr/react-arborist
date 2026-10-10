@@ -1,6 +1,6 @@
 import React from "react";
 import { forwardRef } from "react";
-import { useTreeApi } from "../context";
+import { useTreeApi } from "../context.js";
 
 export const ListInnerElement = forwardRef<any, any>(function InnerElement(
   { style, ...rest },

@@ -1,4 +1,4 @@
-import { ActionTypes } from "../types/utils";
+import { ActionTypes } from "../types/utils.js";
 
 /* Types */
 export type OpenMap = { [id: string]: boolean };

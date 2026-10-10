@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { SimpleTree, SimpleTreeOptions } from "../data/simple-tree";
-import { CreateHandler, DeleteHandler, MoveHandler, RenameHandler } from "../types/handlers";
+import { SimpleTree, SimpleTreeOptions } from "../data/simple-tree.js";
+import { CreateHandler, DeleteHandler, MoveHandler, RenameHandler } from "../types/handlers.js";
 
 export type SimpleTreeData = {
   id: string;

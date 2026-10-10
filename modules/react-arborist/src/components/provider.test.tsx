@@ -1,9 +1,9 @@
 import { createRef } from "react";
 import { act, render, screen } from "@testing-library/react";
 import { FixedSizeList, VariableSizeList } from "react-window";
-import { Tree } from "./tree";
-import { TreeApi } from "../interfaces/tree-api";
-import { NodeApi } from "../interfaces/node-api";
+import { Tree } from "./tree.js";
+import { TreeApi } from "../interfaces/tree-api.js";
+import { NodeApi } from "../interfaces/node-api.js";
 
 type Datum = { id: string; name: string; children?: Datum[] };
 

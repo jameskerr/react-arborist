@@ -1,7 +1,7 @@
 import { createRef } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { Tree } from "./tree";
-import { TreeApi } from "../interfaces/tree-api";
+import { Tree } from "./tree.js";
+import { TreeApi } from "../interfaces/tree-api.js";
 
 type Datum = { id: string; name: string; children?: Datum[] };
 

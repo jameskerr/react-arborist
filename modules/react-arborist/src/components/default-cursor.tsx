@@ -1,5 +1,5 @@
 import React, { CSSProperties } from "react";
-import { CursorProps } from "../types/renderers";
+import { CursorProps } from "../types/renderers.js";
 
 const placeholderStyle = {
   display: "flex",

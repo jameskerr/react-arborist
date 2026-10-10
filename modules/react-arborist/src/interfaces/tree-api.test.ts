@@ -1,9 +1,9 @@
 import { createStore } from "redux";
-import { rootReducer } from "../state/root-reducer";
-import { actions as dnd } from "../state/dnd-slice";
-import { TreeProps } from "../types/tree-props";
-import { TreeApi } from "./tree-api";
-import { NodeApi } from "./node-api";
+import { rootReducer } from "../state/root-reducer.js";
+import { actions as dnd } from "../state/dnd-slice.js";
+import { TreeProps } from "../types/tree-props.js";
+import { TreeApi } from "./tree-api.js";
+import { NodeApi } from "./node-api.js";
 
 function setupApi(props: TreeProps<any>) {
   const store = createStore(rootReducer);

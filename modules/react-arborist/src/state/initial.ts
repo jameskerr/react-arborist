@@ -1,5 +1,5 @@
-import { TreeProps } from "../types/tree-props";
-import { RootState } from "./root-reducer";
+import { TreeProps } from "../types/tree-props.js";
+import { RootState } from "./root-reducer.js";
 
 export const initialState = (props?: TreeProps<any>): RootState => ({
   nodes: {

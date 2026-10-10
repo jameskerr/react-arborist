@@ -1,4 +1,4 @@
-import { adjustMoveIndex } from "./adjust-move-index";
+import { adjustMoveIndex } from "./adjust-move-index.js";
 
 /* Apply an onMove the naive remove-then-insert way, using the adjusted index,
    and return the resulting id order. Mirrors what a custom onMove does with a

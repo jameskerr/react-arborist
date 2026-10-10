@@ -1,6 +1,6 @@
-import { Cursor } from "../dnd/compute-drop";
-import { ActionTypes } from "../types/utils";
-import { initialState } from "./initial";
+import { Cursor } from "../dnd/compute-drop.js";
+import { ActionTypes } from "../types/utils.js";
+import { initialState } from "./initial.js";
 
 /* Types */
 export type DndState = {

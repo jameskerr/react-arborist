@@ -1,9 +1,9 @@
 import { createStore } from "redux";
-import { rootReducer } from "../state/root-reducer";
-import { ROOT_ID } from "../data/create-root";
-import { TreeProps } from "../types/tree-props";
-import { TreeApi } from "../interfaces/tree-api";
-import { computeDrop } from "./compute-drop";
+import { rootReducer } from "../state/root-reducer.js";
+import { ROOT_ID } from "../data/create-root.js";
+import { TreeProps } from "../types/tree-props.js";
+import { TreeApi } from "../interfaces/tree-api.js";
+import { computeDrop } from "./compute-drop.js";
 
 const ROW = 40; // height; top edge at y<10, middle 10..30, bottom edge y>30
 const INDENT = 24;

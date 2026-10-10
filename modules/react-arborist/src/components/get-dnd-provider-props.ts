@@ -1,5 +1,5 @@
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { TreeProps } from "../types/tree-props";
+import { TreeProps } from "../types/tree-props.js";
 
 type DndProviderProps =
   | { manager: NonNullable<TreeProps<unknown>["dndManager"]> }

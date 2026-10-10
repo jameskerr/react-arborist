@@ -1,4 +1,4 @@
-import { useDndContext, useTreeApi } from "../context";
+import { useDndContext, useTreeApi } from "../context.js";
 
 export function Cursor() {
   const tree = useTreeApi();

@@ -1,5 +1,5 @@
 import React from "react";
-import { RowRendererProps } from "../types/renderers";
+import { RowRendererProps } from "../types/renderers.js";
 
 export function DefaultRow<T>({ node, attrs, innerRef, children }: RowRendererProps<T>) {
   return (

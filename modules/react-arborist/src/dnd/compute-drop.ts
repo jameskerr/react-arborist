@@ -1,7 +1,7 @@
 import { XYCoord } from "react-dnd";
-import { NodeApi } from "../interfaces/node-api";
-import { bound, indexOf, isClosed, isItem } from "../utils";
-import { DropResult } from "./drop-hook";
+import { NodeApi } from "../interfaces/node-api.js";
+import { bound, indexOf, isClosed, isItem } from "../utils.js";
+import { DropResult } from "./drop-hook.js";
 
 function measureHover(el: HTMLElement, offset: XYCoord) {
   const rect = el.getBoundingClientRect();

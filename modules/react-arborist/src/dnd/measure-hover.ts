@@ -1,5 +1,5 @@
 import { XYCoord } from "react-dnd";
-import { bound } from "../utils";
+import { bound } from "../utils.js";
 
 export function measureHover(el: HTMLElement, offset: XYCoord, indent: number) {
   const nextEl = el.nextElementSibling as HTMLElement | null;

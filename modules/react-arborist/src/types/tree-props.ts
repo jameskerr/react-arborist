@@ -1,10 +1,10 @@
-import { BoolFunc } from "./utils";
-import * as handlers from "./handlers";
-import * as renderers from "./renderers";
+import { BoolFunc } from "./utils.js";
+import * as handlers from "./handlers.js";
+import * as renderers from "./renderers.js";
 import { ElementType, MouseEventHandler } from "react";
 import { ListOnScrollProps, CommonProps as ReactWindowCommonProps } from "react-window";
-import { NodeApi } from "../interfaces/node-api";
-import { OpenMap } from "../state/open-slice";
+import { NodeApi } from "../interfaces/node-api.js";
+import { OpenMap } from "../state/open-slice.js";
 import { useDragDropManager, DndProviderProps } from "react-dnd";
 
 /** Returns the height in pixels for a given node's row. */
