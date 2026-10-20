@@ -1,4 +1,4 @@
-import { XYCoord } from "react-dnd";
+import { XYCoord } from "../types/renderers.js";
 import { bound } from "../utils.js";
 
 export function measureHover(el: HTMLElement, offset: XYCoord, indent: number) {

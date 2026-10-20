@@ -1,14 +1,10 @@
-import { useEffect } from "react";
-import { ConnectDragSource, useDrag } from "react-dnd";
-import { getEmptyImage } from "react-dnd-html5-backend";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useDraggable } from "@dnd-kit/core";
 import { useTreeApi } from "../context.js";
 import { NodeApi } from "../interfaces/node-api.js";
-import { DragItem } from "../types/dnd.js";
 import { TreeProps } from "../types/tree-props.js";
-import { DropResult } from "./drop-hook.js";
-import { actions as dnd } from "../state/dnd-slice.js";
 
-/* The react-dnd item type a row's drag source broadcasts. The dragType prop
+/* The item type a row's drag source broadcasts. The dragType prop
    can be a fixed string or a per-node function; it defaults to "NODE". */
 export function dragTypeForNode<T>(dragType: TreeProps<T>["dragType"], node: NodeApi<T>): string {
   if (typeof dragType === "function") return dragType(node);
@@ -22,32 +18,62 @@ export function canDragNode<T>(node: NodeApi<T>): boolean {
   return node.isDraggable && !node.isEditing;
 }
 
-export function useDragHook<T>(node: NodeApi<T>): ConnectDragSource {
+export type DragHandleRef = (element: HTMLElement | null) => void;
+
+export function useDragHook<T>(node: NodeApi<T>): DragHandleRef {
   const tree = useTreeApi<T>();
-  const ids = tree.selectedIds;
-  const [_, ref, preview] = useDrag<DragItem<T>, DropResult, void>(
-    () => ({
-      canDrag: () => canDragNode(node),
-      type: dragTypeForNode(tree.props.dragType, node),
-      item: () => {
-        // This is fired once at the beginning of a drag operation
-        const dragIds = tree.isSelected(node.id) ? Array.from(ids) : [node.id];
-        tree.dispatch(dnd.dragStart(node.id, dragIds));
-        return { id: node.id, dragIds, data: node.data };
-      },
-      end: () => {
-        tree.cancelHover();
-        tree.hideCursor();
-        tree.redrawList();
-        tree.dispatch(dnd.dragEnd());
-      },
-    }),
-    [ids, node, tree.props.dragType],
+  const isEnabled = canDragNode(node);
+  const dragType = dragTypeForNode(tree.props.dragType, node);
+
+  const { listeners, setNodeRef, setActivatorNodeRef } = useDraggable({
+    id: node.id,
+    disabled: !isEnabled,
+    data: {
+      id: node.id,
+      node,
+      data: node.data,
+      type: dragType,
+    },
+  });
+
+  const listenersRef = useRef(listeners);
+  listenersRef.current = listeners;
+
+  const [element, setElement] = useState<HTMLElement | null>(null);
+
+  const dragHandle: DragHandleRef = useCallback(
+    (el: HTMLElement | null) => {
+      setElement(el);
+      setNodeRef(el);
+      setActivatorNodeRef(el);
+    },
+    [setNodeRef, setActivatorNodeRef],
   );
 
   useEffect(() => {
-    preview(getEmptyImage());
-  }, [preview]);
+    if (!element || !listeners) return;
 
-  return ref;
+    const cleanupFns: (() => void)[] = [];
+
+    for (const [propName, handler] of Object.entries(listeners)) {
+      if (!propName.startsWith("on") || typeof handler !== "function") continue;
+      const eventName = propName.slice(2).toLowerCase();
+      const listener = (event: Event) => {
+        const currentHandler = listenersRef.current?.[propName];
+        if (currentHandler) {
+          currentHandler({ nativeEvent: event });
+        }
+      };
+      element.addEventListener(eventName, listener);
+      cleanupFns.push(() => {
+        element.removeEventListener(eventName, listener);
+      });
+    }
+
+    return () => {
+      cleanupFns.forEach((fn) => fn());
+    };
+  }, [element, listeners]);
+
+  return dragHandle;
 }

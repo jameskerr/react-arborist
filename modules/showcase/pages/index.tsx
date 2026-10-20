@@ -70,7 +70,7 @@ const Home: NextPage = () => {
               <h2>Drag Nodes Out</h2>
               <p>
                 In this demo, we drag nodes onto a drop target outside the tree, which reads the
-                dragged node&apos;s data from the react-dnd item.
+                dragged node&apos;s data from the @dnd-kit draggable item.
               </p>
               <Link href="/drag-out">View Demo</Link>
             </div>

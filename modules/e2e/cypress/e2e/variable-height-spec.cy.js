@@ -58,16 +58,62 @@ describe("Variable Row Height Demo", () => {
     cy.contains("[role=treeitem]", "Documents").should("have.css", "top", "0px");
 
     // installer.dmg dropped near the top, so its offset is recomputed well above 256px.
-    cy.contains("[role=treeitem]", "installer.dmg").then(($el) => {
+    cy.contains("[role=treeitem]", "installer.dmg").should(($el) => {
       expect(parseFloat($el.css("top"))).to.be.lessThan(256);
     });
   });
 });
 
 function dragAndDrop(src, dst) {
-  const dataTransfer = new DataTransfer();
-  src.trigger("dragstart", { dataTransfer });
-  dst.trigger("dragover", { dataTransfer });
-  dst.trigger("drop", { dataTransfer });
-  dst.trigger("dragend", { dataTransfer });
+  src.then(($src) => {
+    const handleEl = $src.children()[0] || $src[0];
+    const srcRect = handleEl.getBoundingClientRect();
+    const startX = srcRect.x + srcRect.width / 2;
+    const startY = srcRect.y + srcRect.height / 2;
+
+    dst.then(($dst) => {
+      const dstRect = $dst[0].getBoundingClientRect();
+      const endX = dstRect.x + dstRect.width / 2;
+      const endY = dstRect.y + dstRect.height * 0.25;
+
+      cy.wrap(handleEl).trigger("pointerdown", {
+        button: 0,
+        clientX: startX,
+        clientY: startY,
+        pointerId: 1,
+        isPrimary: true,
+        force: true,
+      });
+
+      cy.wait(50);
+
+      cy.document().trigger("pointermove", {
+        clientX: startX + 10,
+        clientY: startY + 10,
+        pointerId: 1,
+        isPrimary: true,
+        force: true,
+      });
+
+      cy.wait(50);
+
+      cy.document().trigger("pointermove", {
+        clientX: endX,
+        clientY: endY,
+        pointerId: 1,
+        isPrimary: true,
+        force: true,
+      });
+
+      cy.wait(50);
+
+      cy.document().trigger("pointerup", {
+        clientX: endX,
+        clientY: endY,
+        pointerId: 1,
+        isPrimary: true,
+        force: true,
+      });
+    });
+  });
 }

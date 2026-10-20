@@ -13,3 +13,4 @@ export { adjustMoveIndex } from "./data/adjust-move-index.js";
 export * from "./hooks/use-simple-tree.js";
 export { getTreeLinePrefix } from "./utils.js";
 export type { TreeLineChars } from "./utils.js";
+export { treeCollisionDetection } from "./components/get-dnd-provider-props.js";

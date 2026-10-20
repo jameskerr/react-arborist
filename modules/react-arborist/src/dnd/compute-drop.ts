@@ -1,4 +1,4 @@
-import { XYCoord } from "react-dnd";
+import { XYCoord } from "../types/renderers.js";
 import { NodeApi } from "../interfaces/node-api.js";
 import { bound, indexOf, isClosed, isItem } from "../utils.js";
 import { DropResult } from "./drop-hook.js";

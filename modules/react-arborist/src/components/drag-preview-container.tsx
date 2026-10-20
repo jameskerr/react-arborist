@@ -1,26 +1,18 @@
-import { useDragLayer } from "react-dnd";
-import { useTreeApi } from "../context.js";
+import { useDragPreviewState, useTreeApi } from "../context.js";
 import { DefaultDragPreview } from "./default-drag-preview.js";
 
 export function DragPreviewContainer() {
   const tree = useTreeApi();
-  const { offset, mouse, item, isDragging } = useDragLayer((m) => {
-    return {
-      offset: m.getSourceClientOffset(),
-      mouse: m.getClientOffset(),
-      item: m.getItem(),
-      isDragging: m.isDragging(),
-    };
-  });
+  const state = useDragPreviewState();
 
   const DragPreview = tree.props.renderDragPreview || DefaultDragPreview;
   return (
     <DragPreview
-      offset={offset}
-      mouse={mouse}
-      id={item?.id || null}
-      dragIds={item?.dragIds || []}
-      isDragging={isDragging}
+      offset={state.offset}
+      mouse={state.mouse}
+      id={state.id}
+      dragIds={state.dragIds}
+      isDragging={state.isDragging}
     />
   );
 }

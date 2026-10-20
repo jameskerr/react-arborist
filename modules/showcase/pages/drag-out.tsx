@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { NodeRendererProps, Tree } from "react-arborist";
-import { DndProvider, useDragDropManager, useDrop } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import { NodeRendererProps, Tree, treeCollisionDetection } from "react-arborist";
+import { DndContext, DragEndEvent, useDroppable } from "@dnd-kit/core";
 import Link from "next/link";
 
 type Item = { id: string; name: string; children?: Item[] };
@@ -27,16 +26,11 @@ export default function DragOut() {
     <div style={{ padding: 24, fontFamily: "sans-serif" }}>
       <h1>Drag Nodes Out of the Tree</h1>
       <p>
-        The dragged node&apos;s data rides along on the react-dnd drag item, so a drop target
-        outside the tree can read it. Both the tree and the drop zone below share one react-dnd
-        backend (via the <code>dndManager</code> prop), and the drop zone accepts the default{" "}
-        <code>&quot;NODE&quot;</code> type. Internal reordering still works.
+        The dragged node&apos;s data rides along on the @dnd-kit draggable data, so a drop target
+        outside the tree can read it. Both the tree and the drop zone below share one DndContext,
+        and the drop zone accepts drops from the tree. Internal reordering still works.
       </p>
-      {/* One DndProvider wraps both the tree and the external drop target so they
-          share a backend; the tree reuses it through the dndManager prop. */}
-      <DndProvider backend={HTML5Backend}>
-        <DragOutDemo />
-      </DndProvider>
+      <DragOutDemo />
       <p style={{ marginTop: 24 }}>
         <Link href="/">Back to Demos</Link>
       </p>
@@ -45,24 +39,26 @@ export default function DragOut() {
 }
 
 function DragOutDemo() {
-  const manager = useDragDropManager();
   const [dropped, setDropped] = useState<string[]>([]);
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    if (event.over?.id === "drop-zone") {
+      const name = event.active.data.current?.data?.name;
+      if (name) {
+        setDropped((prev) => [...prev, name]);
+      }
+    }
+  };
+
   return (
-    <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-      <Tree
-        initialData={data}
-        openByDefault
-        width={300}
-        height={300}
-        indent={20}
-        rowHeight={32}
-        dndManager={manager}
-      >
-        {Node}
-      </Tree>
-      <DropZone dropped={dropped} onDrop={(name) => setDropped((prev) => [...prev, name])} />
-    </div>
+    <DndContext onDragEnd={handleDragEnd} collisionDetection={treeCollisionDetection}>
+      <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+        <Tree initialData={data} openByDefault width={300} height={300} indent={20} rowHeight={32}>
+          {Node}
+        </Tree>
+        <DropZone dropped={dropped} />
+      </div>
+    </DndContext>
   );
 }
 
@@ -86,16 +82,14 @@ function Node({ node, style, dragHandle }: NodeRendererProps<Item>) {
   );
 }
 
-function DropZone({ dropped, onDrop }: { dropped: string[]; onDrop: (name: string) => void }) {
-  const [{ isOver }, drop] = useDrop<{ data: Item }, void, { isOver: boolean }>(() => ({
-    accept: "NODE",
-    drop: (item) => onDrop(item.data.name),
-    collect: (monitor) => ({ isOver: monitor.isOver() }),
-  }));
+function DropZone({ dropped }: { dropped: string[] }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: "drop-zone",
+  });
 
   return (
     <div
-      ref={drop}
+      ref={setNodeRef}
       data-testid="drop-zone"
       style={{
         width: 220,

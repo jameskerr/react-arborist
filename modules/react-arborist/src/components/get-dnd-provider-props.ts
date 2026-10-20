@@ -1,21 +1,55 @@
-import { HTML5Backend } from "react-dnd-html5-backend";
+import {
+  CollisionDetection,
+  KeyboardSensor,
+  MouseSensor,
+  PointerSensor,
+  pointerWithin,
+  SensorDescriptor,
+  SensorOptions,
+} from "@dnd-kit/core";
 import { TreeProps } from "../types/tree-props.js";
+import { OUTER_DROP_ID } from "../dnd/outer-drop-hook.js";
 
-type DndProviderProps =
-  | { manager: NonNullable<TreeProps<unknown>["dndManager"]> }
-  | {
-      backend: NonNullable<TreeProps<unknown>["dndBackend"]> | typeof HTML5Backend;
-      options: { rootElement: globalThis.Node | undefined };
-    };
+/** Collision detection for react-arborist: prefers row droppables over the outer list droppable. */
+export const treeCollisionDetection: CollisionDetection = (args) => {
+  const collisions = pointerWithin(args);
+  if (collisions.length === 0) return [];
+  const rowCollision = collisions.find((c) => c.id !== OUTER_DROP_ID);
+  if (rowCollision) {
+    return [rowCollision];
+  }
+  return collisions;
+};
 
-/** Resolves the props to spread onto react-dnd's <DndProvider>. */
-export function getDndProviderProps<T>(
-  treeProps: TreeProps<T>,
-  dndRootElement: globalThis.Node | undefined,
-): DndProviderProps {
-  if (treeProps.dndManager) return { manager: treeProps.dndManager };
+export function getDefaultSensors(): SensorDescriptor<SensorOptions>[] {
+  const ActivePointerSensor =
+    typeof window !== "undefined" && "PointerEvent" in window ? PointerSensor : MouseSensor;
+
+  return [
+    {
+      sensor: ActivePointerSensor,
+      options: {
+        activationConstraint: {
+          distance: 5,
+        },
+      },
+    },
+    {
+      sensor: KeyboardSensor,
+      options: {},
+    },
+  ];
+}
+
+export type DndContextProps = {
+  sensors?: SensorDescriptor<SensorOptions>[];
+  collisionDetection: CollisionDetection;
+};
+
+/** Resolves the props for @dnd-kit's <DndContext>. */
+export function getDndProviderProps<T>(treeProps: TreeProps<T>): DndContextProps {
   return {
-    backend: treeProps.dndBackend || HTML5Backend,
-    options: { rootElement: dndRootElement },
+    sensors: treeProps.sensors,
+    collisionDetection: treeCollisionDetection,
   };
 }

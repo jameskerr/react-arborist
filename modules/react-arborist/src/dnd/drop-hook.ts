@@ -1,44 +1,23 @@
 import { RefObject } from "react";
-import { ConnectDropTarget, useDrop } from "react-dnd";
-import { useTreeApi } from "../context.js";
+import { useDroppable } from "@dnd-kit/core";
 import { NodeApi } from "../interfaces/node-api.js";
-import { DragItem } from "../types/dnd.js";
-import { computeDrop } from "./compute-drop.js";
 
 export type DropResult = {
   parentId: string | null;
   index: number | null;
 };
 
-export function useDropHook(
-  el: RefObject<HTMLElement | null>,
-  node: NodeApi<any>,
-): ConnectDropTarget {
-  const tree = useTreeApi();
-  const [_, dropRef] = useDrop<DragItem, DropResult | null, void>(
-    () => ({
-      accept: "NODE",
-      canDrop: () => tree.canDrop(),
-      hover: (_item, m) => {
-        const offset = m.getClientOffset();
-        if (!el.current || !offset) return;
-        const { cursor, drop } = computeDrop({
-          element: el.current,
-          offset: offset,
-          indent: tree.indent,
-          node: node,
-          prevNode: node.prev,
-          nextNode: node.next,
-        });
-        tree.hover(drop, cursor);
-      },
-      drop: (_, m) => {
-        if (!m.canDrop()) return null;
-        tree.drop();
-      },
-    }),
-    [node, el.current, tree.props],
-  );
+export type DropTargetRef = (element: HTMLElement | null) => void;
 
-  return dropRef;
+export function useDropHook(el: RefObject<HTMLElement | null>, node: NodeApi<any>): DropTargetRef {
+  const { setNodeRef } = useDroppable({
+    id: node.id,
+    data: {
+      id: node.id,
+      node,
+      elementRef: el,
+    },
+  });
+
+  return setNodeRef;
 }

@@ -5,7 +5,7 @@ import { ElementType, MouseEventHandler } from "react";
 import { ListOnScrollProps, CommonProps as ReactWindowCommonProps } from "react-window";
 import { NodeApi } from "../interfaces/node-api.js";
 import { OpenMap } from "../state/open-slice.js";
-import { useDragDropManager, DndProviderProps } from "react-dnd";
+import type { SensorDescriptor, SensorOptions } from "@dnd-kit/core";
 
 /** Returns the height in pixels for a given node's row. */
 export type RowHeightAccessor<T> = (node: NodeApi<T>) => number;
@@ -81,16 +81,16 @@ export interface TreeProps<T> {
   dndRootElement?: globalThis.Node | null;
   onClick?: MouseEventHandler;
   onContextMenu?: MouseEventHandler;
-  dndBackend?: Extract<DndProviderProps<unknown, unknown>, { backend: unknown }>["backend"];
-  dndManager?: ReturnType<typeof useDragDropManager>;
+  /** @deprecated react-dnd is replaced by @dnd-kit; this prop is a no-op. */
+  dndBackend?: unknown;
+  /** @deprecated react-dnd is replaced by @dnd-kit; this prop is a no-op. */
+  dndManager?: unknown;
+  /** Custom sensors for @dnd-kit DndContext. Defaults to PointerSensor + KeyboardSensor. */
+  sensors?: SensorDescriptor<SensorOptions>[];
 
-  /* The react-dnd item type each row's drag source advertises. Defaults to
-     "NODE". Set a custom value (or a per-node function) so rows can be dropped
-     onto external react-dnd targets that accept that type. The dragged node's
-     data is always exposed on the drag item, so an external target accepting
-     the default "NODE" type can read it without setting this. Note: the tree's
-     own drop targets only accept "NODE", so a row given a custom type is no
-     longer reorderable within the tree. */
+  /* The item type each row's drag source advertises on its draggable data.
+     Defaults to "NODE". Set a custom value (or a per-node function) so rows can be
+     dropped onto external drop targets that accept that type. */
   dragType?: string | ((node: NodeApi<T>) => string);
 
   /* Custom react-window outer/inner elements */
