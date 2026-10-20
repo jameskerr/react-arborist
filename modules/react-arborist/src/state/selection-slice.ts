@@ -1,11 +1,16 @@
 import { ActionTypes } from "../types/utils.js";
-import { initialState } from "./initial.js";
 
 /* Types */
 export type SelectionState = {
   ids: Set<string>;
   anchor: string | null;
   mostRecent: string | null;
+};
+
+export const initialSelectionState: SelectionState = {
+  ids: new Set(),
+  anchor: null,
+  mostRecent: null,
 };
 
 /* Actions. These take ids already resolved to strings: callers go through
@@ -48,7 +53,7 @@ export const actions = {
 
 /* Reducer */
 export function reducer(
-  state: SelectionState = initialState()["nodes"]["selection"],
+  state: SelectionState = initialSelectionState,
   action: ActionTypes<typeof actions>,
 ): SelectionState {
   const ids = state.ids;

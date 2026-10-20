@@ -1,6 +1,5 @@
 import { ActionTypes } from "../types/utils.js";
 import { actions as dnd } from "./dnd-slice.js";
-import { initialState } from "./initial.js";
 
 /* Types */
 
@@ -9,10 +8,15 @@ export type DragSlice = {
   selectedIds: string[];
 };
 
+export const initialDragState: DragSlice = {
+  id: null,
+  selectedIds: [],
+};
+
 /* Reducer */
 
 export function reducer(
-  state: DragSlice = initialState().nodes.drag,
+  state: DragSlice = initialDragState,
   action: ActionTypes<typeof dnd>,
 ): DragSlice {
   switch (action.type) {

@@ -1,7 +1,7 @@
-import { NodeApi } from "../interfaces/node-api.js";
-import { TreeApi } from "../interfaces/tree-api.js";
+import { NodeApi, ROOT_ID } from "../interfaces/node-api.js";
+import type { TreeApi } from "../interfaces/tree-api.js";
 
-export const ROOT_ID = "__REACT_ARBORIST_INTERNAL_ROOT__";
+export { ROOT_ID };
 
 export function createRoot<T>(tree: TreeApi<T>): NodeApi<T> {
   function visitSelfAndChildren(data: T, level: number, parent: NodeApi<T> | null) {

@@ -1,6 +1,5 @@
 import { Cursor } from "../dnd/compute-drop.js";
 import { ActionTypes } from "../types/utils.js";
-import { initialState } from "./initial.js";
 
 /* Types */
 export type DndState = {
@@ -59,9 +58,19 @@ function isSameCursor(a: Cursor, b: Cursor): boolean {
   }
 }
 
+export const initialDndState: DndState = {
+  cursor: { type: "none" },
+  dragId: null,
+  dragIds: [],
+  parentId: null,
+  index: -1,
+  destinationParentId: null,
+  destinationIndex: null,
+};
+
 /* Reducer */
 export function reducer(
-  state: DndState = initialState()["dnd"],
+  state: DndState = initialDndState,
   action: ActionTypes<typeof actions>,
 ): DndState {
   switch (action.type) {
@@ -72,7 +81,7 @@ export function reducer(
     case "DND_DRAG_START":
       return { ...state, dragId: action.id, dragIds: action.dragIds };
     case "DND_DRAG_END":
-      return initialState()["dnd"];
+      return initialDndState;
     case "DND_HOVERING":
       return state.parentId === action.parentId && state.index === action.index
         ? state
