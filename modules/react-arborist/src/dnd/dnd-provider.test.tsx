@@ -35,7 +35,7 @@ describe("DndProvider / DndContext integration", () => {
     expect(screen.getByText("Child A")).not.toBeNull();
   });
 
-  test("starts dragging when dragHandle moves beyond distance threshold", () => {
+  test("starts dragging when dragHandle moves beyond distance threshold", async () => {
     const handleMove = jest.fn();
     render(
       <Tree<Datum> data={data} rowHeight={24} onMove={handleMove}>
@@ -49,7 +49,7 @@ describe("DndProvider / DndContext integration", () => {
     // In jsdom without PointerEvent, MouseSensor is used
     fireEvent.mouseDown(rootEl, { clientX: 10, clientY: 10, button: 0 });
     // Moving beyond distance threshold of 5px activates the drag
-    act(() => {
+    await act(async () => {
       fireEvent.mouseMove(document, { clientX: 10, clientY: 30 });
     });
 
@@ -57,7 +57,7 @@ describe("DndProvider / DndContext integration", () => {
     expect(screen.getAllByText("Root")).toHaveLength(2);
 
     // Release drag
-    act(() => {
+    await act(async () => {
       fireEvent.mouseUp(document, { clientX: 10, clientY: 30 });
     });
 
@@ -65,7 +65,7 @@ describe("DndProvider / DndContext integration", () => {
     expect(screen.getAllByText("Root")).toHaveLength(1);
   });
 
-  test("keeps the drag alive after the source row unmounts (virtualization)", () => {
+  test("keeps the drag alive after the source row unmounts (virtualization)", async () => {
     const many: Datum[] = Array.from({ length: 100 }, (_, i) => ({
       id: String(i),
       name: `Node ${i}`,
@@ -78,64 +78,26 @@ describe("DndProvider / DndContext integration", () => {
     );
 
     fireEvent.mouseDown(screen.getByText("Node 0"), { clientX: 10, clientY: 10, button: 0 });
-    act(() => {
+    await act(async () => {
       fireEvent.mouseMove(document, { clientX: 10, clientY: 30 });
     });
-    // Row plus the drag preview overlay.
+    // Row plus the drag overlay.
     expect(screen.getAllByText("Node 0")).toHaveLength(2);
 
     // Scroll the source row out of the rendered window.
-    act(() => {
+    await act(async () => {
       ref.current!.list.current!.scrollTo(2000);
     });
     expect(screen.getAllByText("Node 0")).toHaveLength(1);
 
     // The drag survives the unmount: it still ends cleanly.
-    act(() => {
+    await act(async () => {
       fireEvent.mouseUp(document, { clientX: 10, clientY: 30 });
     });
     expect(screen.queryByText("Node 0")).toBeNull();
   });
 
-  test("follows the pointer, not dnd-kit's scroll-adjusted delta, when the list scrolls", () => {
-    const many: Datum[] = Array.from({ length: 50 }, (_, i) => ({
-      id: String(i),
-      name: `Node ${i}`,
-    }));
-    const ref = createRef<TreeApi<Datum> | undefined>();
-    render(
-      <Tree<Datum> ref={ref} data={many} rowHeight={24} height={100} width={300}>
-        {Node}
-      </Tree>,
-    );
-
-    const preview = () => document.querySelector(".preview") as HTMLElement;
-
-    // Grab, then move twice: the first move starts the drag, the second is
-    // tracked by the pointer listener.
-    fireEvent.mouseDown(screen.getByText("Node 0"), { clientX: 10, clientY: 10, button: 0 });
-    act(() => {
-      fireEvent.mouseMove(document, { clientX: 10, clientY: 30 });
-    });
-    act(() => {
-      fireEvent.mouseMove(document, { clientX: 10, clientY: 40 });
-    });
-    const before = preview().style.transform;
-
-    // The list scrolls mid-drag. dnd-kit adds that scroll to `event.delta`, so a
-    // delta-derived pointer would jump here; the preview must track the pointer.
-    act(() => {
-      const outer = ref.current!.listEl.current!;
-      outer.scrollTop = 100;
-      fireEvent.scroll(outer);
-    });
-    act(() => {
-      fireEvent.mouseMove(document, { clientX: 10, clientY: 40 });
-    });
-    expect(preview().style.transform).toBe(before);
-  });
-
-  test("triggers onMove when dragging and dropping a node onto another node", () => {
+  test("triggers onMove when dragging and dropping a node onto another node", async () => {
     const handleMove = jest.fn();
     render(
       <Tree<Datum> data={data} rowHeight={24} onMove={handleMove}>
@@ -165,13 +127,13 @@ describe("DndProvider / DndContext integration", () => {
 
     // Start drag on Child A
     fireEvent.mouseDown(childA, { clientX: 10, clientY: 30, button: 0 });
-    act(() => {
+    await act(async () => {
       // Move up into Root row
       fireEvent.mouseMove(document, { clientX: 10, clientY: 12 });
     });
 
     // Drop onto Root
-    act(() => {
+    await act(async () => {
       fireEvent.mouseUp(document, { clientX: 10, clientY: 12 });
     });
 

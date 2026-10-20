@@ -22,8 +22,6 @@ export type RowRendererProps<T> = {
 };
 
 export type DragPreviewProps = {
-  offset: XYCoord | null;
-  mouse: XYCoord | null;
   id: string | null;
   dragIds: string[];
   isDragging: boolean;

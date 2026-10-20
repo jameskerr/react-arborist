@@ -5,7 +5,6 @@ import {
   useImperativeHandle,
   useMemo,
   useRef,
-  useState,
   useSyncExternalStore,
 } from "react";
 import { FixedSizeList, VariableSizeList } from "react-window";
@@ -22,14 +21,8 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { getEventCoordinates } from "@dnd-kit/utilities";
-import {
-  DataUpdatesContext,
-  DndContext,
-  DragPreviewContext,
-  DragPreviewState,
-  NodesContext,
-  TreeApiContext,
-} from "../context.js";
+import { DataUpdatesContext, DndContext, NodesContext, TreeApiContext } from "../context.js";
+
 import { TreeApi } from "../interfaces/tree-api.js";
 import { initialState } from "../state/initial.js";
 import { Actions, rootReducer, RootState } from "../state/root-reducer.js";
@@ -52,14 +45,6 @@ const POINTER_SENSOR_OPTIONS = {
   activationConstraint: {
     distance: 5,
   },
-};
-
-const INITIAL_DRAG_PREVIEW_STATE: DragPreviewState = {
-  offset: null,
-  mouse: null,
-  id: null,
-  dragIds: [],
-  isDragging: false,
 };
 
 function StandaloneDndContext({
@@ -115,18 +100,13 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
     () => SERVER_STATE,
   );
 
-  const [dragPreviewState, setDragPreviewState] = useState<DragPreviewState>(
-    INITIAL_DRAG_PREVIEW_STATE,
-  );
-
   /* dnd-kit's delta includes scroll adjustments, so `activator + delta` is not
      the pointer position once the list auto-scrolls mid-drag. Track the real
      pointer natively instead. */
   const pointerRef = useRef<{ x: number; y: number } | null>(null);
-  const grabOffsetRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    if (!dragPreviewState.isDragging) return;
+    if (!state.nodes.drag.id) return;
     const track = (event: Event) => {
       const coords = getEventCoordinates(event as MouseEvent);
       if (coords) pointerRef.current = coords;
@@ -139,8 +119,7 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
       document.removeEventListener("mousemove", track, true);
       document.removeEventListener("touchmove", track, true);
     };
-  }, [dragPreviewState.isDragging]);
-
+  }, [state.nodes.drag.id]);
   /* The tree api object is stable. */
   const api = useMemo(() => {
     return new TreeApi<T>(store.current, treeProps, list, listEl);
@@ -189,23 +168,7 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
       const dragIds = api.isSelected(id) ? Array.from(api.selectedIds) : [id];
       store.current.dispatch(dndActions.dragStart(id, dragIds));
 
-      const initialCoords = event.activatorEvent ? getEventCoordinates(event.activatorEvent) : null;
-      const initialRect = event.active.rect.current.initial;
-      const offset = initialRect ? { x: initialRect.left, y: initialRect.top } : initialCoords;
-
-      pointerRef.current = initialCoords;
-      grabOffsetRef.current =
-        initialCoords && initialRect
-          ? { x: initialCoords.x - initialRect.left, y: initialCoords.y - initialRect.top }
-          : null;
-
-      setDragPreviewState({
-        offset,
-        mouse: initialCoords,
-        id,
-        dragIds,
-        isDragging: true,
-      });
+      pointerRef.current = event.activatorEvent ? getEventCoordinates(event.activatorEvent) : null;
     },
     [api],
   );
@@ -261,14 +224,6 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
         (initialCoords
           ? { x: initialCoords.x + event.delta.x, y: initialCoords.y + event.delta.y }
           : null);
-      const grab = grabOffsetRef.current;
-      const offset = mouse && grab ? { x: mouse.x - grab.x, y: mouse.y - grab.y } : mouse;
-
-      setDragPreviewState((prev) => ({
-        ...prev,
-        offset,
-        mouse,
-      }));
 
       updateHover(event.over, mouse);
     },
@@ -295,7 +250,6 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
       api.hideCursor();
       api.redrawList();
       store.current.dispatch(dndActions.dragEnd());
-      setDragPreviewState(INITIAL_DRAG_PREVIEW_STATE);
     },
     [api, updateHover],
   );
@@ -306,7 +260,6 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
       api.hideCursor();
       api.redrawList();
       store.current.dispatch(dndActions.dragEnd());
-      setDragPreviewState(INITIAL_DRAG_PREVIEW_STATE);
     },
     [api],
   );
@@ -316,17 +269,15 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
       <DataUpdatesContext.Provider value={updateCount.current}>
         <NodesContext.Provider value={state.nodes}>
           <DndContext.Provider value={state.dnd}>
-            <DragPreviewContext.Provider value={dragPreviewState}>
-              <StandaloneDndContext
-                treeProps={treeProps}
-                onDragStart={handleDragStart}
-                onDragMove={handleDragMove}
-                onDragEnd={handleDragEnd}
-                onDragCancel={handleDragCancel}
-              >
-                {children}
-              </StandaloneDndContext>
-            </DragPreviewContext.Provider>
+            <StandaloneDndContext
+              treeProps={treeProps}
+              onDragStart={handleDragStart}
+              onDragMove={handleDragMove}
+              onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
+            >
+              {children}
+            </StandaloneDndContext>
           </DndContext.Provider>
         </NodesContext.Provider>
       </DataUpdatesContext.Provider>

@@ -465,6 +465,8 @@ npm install react-arborist
 
 `dndBackend`, `dndManager`, and `dndRootElement` are removed in v5; TypeScript flags existing uses. For custom sensors, pass the `sensors` prop instead.
 
+Drag previews are positioned by `@dnd-kit`'s `<DragOverlay>`, so `DragPreviewProps` no longer carries `offset` or `mouse`. A custom `renderDragPreview` that positioned itself with `offset` should stop; `id`, `dragIds` and `isDragging` are unchanged.
+
 v5 also drops the native HTML5 drag-and-drop capabilities that depended on `react-dnd`:
 
 - dragging rows onto the host app's `react-dnd` targets, and dropping the app's `react-dnd` items into the tree
@@ -508,13 +510,13 @@ The _\<DragPreview\>_ is responsible for showing a "ghost" version of the node b
 
 ```ts
 type DragPreviewProps = {
-  offset: XYCoord | null;
-  mouse: XYCoord | null;
   id: string | null;
   dragIds: string[];
   isDragging: boolean;
 };
 ```
+
+`@dnd-kit`'s `<DragOverlay>` positions the preview, so preview components no longer receive an `offset` or `mouse` coordinate. A custom preview that positioned itself with `offset` should stop doing so and let the overlay place it.
 
 ## Cursor Component Props
 

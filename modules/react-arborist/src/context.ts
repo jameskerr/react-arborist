@@ -33,23 +33,3 @@ export const DataUpdatesContext = createContext<number>(0);
 export function useDataUpdates() {
   useContext(DataUpdatesContext);
 }
-
-export type DragPreviewState = {
-  offset: { x: number; y: number } | null;
-  mouse: { x: number; y: number } | null;
-  id: string | null;
-  dragIds: string[];
-  isDragging: boolean;
-};
-
-export const DragPreviewContext = createContext<DragPreviewState>({
-  offset: null,
-  mouse: null,
-  id: null,
-  dragIds: [],
-  isDragging: false,
-});
-
-export function useDragPreviewState() {
-  return useContext(DragPreviewContext);
-}
