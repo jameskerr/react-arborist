@@ -24,6 +24,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { getEventCoordinates } from "@dnd-kit/utilities";
 import {
   DataUpdatesContext,
   DndContext,
@@ -64,34 +65,6 @@ const INITIAL_DRAG_PREVIEW_STATE: DragPreviewState = {
   dragIds: [],
   isDragging: false,
 };
-
-function getEventCoordinates(event: Event | null): { x: number; y: number } | null {
-  if (!event) return null;
-  if ("clientX" in event && typeof (event as MouseEvent).clientX === "number") {
-    return { x: (event as MouseEvent).clientX, y: (event as MouseEvent).clientY };
-  }
-  if (
-    "touches" in event &&
-    (event as TouchEvent).touches &&
-    (event as TouchEvent).touches.length > 0
-  ) {
-    return {
-      x: (event as TouchEvent).touches[0].clientX,
-      y: (event as TouchEvent).touches[0].clientY,
-    };
-  }
-  if (
-    "changedTouches" in event &&
-    (event as TouchEvent).changedTouches &&
-    (event as TouchEvent).changedTouches.length > 0
-  ) {
-    return {
-      x: (event as TouchEvent).changedTouches[0].clientX,
-      y: (event as TouchEvent).changedTouches[0].clientY,
-    };
-  }
-  return null;
-}
 
 function useHasParentDndContext(): boolean {
   const ctx = useDndKitContext();
@@ -227,7 +200,7 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
       const dragIds = api.isSelected(id) ? Array.from(api.selectedIds) : [id];
       store.current.dispatch(dndActions.dragStart(id, dragIds));
 
-      const initialCoords = getEventCoordinates(event.activatorEvent);
+      const initialCoords = event.activatorEvent ? getEventCoordinates(event.activatorEvent) : null;
       const initialRect = event.active.rect.current.initial;
       const offset = initialRect ? { x: initialRect.left, y: initialRect.top } : initialCoords;
 
@@ -248,7 +221,7 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
       activatorEvent: Event | null,
       delta: { x: number; y: number },
     ) => {
-      const initialCoords = getEventCoordinates(activatorEvent);
+      const initialCoords = activatorEvent ? getEventCoordinates(activatorEvent) : null;
       const mouse = initialCoords
         ? { x: initialCoords.x + delta.x, y: initialCoords.y + delta.y }
         : null;
@@ -296,7 +269,7 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
 
   const handleDragMove = useCallback(
     (event: DragMoveEvent) => {
-      const initialCoords = getEventCoordinates(event.activatorEvent);
+      const initialCoords = event.activatorEvent ? getEventCoordinates(event.activatorEvent) : null;
       const delta = event.delta;
       const mouse = initialCoords
         ? { x: initialCoords.x + delta.x, y: initialCoords.y + delta.y }
