@@ -371,12 +371,6 @@ interface TreeProps<T> {
   onClick?: MouseEventHandler;
   onContextMenu?: MouseEventHandler;
 
-  dndRootElement?: globalThis.Node | null;
-  dndBackend?: Extract<
-    DndProviderProps<unknown, unknown>,
-    { backend: unknown }
-  >["backend"];
-  dndManager?: ReturnType<typeof useDragDropManager>;
   dragType?: string | ((node: NodeApi<T>) => string);
 }
 ```
@@ -405,42 +399,6 @@ To act only when the empty area was clicked (and not a row), check whether the e
 
 Clicking empty space already clears the selection by default; pass the [`disableDeselectOnClick`](#tree-component-props) prop to keep the selection instead.
 
-### Dragging Nodes to External Drop Targets
-
-Each dragged row attaches its node `data` to the active @dnd-kit draggable item (`event.active.data.current.data`), so a drop target rendered outside the tree can read it:
-
-```tsx
-import { useDroppable } from "@dnd-kit/core";
-
-function ExternalDropZone() {
-  const { setNodeRef, isOver } = useDroppable({ id: "external-drop" });
-  return <div ref={setNodeRef}>Drop here</div>;
-}
-```
-
-Wrap both the tree and your external drop targets in a single `<DndContext>`:
-
-```tsx
-import { DndContext, DragEndEvent } from "@dnd-kit/core";
-import { Tree, treeCollisionDetection } from "react-arborist";
-
-function App() {
-  const handleDragEnd = (event: DragEndEvent) => {
-    if (event.over?.id === "external-drop") {
-      const nodeData = event.active.data.current?.data;
-      console.log("Dropped node:", nodeData);
-    }
-  };
-
-  return (
-    <DndContext onDragEnd={handleDragEnd} collisionDetection={treeCollisionDetection}>
-      <Tree data={data}>{Node}</Tree>
-      <ExternalDropZone />
-    </DndContext>
-  );
-}
-```
-
 ## Drag and Drop (@dnd-kit)
 
 react-arborist uses `@dnd-kit` for drag and drop:
@@ -448,27 +406,25 @@ react-arborist uses `@dnd-kit` for drag and drop:
 - **Zero peer dependencies**: `@dnd-kit` is bundled as a direct dependency; no extra packages need to be installed.
 - **Pointer & touch support**: Uses PointerEvent sensors out of the box for cross-platform desktop and mobile support.
 - **Sensors prop**: Pass custom sensors via the `sensors` prop (`useSensors(...)`) to customize activation constraints (e.g. distance or delay thresholds).
-- **Collision detection**: When wrapping the tree in an external `<DndContext>`, pass `collisionDetection={treeCollisionDetection}` so internal reordering and external drop targets work together seamlessly.
 
-### Multiple trees or external drop targets
+### Drag context
 
-When a `<Tree>` is placed inside a parent `<DndContext>`, it automatically detects the parent context and coordinates drag-and-drop events with it.
+Each `<Tree>` creates and owns its own `<DndContext>`. Coordinating several trees (or a tree plus your own droppables) inside a shared `<DndContext>` is not supported in v5; see [#396](https://github.com/jameskerr/react-arborist/issues/396).
 
-If no parent `<DndContext>` is present, `<Tree>` creates its own standalone context with default Pointer and Keyboard sensors.
+Drag and drop is pointer-only. The default sensors deliberately exclude `@dnd-kit`'s `KeyboardSensor`, since it starts a drag on Space or Enter, which the tree uses to select, toggle, and rename.
 
 ### Custom sensors
 
 Configure sensors on the tree using `@dnd-kit/core`:
 
 ```tsx
-import { useSensor, useSensors, PointerSensor, KeyboardSensor } from "@dnd-kit/core";
+import { useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
 
 function MyTree() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },
     }),
-    useSensor(KeyboardSensor),
   );
 
   return <Tree data={data} sensors={sensors}>{Node}</Tree>;
@@ -507,10 +463,15 @@ npm install react-arborist react-dnd react-dnd-html5-backend
 npm install react-arborist
 ```
 
-If you previously passed `dndBackend` or `dndManager`, these props are now deprecated. For custom sensors, pass the `sensors` prop instead. For external drop targets or coordinating across multiple trees, wrap them in a standard `<DndContext>` from `@dnd-kit/core`.
+`dndBackend`, `dndManager`, and `dndRootElement` are removed in v5; TypeScript flags existing uses. For custom sensors, pass the `sensors` prop instead.
 
-If your app puts its `<DndProvider>` on a custom `context`, or renders one into
-another window, adopt the shared `DndProvider` + `dndManager` pattern shown above.
+v5 also drops the native HTML5 drag-and-drop capabilities that depended on `react-dnd`:
+
+- dragging rows onto the host app's `react-dnd` targets, and dropping the app's `react-dnd` items into the tree
+- OS file drops, dragging out to other apps or windows, and iframe setups via `dndRootElement`
+- `dragType` no longer filters in-tree reordering; it is only a label on the drag data
+
+Coordinating several trees in a shared `<DndContext>` is tracked in [#396](https://github.com/jameskerr/react-arborist/issues/396).
 
 ## Row Component Props
 

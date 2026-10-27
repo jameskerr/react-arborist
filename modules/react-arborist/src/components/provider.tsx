@@ -16,11 +16,8 @@ import {
   DragEndEvent,
   DragMoveEvent,
   DragStartEvent,
-  KeyboardSensor,
   MouseSensor,
   PointerSensor,
-  useDndContext as useDndKitContext,
-  useDndMonitor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -56,7 +53,6 @@ const POINTER_SENSOR_OPTIONS = {
     distance: 5,
   },
 };
-const KEYBOARD_SENSOR_OPTIONS = {};
 
 const INITIAL_DRAG_PREVIEW_STATE: DragPreviewState = {
   offset: null,
@@ -65,36 +61,6 @@ const INITIAL_DRAG_PREVIEW_STATE: DragPreviewState = {
   dragIds: [],
   isDragging: false,
 };
-
-function useHasParentDndContext(): boolean {
-  const ctx = useDndKitContext();
-  // Outside of a <DndContext>, @dnd-kit's default context uses 0-arg noop stubs (length === 0).
-  // Inside an active <DndContext>, dragOverlay.setRef expects (element) and
-  // measureDroppableContainers expects (ids), so their arity is >= 1.
-  return ctx.dragOverlay.setRef.length > 0 || ctx.measureDroppableContainers.length > 0;
-}
-
-function ExternalDndListener({
-  children,
-  onDragStart,
-  onDragMove,
-  onDragEnd,
-  onDragCancel,
-}: {
-  children: ReactNode;
-  onDragStart: (e: DragStartEvent) => void;
-  onDragMove: (e: DragMoveEvent) => void;
-  onDragEnd: (e: DragEndEvent) => void;
-  onDragCancel: (e: DragCancelEvent) => void;
-}) {
-  useDndMonitor({
-    onDragStart,
-    onDragMove,
-    onDragEnd,
-    onDragCancel,
-  });
-  return <>{children}</>;
-}
 
 function StandaloneDndContext({
   treeProps,
@@ -111,12 +77,13 @@ function StandaloneDndContext({
   onDragEnd: (e: DragEndEvent) => void;
   onDragCancel: (e: DragCancelEvent) => void;
 }) {
+  /* Pointer drags only: dnd-kit's KeyboardSensor would start a drag on Space or
+     Enter, which the tree already uses to toggle, select, and rename nodes. */
   const defaultSensors = useSensors(
     useSensor(
       typeof window !== "undefined" && "PointerEvent" in window ? PointerSensor : MouseSensor,
       POINTER_SENSOR_OPTIONS,
     ),
-    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS),
   );
 
   const sensors = treeProps.sensors ?? defaultSensors;
@@ -151,6 +118,28 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
   const [dragPreviewState, setDragPreviewState] = useState<DragPreviewState>(
     INITIAL_DRAG_PREVIEW_STATE,
   );
+
+  /* dnd-kit's delta includes scroll adjustments, so `activator + delta` is not
+     the pointer position once the list auto-scrolls mid-drag. Track the real
+     pointer natively instead. */
+  const pointerRef = useRef<{ x: number; y: number } | null>(null);
+  const grabOffsetRef = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    if (!dragPreviewState.isDragging) return;
+    const track = (event: Event) => {
+      const coords = getEventCoordinates(event as MouseEvent);
+      if (coords) pointerRef.current = coords;
+    };
+    document.addEventListener("pointermove", track, true);
+    document.addEventListener("mousemove", track, true);
+    document.addEventListener("touchmove", track, true);
+    return () => {
+      document.removeEventListener("pointermove", track, true);
+      document.removeEventListener("mousemove", track, true);
+      document.removeEventListener("touchmove", track, true);
+    };
+  }, [dragPreviewState.isDragging]);
 
   /* The tree api object is stable. */
   const api = useMemo(() => {
@@ -204,6 +193,12 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
       const initialRect = event.active.rect.current.initial;
       const offset = initialRect ? { x: initialRect.left, y: initialRect.top } : initialCoords;
 
+      pointerRef.current = initialCoords;
+      grabOffsetRef.current =
+        initialCoords && initialRect
+          ? { x: initialCoords.x - initialRect.left, y: initialCoords.y - initialRect.top }
+          : null;
+
       setDragPreviewState({
         offset,
         mouse: initialCoords,
@@ -216,16 +211,7 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
   );
 
   const updateHover = useCallback(
-    (
-      over: DragMoveEvent["over"],
-      activatorEvent: Event | null,
-      delta: { x: number; y: number },
-    ) => {
-      const initialCoords = activatorEvent ? getEventCoordinates(activatorEvent) : null;
-      const mouse = initialCoords
-        ? { x: initialCoords.x + delta.x, y: initialCoords.y + delta.y }
-        : null;
-
+    (over: DragMoveEvent["over"], mouse: { x: number; y: number } | null) => {
       if (!mouse) return;
 
       if (over) {
@@ -270,14 +256,13 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
   const handleDragMove = useCallback(
     (event: DragMoveEvent) => {
       const initialCoords = event.activatorEvent ? getEventCoordinates(event.activatorEvent) : null;
-      const delta = event.delta;
-      const mouse = initialCoords
-        ? { x: initialCoords.x + delta.x, y: initialCoords.y + delta.y }
-        : null;
-      const initialRect = event.active.rect.current.initial;
-      const offset = initialRect
-        ? { x: initialRect.left + delta.x, y: initialRect.top + delta.y }
-        : mouse;
+      const mouse =
+        pointerRef.current ??
+        (initialCoords
+          ? { x: initialCoords.x + event.delta.x, y: initialCoords.y + event.delta.y }
+          : null);
+      const grab = grabOffsetRef.current;
+      const offset = mouse && grab ? { x: mouse.x - grab.x, y: mouse.y - grab.y } : mouse;
 
       setDragPreviewState((prev) => ({
         ...prev,
@@ -285,7 +270,7 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
         mouse,
       }));
 
-      updateHover(event.over, event.activatorEvent, event.delta);
+      updateHover(event.over, mouse);
     },
     [updateHover],
   );
@@ -293,7 +278,15 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       if (event.over) {
-        updateHover(event.over, event.activatorEvent, event.delta);
+        const initialCoords = event.activatorEvent
+          ? getEventCoordinates(event.activatorEvent)
+          : null;
+        const mouse =
+          pointerRef.current ??
+          (initialCoords
+            ? { x: initialCoords.x + event.delta.x, y: initialCoords.y + event.delta.y }
+            : null);
+        updateHover(event.over, mouse);
         if (api.canDrop()) {
           api.drop();
         }
@@ -318,36 +311,21 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
     [api],
   );
 
-  const hasParentDnd = useHasParentDndContext();
-
-  const dndContent = hasParentDnd ? (
-    <ExternalDndListener
-      onDragStart={handleDragStart}
-      onDragMove={handleDragMove}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      {children}
-    </ExternalDndListener>
-  ) : (
-    <StandaloneDndContext
-      treeProps={treeProps}
-      onDragStart={handleDragStart}
-      onDragMove={handleDragMove}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      {children}
-    </StandaloneDndContext>
-  );
-
   return (
     <TreeApiContext.Provider value={api}>
       <DataUpdatesContext.Provider value={updateCount.current}>
         <NodesContext.Provider value={state.nodes}>
           <DndContext.Provider value={state.dnd}>
             <DragPreviewContext.Provider value={dragPreviewState}>
-              {dndContent}
+              <StandaloneDndContext
+                treeProps={treeProps}
+                onDragStart={handleDragStart}
+                onDragMove={handleDragMove}
+                onDragEnd={handleDragEnd}
+                onDragCancel={handleDragCancel}
+              >
+                {children}
+              </StandaloneDndContext>
             </DragPreviewContext.Provider>
           </DndContext.Provider>
         </NodesContext.Provider>

@@ -78,14 +78,9 @@ export interface TreeProps<T> {
   className?: string | undefined;
   rowClassName?: string | undefined;
 
-  dndRootElement?: globalThis.Node | null;
   onClick?: MouseEventHandler;
   onContextMenu?: MouseEventHandler;
-  /** @deprecated react-dnd is replaced by @dnd-kit; this prop is a no-op. */
-  dndBackend?: unknown;
-  /** @deprecated react-dnd is replaced by @dnd-kit; this prop is a no-op. */
-  dndManager?: unknown;
-  /** Custom sensors for @dnd-kit DndContext. Defaults to PointerSensor + KeyboardSensor. */
+  /** Custom sensors for @dnd-kit DndContext. Defaults to PointerSensor. */
   sensors?: SensorDescriptor<SensorOptions>[];
 
   /* The item type each row's drag source advertises on its draggable data.

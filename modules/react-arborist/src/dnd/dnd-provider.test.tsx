@@ -4,20 +4,11 @@
  * sibling tree rendering.
  */
 
+import { createRef } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import {
-  DndContext as DndKitContext,
-  KeyboardSensor,
-  SensorDescriptor,
-  SensorOptions,
-} from "@dnd-kit/core";
-import {
-  getDefaultSensors,
-  getDndProviderProps,
-  treeCollisionDetection,
-} from "../components/get-dnd-provider-props.js";
+import { treeCollisionDetection } from "../components/get-dnd-provider-props.js";
 import { Tree } from "../components/tree.js";
-import { TreeProps } from "../types/tree-props.js";
+import { TreeApi } from "../interfaces/tree-api.js";
 import { NodeRendererProps } from "../types/renderers.js";
 import { OUTER_DROP_ID } from "./outer-drop-hook.js";
 
@@ -42,15 +33,6 @@ describe("DndProvider / DndContext integration", () => {
     );
     expect(screen.getByText("Root")).not.toBeNull();
     expect(screen.getByText("Child A")).not.toBeNull();
-  });
-
-  test("accepts deprecated dndBackend and dndManager props without error", () => {
-    render(
-      <Tree<Datum> data={data} rowHeight={24} dndBackend={() => ({})} dndManager={{}}>
-        {Node}
-      </Tree>,
-    );
-    expect(screen.getByText("Root")).not.toBeNull();
   });
 
   test("starts dragging when dragHandle moves beyond distance threshold", () => {
@@ -81,6 +63,76 @@ describe("DndProvider / DndContext integration", () => {
 
     // Drag ended: preview overlay unmounts, only the tree row remains
     expect(screen.getAllByText("Root")).toHaveLength(1);
+  });
+
+  test("keeps the drag alive after the source row unmounts (virtualization)", () => {
+    const many: Datum[] = Array.from({ length: 100 }, (_, i) => ({
+      id: String(i),
+      name: `Node ${i}`,
+    }));
+    const ref = createRef<TreeApi<Datum> | undefined>();
+    render(
+      <Tree<Datum> ref={ref} data={many} rowHeight={24} height={100} width={300}>
+        {Node}
+      </Tree>,
+    );
+
+    fireEvent.mouseDown(screen.getByText("Node 0"), { clientX: 10, clientY: 10, button: 0 });
+    act(() => {
+      fireEvent.mouseMove(document, { clientX: 10, clientY: 30 });
+    });
+    // Row plus the drag preview overlay.
+    expect(screen.getAllByText("Node 0")).toHaveLength(2);
+
+    // Scroll the source row out of the rendered window.
+    act(() => {
+      ref.current!.list.current!.scrollTo(2000);
+    });
+    expect(screen.getAllByText("Node 0")).toHaveLength(1);
+
+    // The drag survives the unmount: it still ends cleanly.
+    act(() => {
+      fireEvent.mouseUp(document, { clientX: 10, clientY: 30 });
+    });
+    expect(screen.queryByText("Node 0")).toBeNull();
+  });
+
+  test("follows the pointer, not dnd-kit's scroll-adjusted delta, when the list scrolls", () => {
+    const many: Datum[] = Array.from({ length: 50 }, (_, i) => ({
+      id: String(i),
+      name: `Node ${i}`,
+    }));
+    const ref = createRef<TreeApi<Datum> | undefined>();
+    render(
+      <Tree<Datum> ref={ref} data={many} rowHeight={24} height={100} width={300}>
+        {Node}
+      </Tree>,
+    );
+
+    const preview = () => document.querySelector(".preview") as HTMLElement;
+
+    // Grab, then move twice: the first move starts the drag, the second is
+    // tracked by the pointer listener.
+    fireEvent.mouseDown(screen.getByText("Node 0"), { clientX: 10, clientY: 10, button: 0 });
+    act(() => {
+      fireEvent.mouseMove(document, { clientX: 10, clientY: 30 });
+    });
+    act(() => {
+      fireEvent.mouseMove(document, { clientX: 10, clientY: 40 });
+    });
+    const before = preview().style.transform;
+
+    // The list scrolls mid-drag. dnd-kit adds that scroll to `event.delta`, so a
+    // delta-derived pointer would jump here; the preview must track the pointer.
+    act(() => {
+      const outer = ref.current!.listEl.current!;
+      outer.scrollTop = 100;
+      fireEvent.scroll(outer);
+    });
+    act(() => {
+      fireEvent.mouseMove(document, { clientX: 10, clientY: 40 });
+    });
+    expect(preview().style.transform).toBe(before);
   });
 
   test("triggers onMove when dragging and dropping a node onto another node", () => {
@@ -131,31 +183,6 @@ describe("DndProvider / DndContext integration", () => {
     );
   });
 
-  test("participates in an external @dnd-kit DndContext without nesting errors", () => {
-    const handleDragStart = jest.fn();
-    render(
-      <DndKitContext sensors={getDefaultSensors()} onDragStart={handleDragStart}>
-        <Tree<Datum> data={data} rowHeight={24}>
-          {Node}
-        </Tree>
-      </DndKitContext>,
-    );
-
-    const rootEl = screen.getByText("Root");
-    expect(rootEl).not.toBeNull();
-
-    fireEvent.mouseDown(rootEl, { clientX: 10, clientY: 10, button: 0 });
-    act(() => {
-      fireEvent.mouseMove(document, { clientX: 10, clientY: 30 });
-    });
-
-    expect(handleDragStart).toHaveBeenCalledTimes(1);
-
-    act(() => {
-      fireEvent.mouseUp(document, { clientX: 10, clientY: 30 });
-    });
-  });
-
   test("two sibling Trees render cleanly without singleton conflicts", () => {
     render(
       <>
@@ -172,21 +199,28 @@ describe("DndProvider / DndContext integration", () => {
     expect(screen.getByText("Second Tree Node")).not.toBeNull();
   });
 
-  test("forwards custom sensors to getDndProviderProps", () => {
-    const customSensors: SensorDescriptor<SensorOptions>[] = [
-      { sensor: KeyboardSensor, options: {} },
-    ];
-    const props = getDndProviderProps({ data, sensors: customSensors } as TreeProps<Datum>);
-    expect(props.sensors).toBe(customSensors);
-    expect(props.collisionDetection).toBe(treeCollisionDetection);
-  });
+  test("Space and Enter on a nested button do not start a drag", () => {
+    function RowWithButton({ node, dragHandle }: NodeRendererProps<Datum>) {
+      return (
+        <div ref={dragHandle}>
+          <span>{node.data.name}</span>
+          <button type="button">Action</button>
+        </div>
+      );
+    }
 
-  test("resolves default sensors when no custom sensors given", () => {
-    const props = getDndProviderProps({ data } as TreeProps<Datum>);
-    expect(props.sensors).toBeUndefined();
-    const defaults = getDefaultSensors();
-    expect(defaults).toHaveLength(2);
-    expect(defaults[1].sensor).toBe(KeyboardSensor);
+    render(
+      <Tree<Datum> data={data} rowHeight={24}>
+        {RowWithButton}
+      </Tree>,
+    );
+
+    const button = screen.getAllByRole("button")[0];
+    fireEvent.keyDown(button, { key: " ", code: "Space" });
+    fireEvent.keyDown(button, { key: "Enter", code: "Enter" });
+
+    // A drag would mount the preview overlay, rendering the row text twice.
+    expect(screen.getAllByText("Root")).toHaveLength(1);
   });
 
   describe("treeCollisionDetection", () => {

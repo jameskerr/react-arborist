@@ -61,7 +61,16 @@ export function useDragHook<T>(node: NodeApi<T>): DragHandleRef {
       const listener = (event: Event) => {
         const currentHandler = listenersRef.current?.[propName];
         if (currentHandler) {
-          currentHandler({ nativeEvent: event });
+          /* dnd-kit's activators expect a React-style synthetic event, but the
+             dragHandle contract is a ref callback, so listeners can't be spread
+             onto JSX. Hand them the native event plus the members activators
+             touch (target, preventDefault, stopPropagation). */
+          currentHandler({
+            nativeEvent: event,
+            target: event.target,
+            preventDefault: () => event.preventDefault(),
+            stopPropagation: () => event.stopPropagation(),
+          });
         }
       };
       element.addEventListener(eventName, listener);
