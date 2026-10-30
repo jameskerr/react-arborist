@@ -1,3 +1,5 @@
+import { dragAndDrop } from "../support/drag.js";
+
 const TOTAL_ITEMS = 17;
 
 describe("Testing the Gmail Demo", () => {
@@ -166,58 +168,3 @@ describe("Testing the Gmail Demo", () => {
       .should("have.length", TOTAL_ITEMS - 2);
   });
 });
-
-function dragAndDrop(src, dst) {
-  src.then(($src) => {
-    const handleEl = $src[0].closest("[role=treeitem]")?.firstElementChild || $src[0];
-    const srcRect = handleEl.getBoundingClientRect();
-    const startX = srcRect.x + srcRect.width / 2;
-    const startY = srcRect.y + srcRect.height / 2;
-
-    dst.then(($dst) => {
-      const targetRow = $dst[0].closest("[role=treeitem]") || $dst[0];
-      const dstRect = targetRow.getBoundingClientRect();
-      const endX = dstRect.x + dstRect.width / 2;
-      const endY = dstRect.y + dstRect.height * 0.25;
-
-      cy.wrap(handleEl).trigger("pointerdown", {
-        button: 0,
-        clientX: startX,
-        clientY: startY,
-        pointerId: 1,
-        isPrimary: true,
-        force: true,
-      });
-
-      cy.wait(50);
-
-      cy.document().trigger("pointermove", {
-        clientX: startX + 10,
-        clientY: startY + 10,
-        pointerId: 1,
-        isPrimary: true,
-        force: true,
-      });
-
-      cy.wait(50);
-
-      cy.document().trigger("pointermove", {
-        clientX: endX,
-        clientY: endY,
-        pointerId: 1,
-        isPrimary: true,
-        force: true,
-      });
-
-      cy.wait(50);
-
-      cy.document().trigger("pointerup", {
-        clientX: endX,
-        clientY: endY,
-        pointerId: 1,
-        isPrimary: true,
-        force: true,
-      });
-    });
-  });
-}

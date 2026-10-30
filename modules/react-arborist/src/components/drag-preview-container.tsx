@@ -13,7 +13,7 @@ export function DragPreviewContainer() {
   const DragPreview = tree.props.renderDragPreview || DefaultDragPreview;
   return (
     <DragOverlay dropAnimation={null}>
-      {isDragging && id ? <DragPreview id={id} dragIds={dragIds} isDragging={isDragging} /> : null}
+      {id ? <DragPreview id={id} dragIds={dragIds} isDragging={isDragging} /> : null}
     </DragOverlay>
   );
 }

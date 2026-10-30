@@ -9508,8 +9508,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "showcase@workspace:modules/showcase"
   dependencies:
-    "@dnd-kit/core": "npm:^6.3.1"
-    "@dnd-kit/utilities": "npm:^3.2.2"
     "@types/node": "npm:20.10.4"
     "@types/react": "npm:18.2.43"
     "@types/react-dom": "npm:18.2.17"

@@ -1,9 +1,15 @@
-import { XYCoord } from "../types/renderers.js";
+import type { XYCoord } from "../types/renderers.js";
 import { NodeApi } from "../interfaces/node-api.js";
 import { bound, indexOf, isClosed, isItem } from "../utils.js";
 import { DropResult } from "./drop-hook.js";
 
-function measureHover(el: HTMLElement, offset: XYCoord) {
+/* The only DOM capability the drop maths needs. An element satisfies it, and so
+   does a plain rect object, which keeps computeDrop testable without layout. */
+export type Measurable = {
+  getBoundingClientRect(): { x: number; y: number; height: number };
+};
+
+function measureHover(el: Measurable, offset: XYCoord) {
   const rect = el.getBoundingClientRect();
   const x = offset.x - Math.round(rect.x);
   const y = offset.y - Math.round(rect.y);
@@ -48,7 +54,7 @@ function getNodesAroundCursor(
 }
 
 type Args = {
-  element: HTMLElement;
+  element: Measurable;
   offset: XYCoord;
   indent: number;
   node: NodeApi | null;

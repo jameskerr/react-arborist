@@ -11,6 +11,8 @@
      installer.dmg  leaf    h=28  top=256
 */
 
+import { dragAndDrop } from "../support/drag.js";
+
 describe("Variable Row Height Demo", () => {
   beforeEach(() => {
     cy.visit("http://localhost:3000/variable-height");
@@ -63,57 +65,3 @@ describe("Variable Row Height Demo", () => {
     });
   });
 });
-
-function dragAndDrop(src, dst) {
-  src.then(($src) => {
-    const handleEl = $src.children()[0] || $src[0];
-    const srcRect = handleEl.getBoundingClientRect();
-    const startX = srcRect.x + srcRect.width / 2;
-    const startY = srcRect.y + srcRect.height / 2;
-
-    dst.then(($dst) => {
-      const dstRect = $dst[0].getBoundingClientRect();
-      const endX = dstRect.x + dstRect.width / 2;
-      const endY = dstRect.y + dstRect.height * 0.25;
-
-      cy.wrap(handleEl).trigger("pointerdown", {
-        button: 0,
-        clientX: startX,
-        clientY: startY,
-        pointerId: 1,
-        isPrimary: true,
-        force: true,
-      });
-
-      cy.wait(50);
-
-      cy.document().trigger("pointermove", {
-        clientX: startX + 10,
-        clientY: startY + 10,
-        pointerId: 1,
-        isPrimary: true,
-        force: true,
-      });
-
-      cy.wait(50);
-
-      cy.document().trigger("pointermove", {
-        clientX: endX,
-        clientY: endY,
-        pointerId: 1,
-        isPrimary: true,
-        force: true,
-      });
-
-      cy.wait(50);
-
-      cy.document().trigger("pointerup", {
-        clientX: endX,
-        clientY: endY,
-        pointerId: 1,
-        isPrimary: true,
-        force: true,
-      });
-    });
-  });
-}

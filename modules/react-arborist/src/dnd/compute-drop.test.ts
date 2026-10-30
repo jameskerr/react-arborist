@@ -31,7 +31,7 @@ function hover(api: TreeApi<any>, id: string, x: number, y: number) {
   const node = api.get(id)!;
   const element = {
     getBoundingClientRect: () => ({ x: 0, y: 0, height: ROW }),
-  } as unknown as HTMLElement;
+  };
   return computeDrop({
     element,
     offset: { x, y },
