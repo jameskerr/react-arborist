@@ -1,0 +1,61 @@
+.page {
+  padding: 24px;
+  font-family: sans-serif;
+  max-width: 820px;
+}
+
+.layout {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.tree {
+  border: 1px solid #d9dee4;
+  border-radius: 8px;
+}
+
+.node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  padding-right: 12px;
+  cursor: grab;
+  font-variant-numeric: tabular-nums;
+}
+
+.node[data-selected] {
+  background: #e0ecff;
+}
+
+.icon {
+  margin-left: 8px;
+}
+
+.name {
+  flex: 1;
+}
+
+.amount {
+  color: #3b4754;
+}
+
+.folderAmount {
+  font-weight: 600;
+}
+
+.summary {
+  flex: 1;
+}
+
+.summary label {
+  color: #6b7785;
+  font-size: 14px;
+}
+
+.grandTotal {
+  font-size: 32px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
