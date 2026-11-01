@@ -130,15 +130,17 @@ function moveItems(
   const siblings = parentId ? (find(data, parentId)?.children ?? []) : data;
   const to = adjustMoveIndex({ index, dragIds, siblingIds: siblings.map((s) => s.id) });
 
+  // A single depth-first pass, so the dragged items keep their display order
+  // even when the selection spans different depths.
   const dragged: Item[] = [];
-  const remove = (items: Item[]): Item[] =>
-    items
-      .filter((item) => {
-        if (!dragIds.includes(item.id)) return true;
-        dragged.push(item);
-        return false;
-      })
-      .map((item) => (item.children ? { ...item, children: remove(item.children) } : item));
+  const remove = (items: Item[]): Item[] => {
+    const kept: Item[] = [];
+    for (const item of items) {
+      if (dragIds.includes(item.id)) dragged.push(item);
+      else kept.push(item.children ? { ...item, children: remove(item.children) } : item);
+    }
+    return kept;
+  };
 
   const insert = (items: Item[]): Item[] =>
     items.map((item) => {
