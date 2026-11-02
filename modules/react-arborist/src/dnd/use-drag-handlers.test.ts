@@ -80,8 +80,11 @@ function moveEvent(over: DragMoveEvent["over"], delta: { x: number; y: number })
 test("measures against the pointer, not activator + delta", () => {
   const { api, handlers, over } = setup();
 
-  act(() => handlers.onDragStart(startEvent()));
+  /* onDragStart and the pointer event are in one act() on purpose: if the
+     listeners were attached in an effect they would not exist yet, and the
+     drag would fall back to activator + delta. */
   act(() => {
+    handlers.onDragStart(startEvent());
     document.dispatchEvent(new MouseEvent("pointermove", { clientX: 0, clientY: 5 }));
     handlers.onDragMove(moveEvent(over, { x: 0, y: 200 }));
   });
