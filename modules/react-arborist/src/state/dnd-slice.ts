@@ -1,4 +1,4 @@
-import { Cursor } from "../dnd/compute-drop.js";
+import type { Cursor } from "../dnd/compute-drop.js";
 import { ActionTypes } from "../types/utils.js";
 
 /* Types */
@@ -58,7 +58,7 @@ function isSameCursor(a: Cursor, b: Cursor): boolean {
   }
 }
 
-export const initialDndState: DndState = {
+export const initialDndState = (): DndState => ({
   cursor: { type: "none" },
   dragId: null,
   dragIds: [],
@@ -66,11 +66,11 @@ export const initialDndState: DndState = {
   index: -1,
   destinationParentId: null,
   destinationIndex: null,
-};
+});
 
 /* Reducer */
 export function reducer(
-  state: DndState = initialDndState,
+  state: DndState = initialDndState(),
   action: ActionTypes<typeof actions>,
 ): DndState {
   switch (action.type) {
@@ -81,7 +81,7 @@ export function reducer(
     case "DND_DRAG_START":
       return { ...state, dragId: action.id, dragIds: action.dragIds };
     case "DND_DRAG_END":
-      return initialDndState;
+      return initialDndState();
     case "DND_HOVERING":
       return state.parentId === action.parentId && state.index === action.index
         ? state

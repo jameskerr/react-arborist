@@ -8,15 +8,15 @@ export type DragSlice = {
   selectedIds: string[];
 };
 
-export const initialDragState: DragSlice = {
+export const initialDragState = (): DragSlice => ({
   id: null,
   selectedIds: [],
-};
+});
 
 /* Reducer */
 
 export function reducer(
-  state: DragSlice = initialDragState,
+  state: DragSlice = initialDragState(),
   action: ActionTypes<typeof dnd>,
 ): DragSlice {
   switch (action.type) {
