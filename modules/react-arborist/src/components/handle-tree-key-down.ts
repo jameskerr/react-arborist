@@ -26,7 +26,7 @@ function isEditableTarget(target: EventTarget | null, currentTarget: EventTarget
   );
 }
 
-function handleBackspace<T>(tree: TreeApi<T>) {
+function handleBackspace<T>(_e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T>) {
   if (!tree.props.onDelete) return;
   const ids = Array.from(tree.selectedIds);
   if (ids.length > 1) {
@@ -36,7 +36,7 @@ function handleBackspace<T>(tree: TreeApi<T>) {
     }
     if (!nextFocus) nextFocus = tree.lastNode;
     tree.focus(nextFocus, { scroll: false });
-    tree.delete(Array.from(ids));
+    tree.delete(ids);
     return;
   }
 
@@ -94,7 +94,7 @@ function handleArrowUp<T>(e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<
   }
 }
 
-function handleArrowRight<T>(tree: TreeApi<T>) {
+function handleArrowRight<T>(_e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T>) {
   const node = tree.focusedNode;
   if (!node) return;
   if (node.isInternal && node.isOpen) {
@@ -104,7 +104,7 @@ function handleArrowRight<T>(tree: TreeApi<T>) {
   }
 }
 
-function handleArrowLeft<T>(tree: TreeApi<T>) {
+function handleArrowLeft<T>(_e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T>) {
   const node = tree.focusedNode;
   if (!node || node.isRoot) return;
   if (node.isInternal && node.isOpen) {
@@ -126,18 +126,18 @@ function handleSpace<T>(e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T>
   }
 }
 
-function handleEnter<T>(tree: TreeApi<T>) {
+function handleEnter<T>(_e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T>) {
   const node = tree.focusedNode;
   if (!node || !node.isEditable || !tree.props.onRename) return;
   setTimeout(() => {
-    if (node) tree.edit(node);
+    tree.edit(node);
   });
 }
 
 function handleTypeahead<T>(key: string, tree: TreeApi<T>) {
   const search = searchFor(tree);
   if (search.timeout) clearTimeout(search.timeout);
-  search.term += key;
+  search.term += key.toLowerCase();
   search.timeout = setTimeout(() => {
     search.term = "";
   }, 600);
@@ -163,19 +163,24 @@ function handleTab<T>(e: React.KeyboardEvent<HTMLDivElement>, _tree: TreeApi<T>)
 }
 
 function handleCreateWithKey<T>(e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T>) {
-  const command = e.metaKey || e.ctrlKey;
-  if (command) {
+  if (e.metaKey || e.ctrlKey) {
     if (tree.props.disableMultiSelection) return;
     e.preventDefault();
     tree.selectAll();
   } else if (tree.props.onCreate) {
     tree.createLeaf();
+  } else {
+    handleTypeahead(e.key, tree);
   }
 }
 
 function handleCreateFolder<T>(e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T>) {
   if (e.metaKey || e.ctrlKey) return;
-  if (tree.props.onCreate) tree.createInternal();
+  if (tree.props.onCreate) {
+    tree.createInternal();
+  } else {
+    handleTypeahead(e.key, tree);
+  }
 }
 
 function handleOpenSiblings<T>(_e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T>) {
@@ -203,26 +208,22 @@ function handlePageDown<T>(e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi
   tree.pageDown();
 }
 
-function handleBackspaceKey<T>(_e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T>) {
-  handleBackspace(tree);
-}
-
 type KeyHandler = <T>(e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T>) => void;
 
 /* One entry per command, keyed by KeyboardEvent.key. A key that isn't listed
    falls through to type-to-find. */
 const KEY_HANDLERS: Record<string, KeyHandler> = {
-  Backspace: handleBackspaceKey,
+  Backspace: handleBackspace,
   Tab: handleTab,
   ArrowDown: handleArrowDown,
   ArrowUp: handleArrowUp,
-  ArrowRight: (_e, tree) => handleArrowRight(tree),
-  ArrowLeft: (_e, tree) => handleArrowLeft(tree),
+  ArrowRight: handleArrowRight,
+  ArrowLeft: handleArrowLeft,
   a: handleCreateWithKey,
   A: handleCreateFolder,
   Home: handleHome,
   End: handleEnd,
-  Enter: (_e, tree) => handleEnter(tree),
+  Enter: handleEnter,
   " ": handleSpace,
   "*": handleOpenSiblings,
   PageUp: handlePageUp,
@@ -238,6 +239,10 @@ export function handleTreeKeyDown<T>(e: React.KeyboardEvent<HTMLDivElement>, tre
     handler(e, tree);
     return;
   }
+
+  /* Non-character keys (Escape, F5, etc.) and modified shortcuts (Cmd+C, Ctrl+V)
+     must not be appended to the typeahead search term. */
+  if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return;
 
   handleTypeahead(e.key, tree);
 }

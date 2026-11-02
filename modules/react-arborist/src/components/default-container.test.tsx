@@ -261,6 +261,28 @@ test("Ctrl+a selects every node and a alone creates a leaf", async () => {
   expect(onCreate).toHaveBeenCalled();
 });
 
+test("'a' falls through to type-to-find when onCreate is not set", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(<Tree<Datum> ref={ref} data={data} openByDefault />);
+  const tree = screen.getByRole("tree");
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "a" });
+  });
+  expect(ref.current!.focusedNode?.id).toBe("2");
+});
+
+test("non-character keys and modifiers do not corrupt type-to-find", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(<Tree<Datum> ref={ref} data={data} openByDefault />);
+  const tree = screen.getByRole("tree");
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "Shift" });
+    fireEvent.keyDown(tree, { key: "c", ctrlKey: true });
+    fireEvent.keyDown(tree, { key: "c" });
+  });
+  expect(ref.current!.focusedNode?.id).toBe("4");
+});
+
 test("Backspace deletes the focused node through onDelete", async () => {
   const ref = createRef<TreeApi<Datum> | undefined>();
   const onDelete = jest.fn();
@@ -274,5 +296,6 @@ test("Backspace deletes the focused node through onDelete", async () => {
     fireEvent.keyDown(tree, { key: "Backspace" });
   });
 
-  expect(onDelete).toHaveBeenCalled();
+  expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ ids: ["2"] }));
+  expect(ref.current!.focusedNode?.id).toBe("3");
 });
