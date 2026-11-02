@@ -8707,6 +8707,7 @@ __metadata:
     ts-jest: "npm:^29.4.0"
     typescript: "npm:^5.6.0"
   peerDependencies:
+    "@dnd-kit/core": ^6.0.0
     react: ">= 18"
     react-dom: ">= 18"
   languageName: unknown
@@ -9508,6 +9509,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "showcase@workspace:modules/showcase"
   dependencies:
+    "@dnd-kit/core": "npm:^6.3.1"
     "@types/node": "npm:20.10.4"
     "@types/react": "npm:18.2.43"
     "@types/react-dom": "npm:18.2.17"

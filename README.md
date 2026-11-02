@@ -401,7 +401,7 @@ Clicking empty space already clears the selection by default; pass the [`disable
 
 react-arborist uses `@dnd-kit` for drag and drop:
 
-- **Zero peer dependencies**: `@dnd-kit` is bundled as a direct dependency; no extra packages need to be installed.
+- **Peer dependency**: `@dnd-kit/core` (^6.0.0) is a peer dependency alongside `react` and `react-dom`.
 - **Pointer & touch support**: Uses PointerEvent sensors out of the box for cross-platform desktop and mobile support. The drag handle gets `touch-action: none` so the browser doesn't scroll and cancel the drag before it activates.
 - **Sensors prop**: Pass custom sensors via the `sensors` prop (`useSensors(...)`) to customize activation constraints (e.g. distance or delay thresholds). The prop is typed with `@dnd-kit/core`'s own types, so the public API tracks the 6.x line; a future major may change that type.
 
