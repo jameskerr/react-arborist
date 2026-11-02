@@ -1,7 +1,6 @@
 import React from "react";
+import { ROOT_ID } from "../data/root-id.js";
 import type { TreeApi } from "./tree-api.js";
-
-export const ROOT_ID = "__REACT_ARBORIST_INTERNAL_ROOT__";
 
 type Params<T> = {
   id: string;
