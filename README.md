@@ -370,8 +370,6 @@ interface TreeProps<T> {
      the tree (see "Handling Clicks on the Tree Container" below). */
   onClick?: MouseEventHandler;
   onContextMenu?: MouseEventHandler;
-
-  dragType?: string | ((node: NodeApi<T>) => string);
 }
 ```
 
@@ -404,8 +402,8 @@ Clicking empty space already clears the selection by default; pass the [`disable
 react-arborist uses `@dnd-kit` for drag and drop:
 
 - **Zero peer dependencies**: `@dnd-kit` is bundled as a direct dependency; no extra packages need to be installed.
-- **Pointer & touch support**: Uses PointerEvent sensors out of the box for cross-platform desktop and mobile support.
-- **Sensors prop**: Pass custom sensors via the `sensors` prop (`useSensors(...)`) to customize activation constraints (e.g. distance or delay thresholds).
+- **Pointer & touch support**: Uses PointerEvent sensors out of the box for cross-platform desktop and mobile support. The drag handle gets `touch-action: none` so the browser doesn't scroll and cancel the drag before it activates.
+- **Sensors prop**: Pass custom sensors via the `sensors` prop (`useSensors(...)`) to customize activation constraints (e.g. distance or delay thresholds). The prop is typed with `@dnd-kit/core`'s own types, so the public API tracks the 6.x line; a future major may change that type.
 
 ### Drag context
 
@@ -471,7 +469,7 @@ v5 also drops the native HTML5 drag-and-drop capabilities that depended on `reac
 
 - dragging rows onto the host app's `react-dnd` targets, and dropping the app's `react-dnd` items into the tree
 - OS file drops, dragging out to other apps or windows, and iframe setups via `dndRootElement`
-- `dragType` no longer filters in-tree reordering; it is only a label on the drag data
+- `dragType`: with each tree owning a private `DndContext`, no external target can read the drag data, so the prop did nothing. It is removed rather than left as a label; [#396](https://github.com/jameskerr/react-arborist/issues/396) can bring a replacement back if a shared context arrives.
 
 Coordinating several trees in a shared `<DndContext>` is tracked in [#396](https://github.com/jameskerr/react-arborist/issues/396).
 

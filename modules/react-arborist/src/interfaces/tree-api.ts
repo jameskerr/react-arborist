@@ -631,9 +631,7 @@ export class TreeApi<T> {
   private applyHover() {
     const pending = this.pendingHover;
     this.pendingHover = null;
-    /* No dragId check here: a tree receiving a drag from another tree never
-       sees DND_DRAG_START, so its dragId stays null. A drag that ends before
-       the frame arrives is handled by cancelHover() instead. */
+    /* A drag that ends before the frame arrives is handled by cancelHover(). */
     if (!pending) return;
     const { drop, cursor } = pending;
     if (drop) this.dispatch(dnd.hovering(drop.parentId, drop.index));

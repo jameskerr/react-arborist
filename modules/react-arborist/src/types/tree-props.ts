@@ -83,11 +83,6 @@ export interface TreeProps<T> {
   /** Custom sensors for @dnd-kit DndContext. Defaults to PointerSensor. */
   sensors?: SensorDescriptor<SensorOptions>[];
 
-  /* The item type each row's drag source advertises on its draggable data.
-     Defaults to "NODE". Set a custom value (or a per-node function) so rows can be
-     dropped onto external drop targets that accept that type. */
-  dragType?: string | ((node: NodeApi<T>) => string);
-
   /* Custom react-window outer/inner elements */
   outerElementType?: ReactWindowCommonProps["outerElementType"];
   innerElementType?: ReactWindowCommonProps["innerElementType"];

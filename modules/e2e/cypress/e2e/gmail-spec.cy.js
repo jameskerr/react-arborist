@@ -130,6 +130,121 @@ describe("Testing the Gmail Demo", () => {
     cy.focused().invoke("index").should("eq", 11);
   });
 
+  it("drops beside the row under the pointer after the list auto-scrolls mid-drag", () => {
+    /* Shorten the scrolling list in place: a viewport resize would remount the
+       rows the drag starts from. */
+    cy.get("@item")
+      .first()
+      .parents()
+      .filter((_, el) => getComputedStyle(el).overflowY === "auto")
+      .first()
+      .then(($outer) => {
+        $outer[0].style.height = "500px";
+      });
+    cy.wait(100);
+
+    cy.get("@item")
+      .contains("Sent")
+      .first()
+      .then(($row) => {
+        const row = $row[0];
+        const handle = row.firstElementChild || row;
+        const scroller = $row
+          .parents()
+          .filter((_, el) => getComputedStyle(el).overflowY === "auto")[0];
+        const listRect = scroller.getBoundingClientRect();
+        const handleRect = handle.getBoundingClientRect();
+        const x = handleRect.x + handleRect.width / 2;
+        const y = handleRect.y + handleRect.height / 2;
+        /* Inside the bottom edge band that dnd-kit auto-scrolls in, and in the
+           top half of the last row so the drop cursor goes above that row. */
+        const edgeY = listRect.bottom - 71;
+
+        cy.wrap(handle).trigger("pointerdown", {
+          button: 0,
+          clientX: x,
+          clientY: y,
+          pointerId: 1,
+          isPrimary: true,
+          force: true,
+        });
+        cy.wait(50);
+        cy.document().trigger("pointermove", {
+          clientX: x,
+          clientY: y + 10,
+          pointerId: 1,
+          isPrimary: true,
+          force: true,
+        });
+        cy.wait(50);
+        cy.document().trigger("pointermove", {
+          clientX: x,
+          clientY: edgeY,
+          pointerId: 1,
+          isPrimary: true,
+          force: true,
+        });
+
+        /* Hold the pointer still and let dnd-kit's auto-scroller move the list
+           under it. There is no further pointermove before the drop, so the
+           drag delta and the real pointer position disagree by the scrolled
+           distance. */
+        for (let i = 0; i < 8; i++) cy.wait(100);
+
+        cy.wrap(scroller).invoke("prop", "scrollTop").should("be.greaterThan", 0);
+
+        cy.get("@item").then(($items) => {
+          const visible = Array.from($items).filter((el) => {
+            const rect = el.getBoundingClientRect();
+            return (
+              el.textContent.trim() !== "Sent" &&
+              rect.top >= listRect.top - 1 &&
+              rect.bottom <= listRect.bottom + 1
+            );
+          });
+          /* The bottom-most row: once the list has scrolled as far as it goes,
+             the pointer's band sits over it. */
+          const anchor = visible[visible.length - 1];
+          assert.isOk(anchor, "row under the pointer after auto-scrolling");
+          const anchorRect = anchor.getBoundingClientRect();
+          assert.isBelow(edgeY, anchorRect.bottom, "pointer is over the anchor row");
+          assert.isAbove(edgeY, anchorRect.top, "pointer is over the anchor row");
+          const anchorLabel = anchor.textContent.trim();
+
+          cy.document().trigger("pointerup", {
+            clientX: x,
+            clientY: edgeY,
+            pointerId: 1,
+            isPrimary: true,
+            force: true,
+          });
+
+          /* Scroll back to the top so every row ahead of the pair is mounted
+             and DOM order matches tree order. */
+          cy.wrap(scroller).then(($scroller) => {
+            $scroller[0].scrollTop = 0;
+          });
+          cy.wait(100);
+          cy.get("@item").then(($after) => {
+            const items = Array.from($after);
+            const positionOf = (label) =>
+              items.findIndex((el) => el.textContent.trim().startsWith(label));
+            const anchorIndex = positionOf(anchorLabel);
+            const sentIndex = positionOf("Sent");
+            assert.isAtLeast(anchorIndex, 0, "anchor row still rendered");
+            assert.isAtLeast(sentIndex, 0, "dragged row still rendered");
+            /* The drop lands beside the row that was under the pointer, not back
+               at the position that was hovered before the list scrolled. Before
+               or after that row depends on the cursor line, so allow either. */
+            expect(
+              Math.abs(sentIndex - anchorIndex),
+              "Sent lands beside the anchor row",
+            ).to.be.at.most(1);
+          });
+        });
+      });
+  });
+
   it("prevents Inbox from Dragging into Categories", () => {
     dragAndDrop(
       cy.get("@item").contains("Inbox").first(),

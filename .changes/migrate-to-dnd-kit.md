@@ -15,9 +15,10 @@ This drops capabilities that depended on `react-dnd` and native HTML5 drag and d
   items into the tree.
 - OS file drops, dragging rows out to other apps or windows, and iframe setups via
   `dndRootElement`.
-- `dragType` as a filter: it is now only a label on the drag data, so a custom type no longer
-  makes a row non-reorderable within the tree.
+- `dragType`, which only mattered when an external drop target could read the drag data; with
+  each tree owning a private `DndContext` it had no effect, so it is removed rather than kept as a
+  label.
 
 `dndBackend`, `dndManager`, and `dndRootElement` are removed rather than deprecated, so
 TypeScript flags existing uses. Coordinating several trees inside one shared `<DndContext>` is
-no longer supported and is tracked in #396. (Part of #390)
+no longer supported and is tracked in #396.

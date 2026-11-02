@@ -6,7 +6,7 @@
 
 import { createRef } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { treeCollisionDetection } from "../components/get-dnd-provider-props.js";
+import { treeCollisionDetection } from "../components/collision-detection.js";
 import { Tree } from "../components/tree.js";
 import { TreeApi } from "../interfaces/tree-api.js";
 import { NodeRendererProps } from "../types/renderers.js";

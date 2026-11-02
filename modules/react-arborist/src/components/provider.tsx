@@ -26,7 +26,7 @@ import { initialState } from "../state/initial.js";
 import { Actions, rootReducer, RootState } from "../state/root-reducer.js";
 import { actions as visibility } from "../state/open-slice.js";
 import { TreeProps } from "../types/tree-props.js";
-import { treeCollisionDetection } from "./get-dnd-provider-props.js";
+import { treeCollisionDetection } from "./collision-detection.js";
 import { useDragHandlers } from "../dnd/use-drag-handlers.js";
 
 type Props<T> = {
@@ -138,11 +138,7 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
     }
   }, [api.props.searchTerm]);
 
-  const { onDragStart, onDragMove, onDragEnd, onDragCancel } = useDragHandlers(
-    api,
-    store.current,
-    state.nodes.drag.id,
-  );
+  const { onDragStart, onDragMove, onDragEnd, onDragCancel } = useDragHandlers(api, store.current);
 
   return (
     <TreeApiContext.Provider value={api}>

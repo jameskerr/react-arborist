@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { useTreeApi } from "../context.js";
 
@@ -13,9 +13,15 @@ export function useOuterDrop() {
     },
   });
 
+  const registered = useRef<HTMLElement | null>(null);
+
+  /* The outer element is replaced when rowHeight switches between a number and a
+     function (FixedSizeList to VariableSizeList), and a late-mounting list sets
+     it after the first render, so check after every commit rather than once. */
   useEffect(() => {
-    if (tree.listEl.current) {
-      setNodeRef(tree.listEl.current);
-    }
-  }, [setNodeRef, tree.listEl]);
+    const element = tree.listEl.current;
+    if (!element || element === registered.current) return;
+    registered.current = element;
+    setNodeRef(element);
+  });
 }

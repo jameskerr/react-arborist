@@ -47,18 +47,24 @@ function hoverTarget<T>(api: TreeApi<T>, over: DragMoveEvent["over"]): HoverTarg
 
 /* All of the dnd-kit wiring for one tree: sensor callbacks in, tree api state
    out. Kept out of TreeProvider so the provider stays a wiring component. */
-export function useDragHandlers<T>(
-  api: TreeApi<T>,
-  store: Store<RootState, Actions>,
-  dragId: string | null,
-) {
+export function useDragHandlers<T>(api: TreeApi<T>, store: Store<RootState, Actions>) {
   /* dnd-kit's delta includes scroll adjustments, so `activator + delta` is not
      the pointer position once the list auto-scrolls mid-drag. Track the real
      pointer natively instead. */
   const pointerRef = useRef<Mouse | null>(null);
+  const detachRef = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
-    if (!dragId) return;
+  const stopTracking = useCallback(() => {
+    detachRef.current?.();
+    detachRef.current = null;
+    pointerRef.current = null;
+  }, []);
+
+  /* Attached in onDragStart, not an effect keyed on dragId: an effect only runs
+     after the next commit, so a drag that starts and releases before then would
+     still be measured against the activator's coordinates. */
+  const startTracking = useCallback(() => {
+    stopTracking();
     const track = (event: Event) => {
       const coords = getEventCoordinates(event);
       if (coords) pointerRef.current = coords;
@@ -66,30 +72,35 @@ export function useDragHandlers<T>(
     document.addEventListener("pointermove", track, true);
     document.addEventListener("mousemove", track, true);
     document.addEventListener("touchmove", track, true);
-    return () => {
+    detachRef.current = () => {
       document.removeEventListener("pointermove", track, true);
       document.removeEventListener("mousemove", track, true);
       document.removeEventListener("touchmove", track, true);
     };
-  }, [dragId]);
+  }, [stopTracking]);
 
+  useEffect(() => stopTracking, [stopTracking]);
+
+  /* Returns false when there is no target to hover, having cleared any earlier
+     one. onDragEnd drops only on a target found in the same event, so a row
+     react-window unmounted under the pointer can't collect the drop. */
   const updateHover = useCallback(
-    (over: DragMoveEvent["over"], mouse: Mouse | null) => {
-      if (!mouse) return;
-
-      if (!over) {
+    (over: DragMoveEvent["over"], mouse: Mouse | null): boolean => {
+      const target = over && mouse ? hoverTarget(api, over) : null;
+      if (!target || !mouse) {
         api.cancelHover();
+        /* cancelHover only drops the pending frame; canDrop() and drop() read
+           hoverTarget(), which falls back to the last committed hover. */
+        store.dispatch(dndActions.hovering(null, null));
         api.hideCursor();
-        return;
+        return false;
       }
-
-      const target = hoverTarget(api, over);
-      if (!target) return;
 
       const { cursor, drop } = computeDrop({ ...target, offset: mouse, indent: api.indent });
       api.hover(drop, cursor);
+      return true;
     },
-    [api],
+    [api, store],
   );
 
   /* Falls back to activator + delta only until a real pointer event arrives. */
@@ -106,9 +117,11 @@ export function useDragHandlers<T>(
       const id = String(event.active.id);
       const dragIds = api.isSelected(id) ? Array.from(api.selectedIds) : [id];
       store.dispatch(dndActions.dragStart(id, dragIds));
-      pointerRef.current = event.activatorEvent ? getEventCoordinates(event.activatorEvent) : null;
+      /* pointerRef stays null until a real pointer event arrives, so a flick
+         with no move still measures against activator + delta. */
+      startTracking();
     },
-    [api, store],
+    [api, store, startTracking],
   );
 
   const onDragMove = useCallback(
@@ -120,28 +133,27 @@ export function useDragHandlers<T>(
 
   const onDragEnd = useCallback(
     (event: DragEndEvent) => {
-      if (event.over) {
-        updateHover(event.over, mouseFrom(event));
-        if (api.canDrop()) {
-          api.drop();
-        }
+      stopTracking();
+      if (event.over && updateHover(event.over, mouseFrom(event)) && api.canDrop()) {
+        api.drop();
       }
       api.cancelHover();
       api.hideCursor();
       api.redrawList();
       store.dispatch(dndActions.dragEnd());
     },
-    [api, mouseFrom, store, updateHover],
+    [api, mouseFrom, store, stopTracking, updateHover],
   );
 
   const onDragCancel = useCallback(
     (_event: DragCancelEvent) => {
+      stopTracking();
       api.cancelHover();
       api.hideCursor();
       api.redrawList();
       store.dispatch(dndActions.dragEnd());
     },
-    [api, store],
+    [api, store, stopTracking],
   );
 
   return { onDragStart, onDragMove, onDragEnd, onDragCancel };
