@@ -165,3 +165,51 @@ test("still calls preventDefault on Space typed on the tree container itself (#2
   const notPrevented = fireEvent.keyDown(tree, { key: " ", code: "Space" });
   expect(notPrevented).toBe(false);
 });
+
+test("Backspace on multi-selection at the end of the tree falls back to an unselected node", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  const onDelete = jest.fn();
+  render(<Tree<Datum> data={data} openByDefault ref={ref} onDelete={onDelete} />);
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    ref.current!.select("3");
+    ref.current!.selectMulti("4");
+  });
+  expect(ref.current!.selectedIds.size).toBe(2);
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "Backspace" });
+  });
+
+  expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ ids: ["3", "4"] }));
+  expect(ref.current!.focusedNode?.id).toBe("2");
+});
+
+test("Backspace on single node at end of root falls back to previous node rather than root", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  const onDelete = jest.fn();
+  render(
+    <Tree<Datum>
+      data={[
+        { id: "a", name: "A" },
+        { id: "b", name: "B" },
+      ]}
+      openByDefault
+      ref={ref}
+      onDelete={onDelete}
+    />,
+  );
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    ref.current!.focus("b", { scroll: false });
+  });
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "Backspace" });
+  });
+
+  expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ ids: ["b"] }));
+  expect(ref.current!.focusedNode?.id).toBe("a");
+});

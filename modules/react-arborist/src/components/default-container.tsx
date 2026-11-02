@@ -4,9 +4,31 @@ import { focusNextElement, focusPrevElement } from "../utils.js";
 import { ListOuterElement } from "./list-outer-element.js";
 import { ListInnerElement } from "./list-inner-element.js";
 import { RowContainer } from "./row-container.js";
+import { NodeApi } from "../interfaces/node-api.js";
+import { TreeApi } from "../interfaces/tree-api.js";
 
 let focusSearchTerm = "";
 let timeoutId: any = null;
+
+function findUnselectedFallback<T>(tree: TreeApi<T>, ids: string[]): NodeApi<T> | null {
+  const idSet = new Set(ids);
+  const nodes = tree.visibleNodes;
+  const selectedIndices = nodes.map((n, i) => (idSet.has(n.id) ? i : -1)).filter((i) => i !== -1);
+
+  if (selectedIndices.length === 0) return null;
+
+  const maxIndex = Math.max(...selectedIndices);
+  for (let i = maxIndex + 1; i < nodes.length; i++) {
+    if (!idSet.has(nodes[i].id)) return nodes[i];
+  }
+
+  const minIndex = Math.min(...selectedIndices);
+  for (let i = minIndex - 1; i >= 0; i--) {
+    if (!idSet.has(nodes[i].id)) return nodes[i];
+  }
+
+  return null;
+}
 
 /**
  * All these keyboard shortcuts seem like they should be configurable.
@@ -68,15 +90,18 @@ export function DefaultContainer() {
             while (nextFocus && nextFocus.isSelected) {
               nextFocus = nextFocus.nextSibling;
             }
-            if (!nextFocus) nextFocus = tree.lastNode;
-            tree.focus(nextFocus, { scroll: false });
+            if (!nextFocus || nextFocus.isSelected) {
+              nextFocus = findUnselectedFallback(tree, ids);
+            }
+            if (nextFocus) tree.focus(nextFocus, { scroll: false });
             tree.delete(Array.from(ids));
           } else {
             const node = tree.focusedNode;
             if (node) {
               const sib = node.nextSibling;
-              const parent = node.parent;
-              tree.focus(sib || parent, { scroll: false });
+              const parent = node.parent && !node.parent.isRoot ? node.parent : null;
+              const next = sib || parent || node.prev;
+              if (next) tree.focus(next, { scroll: false });
               tree.delete(node);
             }
           }
