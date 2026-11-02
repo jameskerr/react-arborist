@@ -75,6 +75,19 @@ const Home: NextPage = () => {
               <Link href="/drag-out">View Demo</Link>
             </div>
           </Link>
+
+          <Link href="/budget" legacyBehavior>
+            <div className={styles.demoCard}>
+              <div className={`${styles.demoCardImage} cities`}></div>
+              <b>Derived Data</b>
+              <h2>Budget Tree</h2>
+              <p>
+                In this demo, folders of expenses show the sum of their children, and the totals
+                update as you drag expenses between folders.
+              </p>
+              <Link href="/budget">View Demo</Link>
+            </div>
+          </Link>
         </div>
       </main>
     </div>
