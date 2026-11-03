@@ -15,7 +15,7 @@ import {
   DragMoveEvent,
   DragStartEvent,
   MouseSensor,
-  PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -37,9 +37,19 @@ type Props<T> = {
 
 const SERVER_STATE = initialState();
 
-const POINTER_SENSOR_OPTIONS = {
+const MOUSE_SENSOR_OPTIONS = {
   activationConstraint: {
     distance: 5,
+  },
+};
+
+/* Touch needs a delay rather than a distance: a distance constraint would
+   start dragging as soon as the finger moves, which fights the list scrolling.
+   Holding still for a moment drags, swiping scrolls. */
+const TOUCH_SENSOR_OPTIONS = {
+  activationConstraint: {
+    delay: 250,
+    tolerance: 5,
   },
 };
 
@@ -58,13 +68,13 @@ function StandaloneDndContext({
   onDragEnd: (e: DragEndEvent) => void;
   onDragCancel: (e: DragCancelEvent) => void;
 }) {
-  /* Pointer drags only: dnd-kit's KeyboardSensor would start a drag on Space or
-     Enter, which the tree already uses to toggle, select, and rename nodes. */
+  /* Mouse drags start after a short move; touch drags start on a press and
+     hold. dnd-kit's KeyboardSensor is deliberately excluded: it would start a
+     drag on Space or Enter, which the tree already uses to toggle, select, and
+     rename nodes. */
   const defaultSensors = useSensors(
-    useSensor(
-      typeof window !== "undefined" && "PointerEvent" in window ? PointerSensor : MouseSensor,
-      POINTER_SENSOR_OPTIONS,
-    ),
+    useSensor(MouseSensor, MOUSE_SENSOR_OPTIONS),
+    useSensor(TouchSensor, TOUCH_SENSOR_OPTIONS),
   );
 
   const sensors = treeProps.sensors ?? defaultSensors;

@@ -46,7 +46,7 @@ describe("DndProvider / DndContext integration", () => {
     const rootEl = screen.getByText("Root");
     expect(rootEl).not.toBeNull();
 
-    // In jsdom without PointerEvent, MouseSensor is used
+    // Mouse drags activate on the MouseSensor's distance constraint.
     fireEvent.mouseDown(rootEl, { clientX: 10, clientY: 10, button: 0 });
     // Moving beyond distance threshold of 5px activates the drag
     await act(async () => {
@@ -143,6 +143,85 @@ describe("DndProvider / DndContext integration", () => {
         dragIds: ["2"],
       }),
     );
+  });
+
+  test("picks up a drag after disableDrag turns off", async () => {
+    const { rerender } = render(
+      <Tree<Datum> data={data} rowHeight={24} disableDrag>
+        {Node}
+      </Tree>,
+    );
+
+    /* The rows stay mounted across the re-render, so their ref callbacks do not
+       run again. The listeners have to already be attached for this to work. */
+    rerender(
+      <Tree<Datum> data={data} rowHeight={24} disableDrag={false}>
+        {Node}
+      </Tree>,
+    );
+
+    fireEvent.mouseDown(screen.getByText("Root"), { clientX: 10, clientY: 10, button: 0 });
+    await act(async () => {
+      fireEvent.mouseMove(document, { clientX: 10, clientY: 30 });
+    });
+
+    expect(screen.getAllByText("Root")).toHaveLength(2);
+
+    await act(async () => {
+      fireEvent.mouseUp(document, { clientX: 10, clientY: 30 });
+    });
+  });
+
+  test("a touch press and hold starts a drag", async () => {
+    jest.useFakeTimers();
+    try {
+      render(
+        <Tree<Datum> data={data} rowHeight={24}>
+          {Node}
+        </Tree>,
+      );
+
+      fireEvent.touchStart(screen.getByText("Root"), {
+        touches: [{ clientX: 10, clientY: 10 }],
+      });
+      act(() => {
+        jest.advanceTimersByTime(300);
+      });
+
+      // The overlay renders the row a second time once the drag is active.
+      expect(screen.getAllByText("Root")).toHaveLength(2);
+
+      await act(async () => {
+        fireEvent.touchEnd(document, { touches: [] });
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test("a touch swipe does not start a drag", async () => {
+    jest.useFakeTimers();
+    try {
+      render(
+        <Tree<Datum> data={data} rowHeight={24}>
+          {Node}
+        </Tree>,
+      );
+
+      fireEvent.touchStart(screen.getByText("Root"), {
+        touches: [{ clientX: 10, clientY: 10 }],
+      });
+      await act(async () => {
+        fireEvent.touchMove(screen.getByText("Root"), { touches: [{ clientX: 10, clientY: 80 }] });
+      });
+      act(() => {
+        jest.advanceTimersByTime(300);
+      });
+
+      expect(screen.getAllByText("Root")).toHaveLength(1);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   test("two sibling Trees render cleanly without singleton conflicts", () => {

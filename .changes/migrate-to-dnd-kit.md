@@ -4,9 +4,10 @@ type: breaking
 Drag and drop now runs on `@dnd-kit/core` 6.x as a peer dependency instead of `react-dnd`
 and `react-dnd-html5-backend`. The global HTML5 backend singleton conflict is gone (#319),
 and each `<Tree>` owns its own `<DndContext>`. Row renderers that use `ref={dragHandle}` keep working unchanged, `XYCoord` is defined locally, and a new
-`sensors` prop customizes the pointer sensor's activation constraints. DnD is now pointer-only:
+`sensors` prop customizes the default sensor activation constraints. DnD is now pointer-only:
 the default sensors no longer include `@dnd-kit`'s `KeyboardSensor`, which would otherwise start
-a drag on Space or Enter and swallow the tree's own keyboard commands.
+a drag on Space or Enter and swallow the tree's own keyboard commands. Mouse drags start after a
+short move, touch drags start on a press and hold so a swipe still scrolls the list.
 
 This drops capabilities that depended on `react-dnd` and native HTML5 drag and drop:
 

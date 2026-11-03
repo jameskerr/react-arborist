@@ -80,7 +80,7 @@ export interface TreeProps<T> {
 
   onClick?: MouseEventHandler;
   onContextMenu?: MouseEventHandler;
-  /** Custom sensors for @dnd-kit DndContext. Defaults to PointerSensor. */
+  /** Custom sensors for @dnd-kit DndContext. Defaults to MouseSensor and a delayed TouchSensor. */
   sensors?: SensorDescriptor<SensorOptions>[];
 
   /* Custom react-window outer/inner elements */

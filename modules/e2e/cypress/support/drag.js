@@ -1,7 +1,7 @@
-/* dnd-kit's pointer sensor needs a pointerdown, a move past the activation
-   distance, then a move onto the target and a pointerup. The 50ms waits give
+/* dnd-kit's mouse sensor needs a mousedown, a move past the activation
+   distance, then a move onto the target and a mouseup. The 50ms waits give
    its animation-frame loop a chance to process each step. */
-export function dragAndDrop(src, dst) {
+export function dragAndDrop(src, dst, { yRatio = 0.25 } = {}) {
   src.then(($src) => {
     /* A spec may select the row itself or a label inside it. */
     const row = $src[0].closest("[role=treeitem]") || $src[0];
@@ -14,44 +14,36 @@ export function dragAndDrop(src, dst) {
       const targetRow = $dst[0].closest("[role=treeitem]") || $dst[0];
       const dstRect = targetRow.getBoundingClientRect();
       const endX = dstRect.x + dstRect.width / 2;
-      const endY = dstRect.y + dstRect.height * 0.25;
+      const endY = dstRect.y + dstRect.height * yRatio;
 
-      cy.wrap(handleEl).trigger("pointerdown", {
+      cy.wrap(handleEl).trigger("mousedown", {
         button: 0,
         clientX: startX,
         clientY: startY,
-        pointerId: 1,
-        isPrimary: true,
         force: true,
       });
 
       cy.wait(50);
 
-      cy.document().trigger("pointermove", {
+      cy.document().trigger("mousemove", {
         clientX: startX + 10,
         clientY: startY + 10,
-        pointerId: 1,
-        isPrimary: true,
         force: true,
       });
 
       cy.wait(50);
 
-      cy.document().trigger("pointermove", {
+      cy.document().trigger("mousemove", {
         clientX: endX,
         clientY: endY,
-        pointerId: 1,
-        isPrimary: true,
         force: true,
       });
 
       cy.wait(50);
 
-      cy.document().trigger("pointerup", {
+      cy.document().trigger("mouseup", {
         clientX: endX,
         clientY: endY,
-        pointerId: 1,
-        isPrimary: true,
         force: true,
       });
     });

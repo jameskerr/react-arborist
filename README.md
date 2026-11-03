@@ -27,11 +27,11 @@ Here is a Gmail sidebar clone built with react-arborist.
 ## Installation
 
 ```bash
-npm install react-arborist
+npm install react-arborist @dnd-kit/core
 ```
 
 ```bash
-yarn add react-arborist
+yarn add react-arborist @dnd-kit/core
 ```
 
 ## Examples
@@ -401,8 +401,8 @@ Clicking empty space already clears the selection by default; pass the [`disable
 
 react-arborist uses `@dnd-kit` for drag and drop:
 
-- **Peer dependency**: `@dnd-kit/core` (^6.0.0) is a peer dependency alongside `react` and `react-dom`.
-- **Pointer & touch support**: Uses PointerEvent sensors out of the box for cross-platform desktop and mobile support. The drag handle gets `touch-action: none` so the browser doesn't scroll and cancel the drag before it activates.
+- **Peer dependency**: `@dnd-kit/core` (^6.3.1) is a peer dependency alongside `react` and `react-dom`.
+- **Mouse & touch support**: Mouse drags start after a short move. Touch drags start on a press and hold, so swiping a row still scrolls the list; the drag handle gets `touch-action: manipulation` for that.
 - **Sensors prop**: Pass custom sensors via the `sensors` prop (`useSensors(...)`) to customize activation constraints (e.g. distance or delay thresholds). The prop is typed with `@dnd-kit/core`'s own types, so the public API tracks the 6.x line; a future major may change that type.
 
 ### Drag context
@@ -416,12 +416,15 @@ Drag and drop is pointer-only. The default sensors deliberately exclude `@dnd-ki
 Configure sensors on the tree using `@dnd-kit/core`:
 
 ```tsx
-import { useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
+import { useSensor, useSensors, MouseSensor, TouchSensor } from "@dnd-kit/core";
 
 function MyTree() {
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: { distance: 5 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 },
     }),
   );
 
@@ -458,7 +461,7 @@ In v4, `react-dnd` and `react-dnd-html5-backend` were required peer dependencies
 npm install react-arborist react-dnd react-dnd-html5-backend
 
 # After (v5) — react-dnd is no longer required
-npm install react-arborist
+npm install react-arborist @dnd-kit/core
 ```
 
 `dndBackend`, `dndManager`, and `dndRootElement` are removed in v5; TypeScript flags existing uses. For custom sensors, pass the `sensors` prop instead.

@@ -160,33 +160,27 @@ describe("Testing the Gmail Demo", () => {
            top half of the last row so the drop cursor goes above that row. */
         const edgeY = listRect.bottom - 71;
 
-        cy.wrap(handle).trigger("pointerdown", {
+        cy.wrap(handle).trigger("mousedown", {
           button: 0,
           clientX: x,
           clientY: y,
-          pointerId: 1,
-          isPrimary: true,
           force: true,
         });
         cy.wait(50);
-        cy.document().trigger("pointermove", {
+        cy.document().trigger("mousemove", {
           clientX: x,
           clientY: y + 10,
-          pointerId: 1,
-          isPrimary: true,
           force: true,
         });
         cy.wait(50);
-        cy.document().trigger("pointermove", {
+        cy.document().trigger("mousemove", {
           clientX: x,
           clientY: edgeY,
-          pointerId: 1,
-          isPrimary: true,
           force: true,
         });
 
         /* Hold the pointer still and let dnd-kit's auto-scroller move the list
-           under it. There is no further pointermove before the drop, so the
+           under it. There is no further mousemove before the drop, so the
            drag delta and the real pointer position disagree by the scrolled
            distance. */
         for (let i = 0; i < 8; i++) cy.wait(100);
@@ -211,11 +205,9 @@ describe("Testing the Gmail Demo", () => {
           assert.isAbove(edgeY, anchorRect.top, "pointer is over the anchor row");
           const anchorLabel = anchor.textContent.trim();
 
-          cy.document().trigger("pointerup", {
+          cy.document().trigger("mouseup", {
             clientX: x,
             clientY: edgeY,
-            pointerId: 1,
-            isPrimary: true,
             force: true,
           });
 

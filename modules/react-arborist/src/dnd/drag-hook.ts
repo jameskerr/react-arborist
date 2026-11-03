@@ -11,6 +11,12 @@ export function canDragNode<T>(node: NodeApi<T>): boolean {
 
 export type DragHandleRef = (element: HTMLElement | null) => void;
 
+/* dnd-kit returns no listeners while a draggable is disabled, so the activator
+   events are attached from a fixed list and dispatched through listenersRef at
+   event time. Reading the object once at mount would leave a row that mounted
+   disabled with no listeners after it is enabled. */
+const ACTIVATOR_PROPS = ["onPointerDown", "onMouseDown", "onTouchStart", "onKeyDown"] as const;
+
 export function useDragHook<T>(node: NodeApi<T>): DragHandleRef {
   const isEnabled = canDragNode(node);
 
@@ -40,13 +46,12 @@ export function useDragHook<T>(node: NodeApi<T>): DragHandleRef {
       detachRef.current = null;
       if (!element) return;
 
-      /* PointerSensor needs touch-action: none on the handle, or the browser
-         starts scrolling and fires pointercancel before activation. */
-      element.style.touchAction = "none";
+      /* TouchSensor turns a press and hold into a drag, so the list can still be
+         scrolled by swiping across a row. */
+      element.style.touchAction = "manipulation";
 
       const cleanupFns: (() => void)[] = [];
-      for (const [propName, handler] of Object.entries(listenersRef.current ?? {})) {
-        if (!propName.startsWith("on") || typeof handler !== "function") continue;
+      for (const propName of ACTIVATOR_PROPS) {
         const eventName = propName.slice(2).toLowerCase();
         const listener = (event: Event) => {
           const currentHandler = listenersRef.current?.[propName];
