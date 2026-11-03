@@ -141,7 +141,10 @@ export function waitFor(fn: () => boolean) {
     let tries = 0;
     function check() {
       tries += 1;
-      if (tries === 100) reject();
+      if (tries === 100) {
+        reject();
+        return;
+      }
       if (fn()) resolve();
       else setTimeout(check, 10);
     }
