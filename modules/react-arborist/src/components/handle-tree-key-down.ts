@@ -167,9 +167,9 @@ function handleTypeahead<T>(key: string, tree: TreeApi<T>) {
   }, 600);
 
   const node = tree.visibleNodes.find((n) => {
-    const name = (n.data as { name?: unknown })?.name;
-    if (typeof name === "string") {
-      return name.toLowerCase().startsWith(search.term);
+    const data = n.data;
+    if (data && typeof data === "object" && "name" in data && typeof data.name === "string") {
+      return data.name.toLowerCase().startsWith(search.term);
     }
     return false;
   });
