@@ -61,8 +61,14 @@ const TOUCH_SENSOR_OPTIONS = {
 function nodeName<T>(tree: TreeApi<T>, id: UniqueIdentifier): string {
   const key = String(id);
   if (key === OUTER_DROP_ID) return "the end of the list";
-  const data = tree.get(key)?.data as { name?: unknown } | undefined;
-  return typeof data?.name === "string" || typeof data?.name === "number" ? String(data.name) : key;
+  const data = tree.get(key)?.data;
+  if (data && typeof data === "object" && "name" in data) {
+    const name = data.name;
+    if (typeof name === "string" || typeof name === "number") {
+      return String(name);
+    }
+  }
+  return key;
 }
 
 function defaultAccessibility<T>(tree: TreeApi<T>): NonNullable<TreeProps<T>["accessibility"]> {
@@ -84,7 +90,7 @@ function defaultAccessibility<T>(tree: TreeApi<T>): NonNullable<TreeProps<T>["ac
   };
 }
 
-function StandaloneDndContext({
+function StandaloneDndContext<T>({
   tree,
   treeProps,
   children,
@@ -93,8 +99,8 @@ function StandaloneDndContext({
   onDragEnd,
   onDragCancel,
 }: {
-  tree: TreeApi<any>;
-  treeProps: TreeProps<any>;
+  tree: TreeApi<T>;
+  treeProps: TreeProps<T>;
   children: ReactNode;
   onDragStart: (e: DragStartEvent) => void;
   onDragMove: (e: DragMoveEvent) => void;

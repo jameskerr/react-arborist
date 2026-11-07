@@ -9,7 +9,7 @@ export type DropResult = {
 
 export type DropTargetRef = (element: HTMLElement | null) => void;
 
-export function useDropHook(el: RefObject<HTMLElement | null>, node: NodeApi<any>): DropTargetRef {
+export function useDropHook<T>(el: RefObject<HTMLElement | null>, node: NodeApi<T>): DropTargetRef {
   const { setNodeRef } = useDroppable({
     id: node.id,
     data: {
