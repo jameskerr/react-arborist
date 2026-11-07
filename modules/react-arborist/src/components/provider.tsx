@@ -19,6 +19,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import type { UniqueIdentifier } from "@dnd-kit/core";
 import { DataUpdatesContext, DndContext, NodesContext, TreeApiContext } from "../context.js";
 
 import { TreeApi } from "../interfaces/tree-api.js";
@@ -28,6 +29,7 @@ import { actions as visibility } from "../state/open-slice.js";
 import { TreeProps } from "../types/tree-props.js";
 import { treeCollisionDetection } from "./collision-detection.js";
 import { useDragHandlers } from "../dnd/use-drag-handlers.js";
+import { OUTER_DROP_ID } from "../dnd/outer-drop-hook.js";
 
 type Props<T> = {
   treeProps: TreeProps<T>;
@@ -53,7 +55,37 @@ const TOUCH_SENSOR_OPTIONS = {
   },
 };
 
+/* dnd-kit's defaults announce Space-bar instructions and read raw ids, neither
+   of which fits a pointer-only tree. Use the node's data.name (what the default
+   renderer shows) and fall back to the id for custom data shapes. */
+function nodeName<T>(tree: TreeApi<T>, id: UniqueIdentifier): string {
+  const key = String(id);
+  if (key === OUTER_DROP_ID) return "the end of the list";
+  const data = tree.get(key)?.data as { name?: unknown } | undefined;
+  return typeof data?.name === "string" || typeof data?.name === "number" ? String(data.name) : key;
+}
+
+function defaultAccessibility<T>(tree: TreeApi<T>): NonNullable<TreeProps<T>["accessibility"]> {
+  const name = (id: UniqueIdentifier) => nodeName(tree, id);
+  return {
+    screenReaderInstructions: {
+      draggable: "To pick up a node, press the mouse button and drag it. Press Escape to cancel.",
+    },
+    announcements: {
+      onDragStart: ({ active }) => `Picked up ${name(active.id)}.`,
+      onDragOver: ({ active, over }) =>
+        over
+          ? `${name(active.id)} moved over ${name(over.id)}.`
+          : `${name(active.id)} is no longer over a row.`,
+      onDragEnd: ({ active, over }) =>
+        over ? `Dropped ${name(active.id)} at ${name(over.id)}.` : `Dropped ${name(active.id)}.`,
+      onDragCancel: ({ active }) => `Cancelled dragging ${name(active.id)}.`,
+    },
+  };
+}
+
 function StandaloneDndContext({
+  tree,
   treeProps,
   children,
   onDragStart,
@@ -61,6 +93,7 @@ function StandaloneDndContext({
   onDragEnd,
   onDragCancel,
 }: {
+  tree: TreeApi<any>;
   treeProps: TreeProps<any>;
   children: ReactNode;
   onDragStart: (e: DragStartEvent) => void;
@@ -78,10 +111,15 @@ function StandaloneDndContext({
   );
 
   const sensors = treeProps.sensors ?? defaultSensors;
+  const accessibility = useMemo(
+    () => treeProps.accessibility ?? defaultAccessibility(tree),
+    [treeProps.accessibility, tree],
+  );
 
   return (
     <DndKitContext
       sensors={sensors}
+      accessibility={accessibility}
       collisionDetection={treeCollisionDetection}
       onDragStart={onDragStart}
       onDragMove={onDragMove}
@@ -156,6 +194,7 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
         <NodesContext.Provider value={state.nodes}>
           <DndContext.Provider value={state.dnd}>
             <StandaloneDndContext
+              tree={api}
               treeProps={treeProps}
               onDragStart={onDragStart}
               onDragMove={onDragMove}

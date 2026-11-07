@@ -7,7 +7,9 @@ and each `<Tree>` owns its own `<DndContext>`. Row renderers that use `ref={drag
 `sensors` prop customizes the default sensor activation constraints. DnD is now pointer-only:
 the default sensors no longer include `@dnd-kit`'s `KeyboardSensor`, which would otherwise start
 a drag on Space or Enter and swallow the tree's own keyboard commands. Mouse drags start after a
-short move, touch drags start on a press and hold so a swipe still scrolls the list.
+short move, touch drags start on a press and hold so a swipe still scrolls the list. Screen-reader
+instructions are pointer-only and announcements use node names; the new `accessibility` prop
+overrides them.
 
 This drops capabilities that depended on `react-dnd` and native HTML5 drag and drop:
 

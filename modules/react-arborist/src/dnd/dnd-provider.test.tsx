@@ -264,6 +264,87 @@ describe("DndProvider / DndContext integration", () => {
     expect(screen.getAllByText("Root")).toHaveLength(1);
   });
 
+  test("announces pointer instructions and node names, not raw ids or Space", async () => {
+    render(
+      <Tree<Datum> data={data} rowHeight={24}>
+        {Node}
+      </Tree>,
+    );
+
+    expect(screen.getByText(/To pick up a node, press the mouse button/)).not.toBeNull();
+    expect(document.body.textContent).not.toMatch(/space bar/i);
+
+    fireEvent.mouseDown(screen.getByText("Root"), { clientX: 10, clientY: 10, button: 0 });
+    await act(async () => {
+      fireEvent.mouseMove(document, { clientX: 10, clientY: 30 });
+    });
+
+    expect(screen.getByRole("status").textContent).toBe("Picked up Root.");
+
+    await act(async () => {
+      fireEvent.mouseUp(document, { clientX: 10, clientY: 30 });
+    });
+  });
+
+  test("a pointer move over the tree does not re-render unrelated rows (#385)", async () => {
+    const nested: Datum[] = [
+      { id: "a", name: "Folder A", children: [{ id: "a1", name: "A1" }] },
+      { id: "b", name: "Folder B", children: [{ id: "b1", name: "B1" }] },
+      { id: "c", name: "Folder C", children: [{ id: "c1", name: "C1" }] },
+    ];
+    const renders: Record<string, number> = {};
+    function CountedNode({ node, dragHandle }: NodeRendererProps<Datum>) {
+      renders[node.id] = (renders[node.id] ?? 0) + 1;
+      return <div ref={dragHandle}>{node.data.name}</div>;
+    }
+
+    render(
+      <Tree<Datum>
+        data={nested}
+        rowHeight={24}
+        height={200}
+        width={300}
+        openByDefault
+        renderDragPreview={() => <div />}
+      >
+        {CountedNode}
+      </Tree>,
+    );
+
+    const rows = screen.getAllByRole("treeitem") as HTMLElement[];
+    rows.forEach((row, i) => {
+      row.getBoundingClientRect = () =>
+        ({
+          top: i * 24,
+          bottom: i * 24 + 24,
+          left: 0,
+          right: 300,
+          width: 300,
+          height: 24,
+          x: 0,
+          y: i * 24,
+        }) as DOMRect;
+    });
+
+    fireEvent.mouseDown(screen.getByText("A1"), { clientX: 10, clientY: 36, button: 0 });
+    // Each pointer move updates dnd-kit's InternalContext. Only rows whose
+    // destination changed may repaint; a row in another subtree must not.
+    await act(async () => {
+      fireEvent.mouseMove(document, { clientX: 10, clientY: 60 });
+    });
+    const before = { ...renders };
+
+    await act(async () => {
+      fireEvent.mouseMove(document, { clientX: 10, clientY: 108 });
+    });
+    expect(renders.a).toBe(before.a);
+    expect(renders.a1).toBe(before.a1);
+
+    await act(async () => {
+      fireEvent.mouseUp(document, { clientX: 10, clientY: 108 });
+    });
+  });
+
   describe("treeCollisionDetection", () => {
     test("prefers row droppable collisions over outer container droppable", () => {
       const mockContainers = [

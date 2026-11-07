@@ -404,6 +404,7 @@ react-arborist uses `@dnd-kit` for drag and drop:
 - **Peer dependency**: `@dnd-kit/core` (^6.3.1) is a peer dependency alongside `react` and `react-dom`.
 - **Mouse & touch support**: Mouse drags start after a short move. Touch drags start on a press and hold, so swiping a row still scrolls the list; the drag handle gets `touch-action: manipulation` for that.
 - **Sensors prop**: Pass custom sensors via the `sensors` prop (`useSensors(...)`) to customize activation constraints (e.g. distance or delay thresholds). The prop is typed with `@dnd-kit/core`'s own types, so the public API tracks the 6.x line; a future major may change that type.
+- **Screen readers**: Instructions are pointer-only (no Space-bar prompt), and announcements use each node's `data.name`, falling back to its id. Pass an `accessibility` prop to replace the instructions or announcements, or to suppress them.
 
 ### Drag context
 

@@ -5,7 +5,7 @@ import { ElementType, MouseEventHandler } from "react";
 import { ListOnScrollProps, CommonProps as ReactWindowCommonProps } from "react-window";
 import { NodeApi } from "../interfaces/node-api.js";
 import { OpenMap } from "../state/open-slice.js";
-import type { SensorDescriptor, SensorOptions } from "@dnd-kit/core";
+import type { DndContextProps, SensorDescriptor, SensorOptions } from "@dnd-kit/core";
 
 /** Returns the height in pixels for a given node's row. */
 export type RowHeightAccessor<T> = (node: NodeApi<T>) => number;
@@ -82,6 +82,8 @@ export interface TreeProps<T> {
   onContextMenu?: MouseEventHandler;
   /** Custom sensors for @dnd-kit DndContext. Defaults to MouseSensor and a delayed TouchSensor. */
   sensors?: SensorDescriptor<SensorOptions>[];
+  /** Custom @dnd-kit screen-reader instructions and announcements. Defaults to pointer-only instructions and node names. */
+  accessibility?: DndContextProps["accessibility"];
 
   /* Custom react-window outer/inner elements */
   outerElementType?: ReactWindowCommonProps["outerElementType"];
