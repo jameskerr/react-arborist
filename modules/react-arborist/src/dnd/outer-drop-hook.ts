@@ -1,42 +1,27 @@
-import { useDrop } from "react-dnd";
+import { useEffect, useRef } from "react";
+import { useDroppable } from "@dnd-kit/core";
 import { useTreeApi } from "../context.js";
-import { DragItem } from "../types/dnd.js";
-import { computeDrop } from "./compute-drop.js";
-import { DropResult } from "./drop-hook.js";
+
+export const OUTER_DROP_ID = "__REACT_ARBORIST_OUTER_DROP__";
 
 export function useOuterDrop() {
   const tree = useTreeApi();
+  const { setNodeRef } = useDroppable({
+    id: OUTER_DROP_ID,
+    data: {
+      isOuterDrop: true,
+    },
+  });
 
-  // In case we drop an item at the bottom of the list
-  const [, drop] = useDrop<DragItem, DropResult | null, { isOver: boolean }>(
-    () => ({
-      accept: "NODE",
-      canDrop: (_item, m) => {
-        if (!m.isOver({ shallow: true })) return false;
-        return tree.canDrop();
-      },
-      hover: (_item, m) => {
-        if (!m.isOver({ shallow: true })) return;
-        const offset = m.getClientOffset();
-        if (!tree.listEl.current || !offset) return;
-        const { cursor, drop } = computeDrop({
-          element: tree.listEl.current,
-          offset: offset,
-          indent: tree.indent,
-          node: null,
-          prevNode: tree.visibleNodes[tree.visibleNodes.length - 1],
-          nextNode: null,
-        });
-        tree.hover(drop, cursor);
-      },
-      drop: (_item, m) => {
-        if (!m.isOver({ shallow: true })) return null;
-        if (!m.canDrop()) return null;
-        tree.drop();
-      },
-    }),
-    [tree],
-  );
+  const registered = useRef<HTMLElement | null>(null);
 
-  drop(tree.listEl);
+  /* The outer element is replaced when rowHeight switches between a number and a
+     function (FixedSizeList to VariableSizeList), and a late-mounting list sets
+     it after the first render, so check after every commit rather than once. */
+  useEffect(() => {
+    const element = tree.listEl.current;
+    if (!element || element === registered.current) return;
+    registered.current = element;
+    setNodeRef(element);
+  });
 }

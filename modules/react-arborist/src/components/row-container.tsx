@@ -1,16 +1,55 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { useDataUpdates, useNodesContext, useTreeApi } from "../context.js";
-import { useDragHook } from "../dnd/drag-hook.js";
+import { DragHandleRef, useDragHook } from "../dnd/drag-hook.js";
 import { useDropHook } from "../dnd/drop-hook.js";
 import { useDestinationUpdates } from "../hooks/use-destination-updates.js";
 import { useFreshNode } from "../hooks/use-fresh-node.js";
+import { NodeApi } from "../interfaces/node-api.js";
 
 type Props = {
   style: React.CSSProperties;
   index: number;
 };
 
+type RowViewProps<T> = {
+  style: React.CSSProperties;
+  node: NodeApi<T>;
+  dragRef: DragHandleRef;
+  innerRef: (element: HTMLElement | null) => void;
+};
+
+/* A row is rendered in two parts. The outer part calls dnd-kit's useDraggable
+   and useDroppable: both read dnd-kit's InternalContext, whose value changes
+   whenever the hovered row changes. Keeping them out here means that update
+   re-renders this small component, not the (arbitrarily expensive) Row and Node
+   below (#385). RowView still subscribes to the node and destination state it
+   actually paints. */
 export const RowContainer = React.memo(function RowContainer<T>({ index, style }: Props) {
+  useDataUpdates(); // Re-render when tree props or visability changes
+  const _ = useNodesContext(); // So that useFreshNode sees node state changes
+  const node = useFreshNode<T>(index);
+
+  const el = useRef<HTMLElement | null>(null);
+  const dragRef = useDragHook<T>(node);
+  const dropRef = useDropHook(el, node);
+  const innerRef = useCallback(
+    (n: HTMLElement | null) => {
+      el.current = n;
+      dropRef(n);
+    },
+    [dropRef],
+  );
+
+  useEffect(() => {
+    if (!node.isEditing && node.isFocused) {
+      el.current?.focus({ preventScroll: true });
+    }
+  }, [node.isEditing, node.isFocused]);
+
+  return <RowView style={style} node={node} dragRef={dragRef} innerRef={innerRef} />;
+});
+
+function RowViewInner<T>({ style, node, dragRef, innerRef }: RowViewProps<T>) {
   /* When will the <Row> will re-render.
    *
    * The row component is memo'd so it will only render
@@ -28,21 +67,8 @@ export const RowContainer = React.memo(function RowContainer<T>({ index, style }
    */
 
   useDataUpdates(); // Re-render when tree props or visability changes
-  const _ = useNodesContext(); // So that we re-render appropriately
   const tree = useTreeApi<T>(); // Tree already has the fresh state
-  const node = useFreshNode<T>(index);
   useDestinationUpdates(node.id); // Re-render when this row becomes the drop target
-
-  const el = useRef<HTMLDivElement | null>(null);
-  const dragRef = useDragHook<T>(node);
-  const dropRef = useDropHook(el, node);
-  const innerRef = useCallback(
-    (n: any) => {
-      el.current = n;
-      dropRef(n);
-    },
-    [dropRef],
-  );
 
   const indent = tree.indent * node.level;
   const nodeStyle = useMemo(() => ({ paddingLeft: indent }), [indent]);
@@ -69,12 +95,6 @@ export const RowContainer = React.memo(function RowContainer<T>({ index, style }
     className: tree.props.rowClassName,
   };
 
-  useEffect(() => {
-    if (!node.isEditing && node.isFocused) {
-      el.current?.focus({ preventScroll: true });
-    }
-  }, [node.isEditing, node.isFocused, el.current]);
-
   const Node = tree.renderNode;
   const Row = tree.renderRow;
 
@@ -83,4 +103,6 @@ export const RowContainer = React.memo(function RowContainer<T>({ index, style }
       <Node node={node} tree={tree} style={nodeStyle} dragHandle={dragRef} />
     </Row>
   );
-});
+}
+
+const RowView = React.memo(RowViewInner) as typeof RowViewInner;

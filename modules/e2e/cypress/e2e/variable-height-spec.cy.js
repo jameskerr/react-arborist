@@ -11,6 +11,8 @@
      installer.dmg  leaf    h=28  top=256
 */
 
+import { dragAndDrop } from "../support/drag.js";
+
 describe("Variable Row Height Demo", () => {
   beforeEach(() => {
     cy.visit("http://localhost:3000/variable-height");
@@ -58,16 +60,8 @@ describe("Variable Row Height Demo", () => {
     cy.contains("[role=treeitem]", "Documents").should("have.css", "top", "0px");
 
     // installer.dmg dropped near the top, so its offset is recomputed well above 256px.
-    cy.contains("[role=treeitem]", "installer.dmg").then(($el) => {
+    cy.contains("[role=treeitem]", "installer.dmg").should(($el) => {
       expect(parseFloat($el.css("top"))).to.be.lessThan(256);
     });
   });
 });
-
-function dragAndDrop(src, dst) {
-  const dataTransfer = new DataTransfer();
-  src.trigger("dragstart", { dataTransfer });
-  dst.trigger("dragover", { dataTransfer });
-  dst.trigger("drop", { dataTransfer });
-  dst.trigger("dragend", { dataTransfer });
-}

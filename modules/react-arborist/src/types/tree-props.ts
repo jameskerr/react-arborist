@@ -5,7 +5,7 @@ import { ElementType, MouseEventHandler } from "react";
 import { ListOnScrollProps, CommonProps as ReactWindowCommonProps } from "react-window";
 import { NodeApi } from "../interfaces/node-api.js";
 import { OpenMap } from "../state/open-slice.js";
-import { useDragDropManager, DndProviderProps } from "react-dnd";
+import type { DndContextProps, SensorDescriptor, SensorOptions } from "@dnd-kit/core";
 
 /** Returns the height in pixels for a given node's row. */
 export type RowHeightAccessor<T> = (node: NodeApi<T>) => number;
@@ -78,20 +78,12 @@ export interface TreeProps<T> {
   className?: string | undefined;
   rowClassName?: string | undefined;
 
-  dndRootElement?: globalThis.Node | null;
   onClick?: MouseEventHandler;
   onContextMenu?: MouseEventHandler;
-  dndBackend?: Extract<DndProviderProps<unknown, unknown>, { backend: unknown }>["backend"];
-  dndManager?: ReturnType<typeof useDragDropManager>;
-
-  /* The react-dnd item type each row's drag source advertises. Defaults to
-     "NODE". Set a custom value (or a per-node function) so rows can be dropped
-     onto external react-dnd targets that accept that type. The dragged node's
-     data is always exposed on the drag item, so an external target accepting
-     the default "NODE" type can read it without setting this. Note: the tree's
-     own drop targets only accept "NODE", so a row given a custom type is no
-     longer reorderable within the tree. */
-  dragType?: string | ((node: NodeApi<T>) => string);
+  /** Custom sensors for @dnd-kit DndContext. Defaults to MouseSensor and a delayed TouchSensor. */
+  sensors?: SensorDescriptor<SensorOptions>[];
+  /** Custom @dnd-kit screen-reader instructions and announcements. Defaults to pointer-only instructions and node names. */
+  accessibility?: DndContextProps["accessibility"];
 
   /* Custom react-window outer/inner elements */
   outerElementType?: ReactWindowCommonProps["outerElementType"];

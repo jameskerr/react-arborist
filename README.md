@@ -26,15 +26,12 @@ Here is a Gmail sidebar clone built with react-arborist.
 
 ## Installation
 
-react-arborist requires `react-dnd` and `react-dnd-html5-backend` as peer
-dependencies. Install them together:
-
 ```bash
-npm install react-arborist react-dnd react-dnd-html5-backend
+npm install react-arborist @dnd-kit/core
 ```
 
 ```bash
-yarn add react-arborist react-dnd react-dnd-html5-backend
+yarn add react-arborist @dnd-kit/core
 ```
 
 ## Examples
@@ -373,14 +370,6 @@ interface TreeProps<T> {
      the tree (see "Handling Clicks on the Tree Container" below). */
   onClick?: MouseEventHandler;
   onContextMenu?: MouseEventHandler;
-
-  dndRootElement?: globalThis.Node | null;
-  dndBackend?: Extract<
-    DndProviderProps<unknown, unknown>,
-    { backend: unknown }
-  >["backend"];
-  dndManager?: ReturnType<typeof useDragDropManager>;
-  dragType?: string | ((node: NodeApi<T>) => string);
 }
 ```
 
@@ -408,128 +397,45 @@ To act only when the empty area was clicked (and not a row), check whether the e
 
 Clicking empty space already clears the selection by default; pass the [`disableDeselectOnClick`](#tree-component-props) prop to keep the selection instead.
 
-### Dragging Nodes to External Drop Targets
+## Drag and Drop (@dnd-kit)
 
-The react-dnd drag item created for each row carries the dragged node's `data`, so a drop target rendered outside the tree can read it:
+react-arborist uses `@dnd-kit` for drag and drop:
 
-```tsx
-const [, drop] = useDrop(() => ({
-  accept: "NODE",
-  drop: (item) => console.log(item.data), // the dragged node's data
-}));
-```
+- **Peer dependency**: `@dnd-kit/core` (^6.3.1) is a peer dependency alongside `react` and `react-dom`.
+- **Mouse & touch support**: Mouse drags start after a short move. Touch drags start on a press and hold, so swiping a row still scrolls the list; the drag handle gets `touch-action: manipulation` for that.
+- **Sensors prop**: Pass custom sensors via the `sensors` prop (`useSensors(...)`) to customize activation constraints (e.g. distance or delay thresholds). The prop is typed with `@dnd-kit/core`'s own types, so the public API tracks the 6.x line; a future major may change that type.
+- **Screen readers**: Instructions are pointer-only (no Space-bar prompt), and announcements use each node's `data.name`, falling back to its id. Pass an `accessibility` prop to replace the instructions or announcements, or to suppress them.
 
-The tree and your external target must share one react-dnd backend. Wrap both in a single `DndProvider` and pass its manager to the tree via the `dndManager` prop. By default rows advertise the `"NODE"` item type; set the `dragType` prop (a fixed string, or a function of the node) to advertise a custom type instead. Note that the tree's own drop targets only accept `"NODE"`, so a row given a custom `dragType` is no longer reorderable within the tree.
+### Drag context
 
-## react-dnd Compatibility
+Each `<Tree>` creates and owns its own `<DndContext>`. Coordinating several trees (or a tree plus your own droppables) inside a shared `<DndContext>` is not supported in v5; see [#396](https://github.com/jameskerr/react-arborist/issues/396).
 
-react-arborist requires **React 18+** and **react-dnd v16**.
+Drag and drop is pointer-only. The default sensors deliberately exclude `@dnd-kit`'s `KeyboardSensor`, since it starts a drag on Space or Enter, which the tree uses to select, toggle, and rename.
 
-react-arborist ships a single ESM build, as does react-dnd v16. `import` and
-`require` both resolve to it, so an app never loads two copies of react-arborist with
-separate React contexts. `require("react-arborist")` from CommonJS relies on
-`require(esm)`, unflagged from **Node.js 22.12**, which is what `engines.node`
-declares. Only the `require` path actually needs that Node version, but `engines` is
-checked at install time: package managers that enforce it (Yarn Classic by default,
-pnpm with `engine-strict`) will refuse to install on older Node even for bundler and
-browser consumers.
+### Custom sensors
 
-CommonJS TypeScript projects that use Node module resolution need a `module` setting
-that understands `require(esm)`: `"nodenext"` (**TypeScript ≥ 5.8**) or `"node20"`
-(**TypeScript ≥ 5.9**). `"node16"` and `"node18"` report error TS1479 on
-`import ... from "react-arborist"`. Projects using `moduleResolution: "bundler"` or
-`"node10"` are unaffected.
-
-### Why react-dnd is a peer dependency
-
-From react-arborist v4, `react-dnd` and `react-dnd-html5-backend` are **peer
-dependencies** rather than bundled dependencies. This matters because react-dnd
-registers a global singleton (`globalThis[Symbol.for('__REACT_DND_CONTEXT_INSTANCE__')]`).
-If your application and react-arborist each bundled their own copy, you would end up
-with two independent singletons, causing drag-and-drop to silently break or throw
-`"Cannot have two HTML5 backends at the same time"`.
-
-Making react-dnd a peer dependency means npm/yarn/pnpm will always resolve a single
-shared copy for your entire application.
-
-### Multiple trees on the same page
-
-Rendering several `<Tree>` components side by side needs no special setup. react-dnd
-v16 memoizes one drag-drop manager per context object, and the default context is the
-global one, so every tree on the page already resolves to the same manager and the
-same backend.
-
-Reach for the shared-provider pattern when you need the tree bound to a *specific*
-manager rather than to whatever the global slot holds: your `<DndProvider>` passes a
-custom `context`, or renders into another window or iframe. It is also the way to make
-the binding explicit — because the global manager is memoized on first use, whichever
-provider mounts first fixes the backend for everything after it, and a `dndBackend`
-passed to a later `<Tree>` is silently ignored. Wrap everything in one `<DndProvider>`
-and pass its manager to each tree:
+Configure sensors on the tree using `@dnd-kit/core`:
 
 ```tsx
-import { DndProvider, useDragDropManager } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import { useSensor, useSensors, MouseSensor, TouchSensor } from "@dnd-kit/core";
 
-function App() {
-  return (
-    <DndProvider backend={HTML5Backend}>
-      <ForestView />
-    </DndProvider>
+function MyTree() {
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 },
+    }),
   );
-}
 
-function ForestView() {
-  const manager = useDragDropManager();
-  return (
-    <>
-      <Tree data={leftData} dndManager={manager}>{Node}</Tree>
-      <Tree data={rightData} dndManager={manager}>{Node}</Tree>
-    </>
-  );
+  return <Tree data={data} sensors={sensors}>{Node}</Tree>;
 }
 ```
 
-Without the shared manager each `<Tree>` resolves through the global context instead.
-If your provider is on a custom `context`, that is a different manager, and drags
-started in the tree are invisible to your drop targets.
+### Jest and Testing
 
-### Custom backends
-
-Pass any react-dnd-compatible backend via `dndBackend`:
-
-```tsx
-import { TouchBackend } from "react-dnd-touch-backend";
-
-<Tree data={data} dndBackend={TouchBackend}>{Node}</Tree>
-```
-
-Passing `dndBackend` or `dndManager` opts out of the default `HTML5Backend`.
-Custom-backend / `dndManager` users still need `react-dnd-html5-backend`
-installed as a peer: the drag preview calls into it (`getEmptyImage()`) on every
-drag regardless of which backend is active, so it's a hard requirement rather
-than an optional default.
-
-`dndBackend` is only dependable when this `<Tree>` is the only react-dnd
-consumer in the page: as the previous section explains, react-dnd v16
-memoizes one manager per context, so if another `<Tree>` or any other
-react-dnd consumer initialised the global manager first, this backend is
-silently dropped with no warning. Reach for the shared `<DndProvider>` +
-`dndManager` pattern above whenever the page has more than one.
-
-### react-dnd v16 and Jest
-
-react-arborist, react-dnd v16, and react-dnd's transitive dependencies (`dnd-core`,
-`@react-dnd/*`) ship **ESM-only** builds. Jest's default CJS runtime can't load them
-directly. Add a `transformIgnorePatterns` entry so ts-jest (or babel-jest) transpiles
-them to CJS.
-Transpile-only mode is required — ts-jest's type-checking path won't emit for files
-outside your TS program. Set `isolatedModules: true` in the transformer's `tsconfig`
-block. Jest stopped bundling `jest-environment-jsdom` in v28, so install it too:
-
-```
-yarn add -D jest-environment-jsdom
-```
+react-arborist and its dependencies ship ESM builds. Add a `transformIgnorePatterns` entry so ts-jest (or babel-jest) transpiles them:
 
 ```js
 // jest.config.js
@@ -538,7 +444,7 @@ module.exports = {
     "^.+\\.[jt]sx?$": ["ts-jest", { tsconfig: { allowJs: true, isolatedModules: true } }],
   },
   transformIgnorePatterns: [
-    "/node_modules/(?!.*(react-arborist|react-dnd|react-dnd-html5-backend|dnd-core|@react-dnd)/)",
+    "/node_modules/(?!.*(react-arborist|@dnd-kit)/)",
   ],
   testEnvironment: "jsdom",
   testEnvironmentOptions: {
@@ -547,48 +453,29 @@ module.exports = {
 };
 ```
 
-Three details in that config are easy to get wrong:
+### Migrating from v4
 
-- `testEnvironment: "jsdom"` is required, not optional, once you restate
-  `customExportConditions`. Jest's default environment is `jest-environment-node`,
-  whose own conditions are `["node"]` — and `customExportConditions` *replaces*
-  rather than extends them. Drop `jsdom` while keeping `["browser", "require",
-  "default"]` and dependencies still resolve their **browser** builds, but now run
-  them in plain Node without the DOM globals those builds expect. A browser build
-  that touches `window` or `document` then fails with errors like
-  `ReferenceError: window is not defined`.
-
-- The lookahead scans the rest of the path (`.*`) instead of just the next segment.
-  Under pnpm these packages live at
-  `node_modules/.pnpm/react-dnd@16.0.1_.../node_modules/react-dnd/...`; a
-  next-segment-only pattern sees `.pnpm`, excludes them from transformation, and you
-  get back the exact `SyntaxError` this is meant to prevent.
-- `customExportConditions` **replaces** the test environment's conditions rather than
-  adding to them, so `"browser"` has to be restated — without it, a dependency whose
-  exports map lists `"browser"` before `"node"` resolves its Node build under jsdom,
-  and your tests pass while exercising code that never ships. Do not add `"node"`:
-  `exports` maps match in the package's own key order, so including `"node"` makes a
-  package that lists `"node"` first resolve its Node build.
-
-> **Why not `--experimental-vm-modules`?** Node 22.12+ supports `require()` of ESM
-> modules natively at the runtime level, but Jest intercepts `require` with its own
-> CJS module system regardless of Node version. The `transformIgnorePatterns` approach
-> works on all Jest versions without experimental flags.
-
-### Migrating from v3
-
-v3 bundled react-dnd v14 as a regular dependency. v4 promotes it to a peer dependency.
+In v4, `react-dnd` and `react-dnd-html5-backend` were required peer dependencies. In v5, react-arborist has migrated to `@dnd-kit`:
 
 ```bash
-# Before (v3) — react-dnd was pulled in automatically
-npm install react-arborist
-
-# After (v4) — install react-dnd alongside react-arborist
+# Before (v4) — required react-dnd peer dependencies
 npm install react-arborist react-dnd react-dnd-html5-backend
+
+# After (v5) — react-dnd is no longer required
+npm install react-arborist @dnd-kit/core
 ```
 
-If your app puts its `<DndProvider>` on a custom `context`, or renders one into
-another window, adopt the shared `DndProvider` + `dndManager` pattern shown above.
+`dndBackend`, `dndManager`, and `dndRootElement` are removed in v5; TypeScript flags existing uses. For custom sensors, pass the `sensors` prop instead.
+
+Drag previews are positioned by `@dnd-kit`'s `<DragOverlay>`, so `DragPreviewProps` no longer carries `offset` or `mouse`. A custom `renderDragPreview` that positioned itself with `offset` should stop; `id`, `dragIds` and `isDragging` are unchanged.
+
+v5 also drops the native HTML5 drag-and-drop capabilities that depended on `react-dnd`:
+
+- dragging rows onto the host app's `react-dnd` targets, and dropping the app's `react-dnd` items into the tree
+- OS file drops, dragging out to other apps or windows, and iframe setups via `dndRootElement`
+- `dragType`: with each tree owning a private `DndContext`, no external target can read the drag data, so the prop did nothing. It is removed rather than left as a label; [#396](https://github.com/jameskerr/react-arborist/issues/396) can bring a replacement back if a shared context arrives.
+
+Coordinating several trees in a shared `<DndContext>` is tracked in [#396](https://github.com/jameskerr/react-arborist/issues/396).
 
 ## Row Component Props
 
@@ -625,13 +512,13 @@ The _\<DragPreview\>_ is responsible for showing a "ghost" version of the node b
 
 ```ts
 type DragPreviewProps = {
-  offset: XYCoord | null;
-  mouse: XYCoord | null;
   id: string | null;
   dragIds: string[];
   isDragging: boolean;
 };
 ```
+
+`@dnd-kit`'s `<DragOverlay>` positions the preview, so preview components no longer receive an `offset` or `mouse` coordinate. A custom preview that positioned itself with `offset` should stop doing so and let the overlay place it.
 
 ## Cursor Component Props
 
