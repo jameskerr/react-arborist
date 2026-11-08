@@ -320,6 +320,151 @@ test("Backspace on multi-selection at the end of the tree falls back to an unsel
   expect(ref.current!.focusedNode?.id).toBe("2");
 });
 
+/* Selecting a folder and one of its children deletes the child's siblings too.
+   Focus must not land on a row that the deletion removes. */
+test("Backspace skips a selected folder's children when choosing focus", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(
+    <Tree<Datum>
+      data={[
+        { id: "w", name: "w" },
+        { id: "x", name: "x" },
+        {
+          id: "f",
+          name: "f",
+          children: [
+            { id: "c1", name: "c1" },
+            { id: "c2", name: "c2" },
+          ],
+        },
+      ]}
+      openByDefault
+      ref={ref}
+      onDelete={jest.fn()}
+    />,
+  );
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    ref.current!.select("x");
+    ref.current!.selectMulti("f");
+  });
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "Backspace" });
+  });
+
+  expect(ref.current!.focusedNode?.id).toBe("w");
+});
+
+test("Backspace skips a sibling that is deleted with its selected parent", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(
+    <Tree<Datum>
+      data={[
+        {
+          id: "1",
+          name: "one",
+          children: [
+            { id: "2", name: "two" },
+            { id: "3", name: "three" },
+          ],
+        },
+        { id: "4", name: "four" },
+      ]}
+      openByDefault
+      ref={ref}
+      onDelete={jest.fn()}
+    />,
+  );
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    ref.current!.select("1");
+    ref.current!.selectMulti("2");
+  });
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "Backspace" });
+  });
+
+  expect(ref.current!.focusedNode?.id).toBe("4");
+});
+
+test("Backspace focuses the collapsed parent when every selected node is hidden", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(
+    <Tree<Datum>
+      data={[
+        {
+          id: "f",
+          name: "f",
+          children: [
+            { id: "c1", name: "c1" },
+            { id: "c2", name: "c2" },
+          ],
+        },
+      ]}
+      openByDefault
+      ref={ref}
+      onDelete={jest.fn()}
+    />,
+  );
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    ref.current!.select("c1");
+    ref.current!.selectMulti("c2");
+    ref.current!.close("f");
+  });
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "Backspace" });
+  });
+
+  expect(ref.current!.focusedNode?.id).toBe("f");
+});
+
+/* AltGr reports ctrlKey+altKey and macOS Option-composed letters report
+   altKey, so both must still reach type-to-find. */
+test("AltGr characters still reach type-to-find", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(
+    <Tree<Datum>
+      data={[
+        { id: "1", name: "łódź" },
+        { id: "2", name: "other" },
+      ]}
+      ref={ref}
+    />,
+  );
+
+  await act(async () => {
+    fireEvent.keyDown(screen.getByRole("tree"), { key: "ł", ctrlKey: true, altKey: true });
+  });
+
+  expect(ref.current!.focusedNode?.id).toBe("1");
+});
+
+test("Option-composed characters still reach type-to-find", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(
+    <Tree<Datum>
+      data={[
+        { id: "1", name: "öl" },
+        { id: "2", name: "other" },
+      ]}
+      ref={ref}
+    />,
+  );
+
+  await act(async () => {
+    fireEvent.keyDown(screen.getByRole("tree"), { key: "ö", altKey: true });
+  });
+
+  expect(ref.current!.focusedNode?.id).toBe("1");
+});
+
 test("Backspace on single node at end of root falls back to previous node rather than root", async () => {
   const ref = createRef<TreeApi<Datum> | undefined>();
   const onDelete = jest.fn();

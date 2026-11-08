@@ -2,8 +2,10 @@
 type: fix
 ---
 
-Deduplicate `computeDrop` branches and decouple tree keyboard navigation into modular command handlers with early return guard clauses.
+Keyboard shortcuts no longer corrupt type-to-find: PageDown used to fall through and append the literal string "PageDown" to the search term, and other non-character keys and modifier shortcuts are now ignored as well. AltGr and macOS Option-composed letters still reach the search. Each tree also keeps its own search term instead of sharing one term across every tree on the page.
 
-PageDown no longer falls through to the type-to-find handler, which used to append the literal string "PageDown" to the search term, and each tree now keeps its own type-to-find buffer instead of sharing one module-level term across every tree on the page.
+`A` without an `onCreate` handler now runs type-to-find instead of doing nothing, matching what a plain character does.
 
-When multiple nodes at the end of the tree are deleted via Backspace, focus falls back to the nearest unselected node instead of an invalid node that is part of the deletion set.
+With multiple nodes selected, Backspace moves focus to the nearest visible row that survives the deletion, including skipping rows that are inside a selected folder and so are deleted with it. With a single node selected, Backspace now focuses the previous visible row instead of the root when there is no next sibling.
+
+Internally, the keyboard commands moved into one table of small handlers, so the tree's keydown branch is no longer 200 lines long, and the duplicated `computeDrop` branches are merged.

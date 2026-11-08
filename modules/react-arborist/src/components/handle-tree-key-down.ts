@@ -27,23 +27,30 @@ function isEditableTarget(target: EventTarget | null, currentTarget: EventTarget
   );
 }
 
-function findUnselectedFallback<T>(tree: TreeApi<T>, ids: string[]): NodeApi<T> | null {
-  const idSet = new Set(ids);
+/* Focus the nearest visible row that survives deleting `ids`. A selected folder
+   takes its descendants with it, so those are skipped even though only the
+   folder's id is in the selection. */
+function nextFocusAfterDelete<T>(tree: TreeApi<T>, ids: string[]): NodeApi<T> | null {
   const nodes = tree.visibleNodes;
-  const selectedIndices = nodes.map((n, i) => (idSet.has(n.id) ? i : -1)).filter((i) => i !== -1);
+  const idSet = new Set(ids);
+  const survives = (node: NodeApi<T>) => {
+    for (let n: NodeApi<T> | null = node; n; n = n.parent) {
+      if (idSet.has(n.id)) return false;
+    }
+    return true;
+  };
 
-  if (selectedIndices.length === 0) return null;
+  /* The most recently selected row is the one under the cursor. When it sits
+     inside a collapsed folder, the focused row (that folder) is the anchor. */
+  const anchor = tree.mostRecentNode ?? tree.focusedNode;
+  const start = anchor ? nodes.indexOf(anchor) : 0;
 
-  const maxIndex = Math.max(...selectedIndices);
-  for (let i = maxIndex + 1; i < nodes.length; i++) {
-    if (!idSet.has(nodes[i].id)) return nodes[i];
+  for (let i = Math.max(start, 0); i < nodes.length; i++) {
+    if (survives(nodes[i])) return nodes[i];
   }
-
-  const minIndex = Math.min(...selectedIndices);
-  for (let i = minIndex - 1; i >= 0; i--) {
-    if (!idSet.has(nodes[i].id)) return nodes[i];
+  for (let i = Math.min(start - 1, nodes.length - 1); i >= 0; i--) {
+    if (survives(nodes[i])) return nodes[i];
   }
-
   return null;
 }
 
@@ -51,13 +58,7 @@ function handleBackspace<T>(_e: React.KeyboardEvent<HTMLDivElement>, tree: TreeA
   if (!tree.props.onDelete) return;
   const ids = Array.from(tree.selectedIds);
   if (ids.length > 1) {
-    let nextFocus = tree.mostRecentNode;
-    while (nextFocus && nextFocus.isSelected) {
-      nextFocus = nextFocus.nextSibling;
-    }
-    if (!nextFocus || nextFocus.isSelected) {
-      nextFocus = findUnselectedFallback(tree, ids);
-    }
+    const nextFocus = nextFocusAfterDelete(tree, ids);
     if (nextFocus) tree.focus(nextFocus, { scroll: false });
     tree.delete(ids);
     return;
@@ -264,9 +265,11 @@ export function handleTreeKeyDown<T>(e: React.KeyboardEvent<HTMLDivElement>, tre
     return;
   }
 
-  /* Non-character keys (Escape, F5, etc.) and modified shortcuts (Cmd+C, Ctrl+V)
-     must not be appended to the typeahead search term. */
-  if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return;
+  /* Non-character keys (Escape, F5) and shortcuts (Cmd+C, Ctrl+V) must not
+     reach the typeahead. AltGr reports ctrlKey+altKey and macOS Option-composed
+     letters report altKey, so those still count as characters. */
+  if (e.key.length !== 1) return;
+  if (e.metaKey || (e.ctrlKey && !e.altKey)) return;
 
   handleTypeahead(e.key, tree);
 }
