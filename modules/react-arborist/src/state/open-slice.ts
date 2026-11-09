@@ -4,11 +4,6 @@ import { ActionTypes } from "../types/utils.js";
 export type OpenMap = { [id: string]: boolean };
 export type OpenSlice = { unfiltered: OpenMap; filtered: OpenMap };
 
-export const initialOpenState = (unfiltered: OpenMap = {}): OpenSlice => ({
-  filtered: {},
-  unfiltered,
-});
-
 /* Actions */
 export const actions = {
   open(id: string, filtered: boolean) {
@@ -43,7 +38,7 @@ function openMapReducer(state: OpenMap = {}, action: ActionTypes<typeof actions>
 }
 
 export function reducer(
-  state: OpenSlice = initialOpenState(),
+  state: OpenSlice = { filtered: {}, unfiltered: {} },
   action: ActionTypes<typeof actions>,
 ): OpenSlice {
   if (!action.type.startsWith("VISIBILITY")) return state;

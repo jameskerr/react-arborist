@@ -2,8 +2,6 @@
 
 export type FocusState = { id: string | null; treeFocused: boolean };
 
-export const initialFocusState = (): FocusState => ({ id: null, treeFocused: false });
-
 /* Actions */
 
 export function focus(id: string | null) {
@@ -17,7 +15,7 @@ export function treeBlur() {
 /* Reducer */
 
 export function reducer(
-  state: FocusState = initialFocusState(),
+  state: FocusState = { id: null, treeFocused: false },
   action: ReturnType<typeof focus> | ReturnType<typeof treeBlur>,
 ) {
   if (action.type === "FOCUS") {

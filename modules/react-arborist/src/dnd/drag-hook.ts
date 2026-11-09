@@ -3,7 +3,7 @@ import { ConnectDragSource, useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 import { useTreeApi } from "../context.js";
 import { NodeApi } from "../interfaces/node-api.js";
-import type { DragItem } from "../types/dnd.js";
+import { DragItem } from "../types/dnd.js";
 import { TreeProps } from "../types/tree-props.js";
 import { DropResult } from "./drop-hook.js";
 import { actions as dnd } from "../state/dnd-slice.js";

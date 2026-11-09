@@ -1,6 +1,6 @@
 import React, { createContext, useContext } from "react";
 import type { TreeApi } from "./interfaces/tree-api.js";
-import type { RootState } from "./state/root-reducer.js";
+import { RootState } from "./state/root-reducer.js";
 
 export const TreeApiContext = createContext<TreeApi<any> | null>(null);
 
