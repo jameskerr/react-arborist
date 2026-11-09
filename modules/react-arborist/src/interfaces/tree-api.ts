@@ -339,8 +339,14 @@ export class TreeApi<T> {
     const idents = Array.isArray(node) ? node : [node];
     const ids = idents.map((i) => this.identify(i));
     const nodes = ids.map((id) => this.get(id)!).filter((n) => !!n);
-    /* Guard against Math.min(...[]) === Infinity when no ids resolve to nodes. */
-    const fromIndex = nodes.length ? Math.min(...nodes.map((n) => n.rowIndex ?? 0)) : 0;
+    /* Track the first index in a loop: spreading one argument per selected
+       node overflows the call stack when a very large tree is select-all
+       deleted. Infinity falls back to 0 when no ids resolve to nodes. */
+    let fromIndex = Infinity;
+    for (const n of nodes) {
+      fromIndex = Math.min(fromIndex, n.rowIndex ?? 0);
+    }
+    if (fromIndex === Infinity) fromIndex = 0;
     await safeRun(this.props.onDelete, { nodes, ids });
     this.redrawList(fromIndex);
   }

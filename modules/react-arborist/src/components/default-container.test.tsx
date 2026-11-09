@@ -165,3 +165,330 @@ test("still calls preventDefault on Space typed on the tree container itself (#2
   const notPrevented = fireEvent.keyDown(tree, { key: " ", code: "Space" });
   expect(notPrevented).toBe(false);
 });
+
+test("ArrowDown moves focus to next node", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(<Tree<Datum> data={data} openByDefault ref={ref} />);
+  const tree = screen.getByRole("tree");
+  await act(async () => {
+    ref.current!.focus("1", { scroll: false });
+  });
+  expect(ref.current!.focusedNode?.id).toBe("1");
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "ArrowDown" });
+  });
+  expect(ref.current!.focusedNode?.id).toBe("2");
+});
+
+test("Home moves focus to first node and End to last node", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(<Tree<Datum> data={data} openByDefault ref={ref} />);
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "End" });
+  });
+  expect(ref.current!.focusedNode?.id).toBe("4");
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "Home" });
+  });
+  expect(ref.current!.focusedNode?.id).toBe("1");
+});
+
+test("ArrowLeft collapses open folder and ArrowRight opens it", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(<Tree<Datum> data={data} openByDefault ref={ref} />);
+  const tree = screen.getByRole("tree");
+  await act(async () => {
+    ref.current!.focus("1", { scroll: false });
+  });
+  expect(ref.current!.focusedNode?.isOpen).toBe(true);
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "ArrowLeft" });
+  });
+  expect(ref.current!.get("1")?.isOpen).toBe(false);
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "ArrowRight" });
+  });
+  expect(ref.current!.get("1")?.isOpen).toBe(true);
+});
+
+/* PageDown used to fall through into the type-to-find handler, so the next key
+   was appended to "PageDown" instead of starting a fresh search. */
+test("PageDown does not leak into type-to-find", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(<Tree<Datum> data={[{ id: "p", name: "plan" }, ...data]} openByDefault ref={ref} />);
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "PageDown" });
+    fireEvent.keyDown(tree, { key: "p" });
+  });
+
+  expect(ref.current!.focusedNode?.id).toBe("p");
+});
+
+test("type-to-find focuses the first node whose name starts with the typed key", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(<Tree<Datum> data={data} openByDefault ref={ref} />);
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "c" });
+  });
+
+  expect(ref.current!.focusedNode?.id).toBe("4");
+});
+
+test("Ctrl+a selects every node and a alone creates a leaf", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  const onCreate = jest.fn();
+  render(<Tree<Datum> data={data} openByDefault ref={ref} onCreate={onCreate} />);
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "a", ctrlKey: true });
+  });
+  expect(ref.current!.selectedIds.size).toBe(4);
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "a" });
+  });
+  expect(onCreate).toHaveBeenCalled();
+});
+
+test("'a' falls through to type-to-find when onCreate is not set", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(<Tree<Datum> ref={ref} data={data} openByDefault />);
+  const tree = screen.getByRole("tree");
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "a" });
+  });
+  expect(ref.current!.focusedNode?.id).toBe("2");
+});
+
+test("non-character keys and modifiers do not corrupt type-to-find", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(<Tree<Datum> ref={ref} data={data} openByDefault />);
+  const tree = screen.getByRole("tree");
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "Shift" });
+    fireEvent.keyDown(tree, { key: "c", ctrlKey: true });
+    fireEvent.keyDown(tree, { key: "c" });
+  });
+  expect(ref.current!.focusedNode?.id).toBe("4");
+});
+
+test("Backspace deletes the focused node through onDelete", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  const onDelete = jest.fn();
+  render(<Tree<Datum> data={data} openByDefault ref={ref} onDelete={onDelete} />);
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    ref.current!.focus("2", { scroll: false });
+  });
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "Backspace" });
+  });
+
+  expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ ids: ["2"] }));
+  expect(ref.current!.focusedNode?.id).toBe("3");
+});
+
+test("Backspace on multi-selection at the end of the tree falls back to an unselected node", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  const onDelete = jest.fn();
+  render(<Tree<Datum> data={data} openByDefault ref={ref} onDelete={onDelete} />);
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    ref.current!.select("3");
+    ref.current!.selectMulti("4");
+  });
+  expect(ref.current!.selectedIds.size).toBe(2);
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "Backspace" });
+  });
+
+  expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ ids: ["3", "4"] }));
+  expect(ref.current!.focusedNode?.id).toBe("2");
+});
+
+/* Selecting a folder and one of its children deletes the child's siblings too.
+   Focus must not land on a row that the deletion removes. */
+test("Backspace skips a selected folder's children when choosing focus", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(
+    <Tree<Datum>
+      data={[
+        { id: "w", name: "w" },
+        { id: "x", name: "x" },
+        {
+          id: "f",
+          name: "f",
+          children: [
+            { id: "c1", name: "c1" },
+            { id: "c2", name: "c2" },
+          ],
+        },
+      ]}
+      openByDefault
+      ref={ref}
+      onDelete={jest.fn()}
+    />,
+  );
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    ref.current!.select("x");
+    ref.current!.selectMulti("f");
+  });
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "Backspace" });
+  });
+
+  expect(ref.current!.focusedNode?.id).toBe("w");
+});
+
+test("Backspace skips a sibling that is deleted with its selected parent", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(
+    <Tree<Datum>
+      data={[
+        {
+          id: "1",
+          name: "one",
+          children: [
+            { id: "2", name: "two" },
+            { id: "3", name: "three" },
+          ],
+        },
+        { id: "4", name: "four" },
+      ]}
+      openByDefault
+      ref={ref}
+      onDelete={jest.fn()}
+    />,
+  );
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    ref.current!.select("1");
+    ref.current!.selectMulti("2");
+  });
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "Backspace" });
+  });
+
+  expect(ref.current!.focusedNode?.id).toBe("4");
+});
+
+test("Backspace focuses the collapsed parent when every selected node is hidden", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(
+    <Tree<Datum>
+      data={[
+        {
+          id: "f",
+          name: "f",
+          children: [
+            { id: "c1", name: "c1" },
+            { id: "c2", name: "c2" },
+          ],
+        },
+      ]}
+      openByDefault
+      ref={ref}
+      onDelete={jest.fn()}
+    />,
+  );
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    ref.current!.select("c1");
+    ref.current!.selectMulti("c2");
+    ref.current!.close("f");
+  });
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "Backspace" });
+  });
+
+  expect(ref.current!.focusedNode?.id).toBe("f");
+});
+
+/* AltGr reports ctrlKey+altKey and macOS Option-composed letters report
+   altKey, so both must still reach type-to-find. */
+test("AltGr characters still reach type-to-find", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(
+    <Tree<Datum>
+      data={[
+        { id: "1", name: "łódź" },
+        { id: "2", name: "other" },
+      ]}
+      ref={ref}
+    />,
+  );
+
+  await act(async () => {
+    fireEvent.keyDown(screen.getByRole("tree"), { key: "ł", ctrlKey: true, altKey: true });
+  });
+
+  expect(ref.current!.focusedNode?.id).toBe("1");
+});
+
+test("Option-composed characters still reach type-to-find", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(
+    <Tree<Datum>
+      data={[
+        { id: "1", name: "öl" },
+        { id: "2", name: "other" },
+      ]}
+      ref={ref}
+    />,
+  );
+
+  await act(async () => {
+    fireEvent.keyDown(screen.getByRole("tree"), { key: "ö", altKey: true });
+  });
+
+  expect(ref.current!.focusedNode?.id).toBe("1");
+});
+
+test("Backspace on single node at end of root falls back to previous node rather than root", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  const onDelete = jest.fn();
+  render(
+    <Tree<Datum>
+      data={[
+        { id: "a", name: "A" },
+        { id: "b", name: "B" },
+      ]}
+      openByDefault
+      ref={ref}
+      onDelete={onDelete}
+    />,
+  );
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    ref.current!.focus("b", { scroll: false });
+  });
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "Backspace" });
+  });
+
+  expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ ids: ["b"] }));
+  expect(ref.current!.focusedNode?.id).toBe("a");
+});

@@ -132,17 +132,8 @@ export function computeDrop(args: Args): ComputedDrop {
     };
   }
 
-  /* The node above the cursor line is an item */
-  if (isItem(above)) {
-    const level = bound(hoverLevel, below?.level || 0, above.level);
-    return {
-      drop: walkUpFrom(above, level),
-      cursor: lineCursor(above.rowIndex! + 1, level),
-    };
-  }
-
-  /* The node above the cursor line is a closed folder */
-  if (isClosed(above)) {
+  /* The node above the cursor line is an item or a closed folder */
+  if (isItem(above) || isClosed(above)) {
     const level = bound(hoverLevel, below?.level || 0, above.level);
     return {
       drop: walkUpFrom(above, level),
@@ -151,7 +142,7 @@ export function computeDrop(args: Args): ComputedDrop {
   }
 
   /*
-   * The node above the cursor is an open folder — empty or with children.
+   * The node above the cursor is an open folder (empty or with children).
    * `below` is either the folder's first child (children) or its next sibling
    * (empty), but neither pins the slide: the deep end is the folder's first
    * child (above.level + 1) and the shallow end walks up the ancestor chain,
