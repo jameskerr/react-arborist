@@ -2,7 +2,7 @@ import { RefObject } from "react";
 import { ConnectDropTarget, useDrop } from "react-dnd";
 import { useTreeApi } from "../context.js";
 import type { NodeApi } from "../interfaces/node-api.js";
-import { DragItem } from "../types/dnd.js";
+import type { DragItem } from "../types/dnd.js";
 import { computeDrop } from "./compute-drop.js";
 
 export type DropResult = {

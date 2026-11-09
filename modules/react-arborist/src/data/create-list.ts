@@ -1,4 +1,4 @@
-import { NodeApi } from "../interfaces/node-api.js";
+import type { NodeApi } from "../interfaces/node-api.js";
 import type { TreeApi } from "../interfaces/tree-api.js";
 
 export type ListResult<T> = {

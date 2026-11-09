@@ -1,4 +1,4 @@
-import { TreeProps } from "../types/tree-props.js";
+import type { TreeProps } from "../types/tree-props.js";
 import type { RootState } from "./root-reducer.js";
 import { initialDndState } from "./dnd-slice.js";
 import { initialDragState } from "./drag-slice.js";
