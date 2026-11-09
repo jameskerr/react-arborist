@@ -16,4 +16,5 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - run: yarn
       - run: yarn build
+      - run: npx --yes madge --circular modules/react-arborist/dist/module/index.js
       - run: yarn test
