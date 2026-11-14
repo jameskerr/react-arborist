@@ -37,6 +37,10 @@ npm install react-arborist react-dnd react-dnd-html5-backend
 yarn add react-arborist react-dnd react-dnd-html5-backend
 ```
 
+```bash
+pnpm add react-arborist react-dnd react-dnd-html5-backend
+```
+
 ## Examples
 
 Assume our data is this:
