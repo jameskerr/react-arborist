@@ -16,8 +16,8 @@ describe("Budget Tree Demo", () => {
   });
 
   it("updates folder totals when an expense moves between folders", () => {
-    // Dropping on the middle of a folder row moves the expense into it.
-    dragAndDrop(cy.get("@item").contains("Internet"), cy.get("@item").contains("Entertainment"));
+    // Dropping just above a row inside the folder moves the expense into it.
+    dragAndDrop(cy.get("@item").contains("Internet"), cy.get("@item").contains("Streaming"));
 
     cy.contains("[role=treeitem]", "Entertainment").should("contain.text", "$60");
     cy.contains("[role=treeitem]", "Utilities").should("contain.text", "$135");

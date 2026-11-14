@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { useTreeApi } from "../context.js";
-import { TreeApi } from "../interfaces/tree-api.js";
+import type { TreeApi } from "../interfaces/tree-api.js";
 
 /* What the drop destination means to a single row. A row reads the destination
    through its own place in the tree — it is the destination (willReceiveDrop),
