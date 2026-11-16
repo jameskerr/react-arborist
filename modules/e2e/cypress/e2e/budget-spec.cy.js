@@ -29,7 +29,15 @@ describe("Budget Tree Demo", () => {
 function dragAndDrop(src, dst) {
   const dataTransfer = new DataTransfer();
   src.trigger("dragstart", { dataTransfer });
-  dst.trigger("dragover", { dataTransfer });
-  dst.trigger("drop", { dataTransfer });
+  /* A real drag sends dragenter before dragover; without it react-dnd never
+     registers the row as a drop target. Send the pointer at the middle of the
+     target row so computeDrop takes its folder branch. */
+  dst.then(($dst) => {
+    const rect = $dst[0].getBoundingClientRect();
+    const pointer = { clientX: rect.x + rect.width / 2, clientY: rect.y + rect.height / 2 };
+    dst.trigger("dragenter", { dataTransfer, ...pointer });
+    dst.trigger("dragover", { dataTransfer, ...pointer });
+    dst.trigger("drop", { dataTransfer, ...pointer });
+  });
   dst.trigger("dragend", { dataTransfer });
 }
