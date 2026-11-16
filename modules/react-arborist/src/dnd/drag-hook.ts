@@ -1,5 +1,6 @@
 import { useCallback, useRef } from "react";
 import { useDraggable } from "@dnd-kit/core";
+import type { DraggableAttributes } from "@dnd-kit/core";
 import { NodeApi } from "../interfaces/node-api.js";
 
 /* A node can start a drag only when it's draggable and not currently being
@@ -11,16 +12,29 @@ export function canDragNode<T>(node: NodeApi<T>): boolean {
 
 export type DragHandleRef = (element: HTMLElement | null) => void;
 
+export type DragHook = {
+  dragHandle: DragHandleRef;
+  /* dnd-kit's aria attributes. They belong on the row (the element that takes
+     focus), not on the handle; see row-container.tsx. */
+  attributes: DraggableAttributes;
+};
+
 /* dnd-kit returns no listeners while a draggable is disabled, so the activator
    events are attached from a fixed list and dispatched through listenersRef at
    event time. Reading the object once at mount would leave a row that mounted
-   disabled with no listeners after it is enabled. */
+   disabled with no listeners after it is enabled. A custom sensor can register
+   an activator outside this list (onContextMenu for a long-press sensor), so
+   the live listener keys are bound too. */
 const ACTIVATOR_PROPS = ["onPointerDown", "onMouseDown", "onTouchStart", "onKeyDown"] as const;
 
-export function useDragHook<T>(node: NodeApi<T>): DragHandleRef {
+function boundEvents(listeners: Record<string, unknown> | undefined): string[] {
+  return [...new Set([...ACTIVATOR_PROPS, ...Object.keys(listeners ?? {})])];
+}
+
+export function useDragHook<T>(node: NodeApi<T>): DragHook {
   const isEnabled = canDragNode(node);
 
-  const { listeners, setNodeRef, setActivatorNodeRef } = useDraggable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef } = useDraggable({
     id: node.id,
     disabled: !isEnabled,
     data: {
@@ -46,12 +60,19 @@ export function useDragHook<T>(node: NodeApi<T>): DragHandleRef {
       detachRef.current = null;
       if (!element) return;
 
-      /* TouchSensor turns a press and hold into a drag, so the list can still be
-         scrolled by swiping across a row. */
-      element.style.touchAction = "manipulation";
-
       const cleanupFns: (() => void)[] = [];
-      for (const propName of ACTIVATOR_PROPS) {
+
+      /* TouchSensor turns a press and hold into a drag, so the list can still be
+         scrolled by swiping across a row. Leave a consumer's own inline
+         touch-action alone, and don't touch rows that can't drag. */
+      if (isEnabled && !element.style.touchAction) {
+        element.style.touchAction = "manipulation";
+        cleanupFns.push(() => {
+          element.style.touchAction = "";
+        });
+      }
+
+      for (const propName of boundEvents(listenersRef.current)) {
         const eventName = propName.slice(2).toLowerCase();
         const listener = (event: Event) => {
           const currentHandler = listenersRef.current?.[propName];
@@ -73,8 +94,8 @@ export function useDragHook<T>(node: NodeApi<T>): DragHandleRef {
       }
       detachRef.current = () => cleanupFns.forEach((fn) => fn());
     },
-    [setNodeRef, setActivatorNodeRef],
+    [isEnabled, setNodeRef, setActivatorNodeRef],
   );
 
-  return dragHandle;
+  return { dragHandle, attributes };
 }

@@ -651,6 +651,17 @@ export class TreeApi<T> {
     this.pendingHover = null;
   }
 
+  /* Reset every piece of hover state together: the pending frame, the target
+     canDrop() reads, the consumer-facing destination and the cursor. The drag
+     handlers used to reset these one by one from outside, which let a folder
+     stay highlighted via willReceiveDrop after the pointer left the tree. */
+  clearHover() {
+    this.cancelHover();
+    this.dispatch(dnd.hovering(null, null));
+    this.dispatch(dnd.setDestination(null, null));
+    this.hideCursor();
+  }
+
   drop() {
     /* The release lands in the same task as the hover before it, a frame before
        that hover would reach the store. Apply it now so onMove — and anything it

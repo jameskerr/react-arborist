@@ -13,9 +13,13 @@ export function useFreshNode<T>(index: number) {
     /* Return a fresh instance if the state values or the underlying node
        change. Identity alone is not enough: the previous clone is what
        visibleNodes holds, so depending on `original` would clone on every
-       render and defeat row memoisation. */
+       render and defeat row memoisation. rowIndex is part of the key set
+       because a folder opening above this row moves it without changing any
+       of the other values, and the clone derives prev/next from its index. */
   }, [
     ...Object.values(original.state),
+    original.id,
+    original.rowIndex,
     original.data,
     original.level,
     original.isDraggable,

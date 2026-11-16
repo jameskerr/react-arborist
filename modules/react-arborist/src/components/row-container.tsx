@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { useDataUpdates, useNodesContext, useTreeApi } from "../context.js";
 import { DragHandleRef, useDragHook } from "../dnd/drag-hook.js";
+import type { DraggableAttributes } from "@dnd-kit/core";
 import { useDropHook } from "../dnd/drop-hook.js";
 import { useDestinationUpdates } from "../hooks/use-destination-updates.js";
 import { useFreshNode } from "../hooks/use-fresh-node.js";
@@ -15,6 +16,7 @@ type RowViewProps<T> = {
   style: React.CSSProperties;
   node: NodeApi<T>;
   dragRef: DragHandleRef;
+  dragAttributes: DraggableAttributes;
   innerRef: (element: HTMLElement | null) => void;
 };
 
@@ -30,7 +32,7 @@ export const RowContainer = React.memo(function RowContainer<T>({ index, style }
   const node = useFreshNode<T>(index);
 
   const el = useRef<HTMLElement | null>(null);
-  const dragRef = useDragHook<T>(node);
+  const { dragHandle, attributes: dragAttributes } = useDragHook<T>(node);
   const dropRef = useDropHook(el, node);
   const innerRef = useCallback(
     (n: HTMLElement | null) => {
@@ -46,10 +48,18 @@ export const RowContainer = React.memo(function RowContainer<T>({ index, style }
     }
   }, [node.isEditing, node.isFocused]);
 
-  return <RowView style={style} node={node} dragRef={dragRef} innerRef={innerRef} />;
+  return (
+    <RowView
+      style={style}
+      node={node}
+      dragRef={dragHandle}
+      dragAttributes={dragAttributes}
+      innerRef={innerRef}
+    />
+  );
 });
 
-function RowViewInner<T>({ style, node, dragRef, innerRef }: RowViewProps<T>) {
+function RowViewInner<T>({ style, node, dragRef, dragAttributes, innerRef }: RowViewProps<T>) {
   /* When will the <Row> will re-render.
    *
    * The row component is memo'd so it will only render
@@ -90,6 +100,12 @@ function RowViewInner<T>({ style, node, dragRef, innerRef }: RowViewProps<T>) {
     "aria-level": node.level + 1,
     "aria-selected": node.isSelected,
     "aria-expanded": node.isOpen,
+    /* dnd-kit's descriptive attributes go on the row because the row, not the
+       handle, is the element that takes focus. role and tabIndex are left out:
+       the row already has treeitem semantics and the tree owns focus. */
+    "aria-describedby": dragAttributes["aria-describedby"],
+    "aria-roledescription": dragAttributes["aria-roledescription"],
+    "aria-disabled": dragAttributes["aria-disabled"] || undefined,
     style: rowStyle,
     tabIndex: -1,
     className: tree.props.rowClassName,

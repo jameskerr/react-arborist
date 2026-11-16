@@ -8,9 +8,8 @@ import type { Actions, RootState } from "../state/root-reducer.js";
 import { actions as dndActions } from "../state/dnd-slice.js";
 import { computeDrop } from "./compute-drop.js";
 import type { Measurable } from "./compute-drop.js";
+import type { XYCoord } from "../types/renderers.js";
 import { OUTER_DROP_ID } from "./outer-drop-hook.js";
-
-type Mouse = { x: number; y: number };
 
 type HoverTarget = {
   element: Measurable;
@@ -51,7 +50,7 @@ export function useDragHandlers<T>(api: TreeApi<T>, store: Store<RootState, Acti
   /* dnd-kit's delta includes scroll adjustments, so `activator + delta` is not
      the pointer position once the list auto-scrolls mid-drag. Track the real
      pointer natively instead. */
-  const pointerRef = useRef<Mouse | null>(null);
+  const pointerRef = useRef<XYCoord | null>(null);
   const detachRef = useRef<(() => void) | null>(null);
 
   const stopTracking = useCallback(() => {
@@ -85,14 +84,10 @@ export function useDragHandlers<T>(api: TreeApi<T>, store: Store<RootState, Acti
      one. onDragEnd drops only on a target found in the same event, so a row
      react-window unmounted under the pointer can't collect the drop. */
   const updateHover = useCallback(
-    (over: DragMoveEvent["over"], mouse: Mouse | null): boolean => {
+    (over: DragMoveEvent["over"], mouse: XYCoord | null): boolean => {
       const target = over && mouse ? hoverTarget(api, over) : null;
       if (!target || !mouse) {
-        api.cancelHover();
-        /* cancelHover only drops the pending frame; canDrop() and drop() read
-           hoverTarget(), which falls back to the last committed hover. */
-        store.dispatch(dndActions.hovering(null, null));
-        api.hideCursor();
+        api.clearHover();
         return false;
       }
 
@@ -100,7 +95,7 @@ export function useDragHandlers<T>(api: TreeApi<T>, store: Store<RootState, Acti
       api.hover(drop, cursor);
       return true;
     },
-    [api, store],
+    [api],
   );
 
   /* Falls back to activator + delta only until a real pointer event arrives. */
@@ -133,12 +128,15 @@ export function useDragHandlers<T>(api: TreeApi<T>, store: Store<RootState, Acti
 
   const onDragEnd = useCallback(
     (event: DragEndEvent) => {
+      /* Read the pointer before teardown: stopTracking() clears pointerRef, and
+         the event's delta is scroll-adjusted, so reading it afterwards would
+         measure the drop from the wrong place when the list auto-scrolled. */
+      const mouse = mouseFrom(event);
       stopTracking();
-      if (event.over && updateHover(event.over, mouseFrom(event)) && api.canDrop()) {
+      if (event.over && updateHover(event.over, mouse) && api.canDrop()) {
         api.drop();
       }
-      api.cancelHover();
-      api.hideCursor();
+      api.clearHover();
       api.redrawList();
       store.dispatch(dndActions.dragEnd());
     },
@@ -148,8 +146,7 @@ export function useDragHandlers<T>(api: TreeApi<T>, store: Store<RootState, Acti
   const onDragCancel = useCallback(
     (_event: DragCancelEvent) => {
       stopTracking();
-      api.cancelHover();
-      api.hideCursor();
+      api.clearHover();
       api.redrawList();
       store.dispatch(dndActions.dragEnd());
     },

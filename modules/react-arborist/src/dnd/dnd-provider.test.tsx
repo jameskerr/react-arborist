@@ -6,6 +6,8 @@
 
 import { createRef } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { useSensor, useSensors } from "@dnd-kit/core";
+import type { Activators, SensorInstance, SensorOptions, SensorProps } from "@dnd-kit/core";
 import { treeCollisionDetection } from "../components/collision-detection.js";
 import { Tree } from "../components/tree.js";
 import { TreeApi } from "../interfaces/tree-api.js";
@@ -99,11 +101,26 @@ describe("DndProvider / DndContext integration", () => {
 
   test("triggers onMove when dragging and dropping a node onto another node", async () => {
     const handleMove = jest.fn();
+    const ref = createRef<TreeApi<Datum> | undefined>();
     render(
-      <Tree<Datum> data={data} rowHeight={24} onMove={handleMove}>
+      <Tree<Datum> ref={ref} data={data} rowHeight={24} onMove={handleMove}>
         {Node}
       </Tree>,
     );
+
+    /* Collision detection ignores rows outside the scroll container, and jsdom
+       measures every element as 0x0 unless it is stubbed. */
+    ref.current!.listEl.current!.getBoundingClientRect = () =>
+      ({
+        top: 0,
+        bottom: 48,
+        left: 0,
+        right: 300,
+        width: 300,
+        height: 48,
+        x: 0,
+        y: 0,
+      }) as DOMRect;
 
     const childA = screen.getByText("Child A");
     const rootEl = screen.getByText("Root");
@@ -256,12 +273,109 @@ describe("DndProvider / DndContext integration", () => {
       </Tree>,
     );
 
-    const button = screen.getAllByRole("button")[0];
+    /* One button per row. */
+    const button = screen.getAllByText("Action")[0];
     fireEvent.keyDown(button, { key: " ", code: "Space" });
     fireEvent.keyDown(button, { key: "Enter", code: "Enter" });
 
     // A drag would mount the preview overlay, rendering the row text twice.
     expect(screen.getAllByText("Root")).toHaveLength(1);
+  });
+
+  test("puts dnd-kit's descriptive attributes on the focusable row", () => {
+    render(
+      <Tree<Datum> data={data} rowHeight={24}>
+        {Node}
+      </Tree>,
+    );
+
+    const row = screen.getByText("Root").closest("[role=treeitem]")!;
+    /* Without aria-describedby the screen-reader instructions are rendered but
+       never referenced from the draggable, so they are never read. */
+    const describedBy = row.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    expect(document.getElementById(describedBy!)).not.toBeNull();
+    expect(row.getAttribute("aria-roledescription")).toBe("draggable");
+
+    /* The row keeps its own role and roving tabindex; dnd-kit's button role and
+       tabIndex=0 would pull focus off the treeitem. */
+    expect(row.getAttribute("role")).toBe("treeitem");
+    expect(row.getAttribute("tabindex")).toBe("-1");
+    expect(screen.getByText("Root").hasAttribute("role")).toBe(false);
+  });
+
+  test("sets touch-action only on rows that can drag", () => {
+    const { rerender } = render(
+      <Tree<Datum> data={data} rowHeight={24} disableDrag>
+        {Node}
+      </Tree>,
+    );
+    expect(screen.getByText("Root").style.touchAction).not.toBe("manipulation");
+
+    /* The row stays mounted across this re-render, so the ref callback has to
+       run again for the gesture to work. */
+    rerender(
+      <Tree<Datum> data={data} rowHeight={24} disableDrag={false}>
+        {Node}
+      </Tree>,
+    );
+    expect(screen.getByText("Root").style.touchAction).toBe("manipulation");
+  });
+
+  test("leaves a consumer's own touch-action alone", () => {
+    function TouchNode({ node, dragHandle }: NodeRendererProps<Datum>) {
+      return (
+        <div ref={dragHandle} style={{ touchAction: "none" }}>
+          {node.data.name}
+        </div>
+      );
+    }
+
+    render(
+      <Tree<Datum> data={data} rowHeight={24}>
+        {TouchNode}
+      </Tree>,
+    );
+    expect(screen.getByText("Root").style.touchAction).toBe("none");
+  });
+
+  test("binds a custom sensor's activator event", async () => {
+    /* A long-press sensor might activate on contextmenu, which is outside the
+       built-in pointer/mouse/touch list. The real MouseSensor's activator type
+       is narrowed to onMouseDown, so this stands in as a minimal sensor. */
+    class ContextMenuSensor implements SensorInstance {
+      static activators: Activators<SensorOptions> = [
+        { eventName: "onContextMenu", handler: () => true },
+      ];
+      autoScrollEnabled = false;
+
+      constructor({ onStart, onEnd }: SensorProps<SensorOptions>) {
+        onStart({ x: 0, y: 0 });
+        document.addEventListener("mouseup", () => onEnd(), { once: true });
+      }
+    }
+
+    function ContextMenuTree() {
+      const sensors = useSensors(useSensor(ContextMenuSensor));
+      return (
+        <Tree<Datum> data={data} rowHeight={24} sensors={sensors}>
+          {Node}
+        </Tree>
+      );
+    }
+
+    render(<ContextMenuTree />);
+
+    await act(async () => {
+      fireEvent.contextMenu(screen.getByText("Root"));
+    });
+
+    // The overlay renders the row a second time once the drag is active.
+    expect(screen.getAllByText("Root")).toHaveLength(2);
+
+    await act(async () => {
+      fireEvent.mouseUp(document);
+    });
   });
 
   test("announces pointer instructions and node names, not raw ids or Space", async () => {
@@ -376,6 +490,75 @@ describe("DndProvider / DndContext integration", () => {
         droppableContainers: mockContainers as any,
         droppableRects: droppableRects as any,
         pointerCoordinates: { x: 50, y: 20 },
+      });
+
+      expect(collisions).toHaveLength(1);
+      expect(collisions[0].id).toBe("node-1");
+    });
+
+    test("ignores a row that sticks out beyond the scroll container", () => {
+      const droppableRects = new Map([
+        [OUTER_DROP_ID, { top: 0, left: 0, right: 200, bottom: 400, width: 200, height: 400 }],
+        // The overscan row sits above the visible list.
+        ["node-0", { top: -40, left: 0, right: 200, bottom: 0, width: 200, height: 40 }],
+      ]);
+      const collisions = treeCollisionDetection({
+        active: null as any,
+        collisionRect: null as any,
+        droppableContainers: [
+          {
+            id: OUTER_DROP_ID,
+            key: OUTER_DROP_ID,
+            data: { current: {} },
+            disabled: false,
+            node: { current: null },
+            rect: { current: null },
+          },
+          {
+            id: "node-0",
+            key: "node-0",
+            data: { current: {} },
+            disabled: false,
+            node: { current: null },
+            rect: { current: null },
+          },
+        ] as any,
+        droppableRects: droppableRects as any,
+        // Inside the row's rect, but above the list the user can see.
+        pointerCoordinates: { x: 50, y: -10 },
+      });
+
+      expect(collisions).toEqual([]);
+    });
+
+    test("keeps a row collision when the pointer is inside the list", () => {
+      const droppableRects = new Map([
+        [OUTER_DROP_ID, { top: 0, left: 0, right: 200, bottom: 400, width: 200, height: 400 }],
+        ["node-1", { top: 0, left: 0, right: 200, bottom: 40, width: 200, height: 40 }],
+      ]);
+      const collisions = treeCollisionDetection({
+        active: null as any,
+        collisionRect: null as any,
+        droppableContainers: [
+          {
+            id: OUTER_DROP_ID,
+            key: OUTER_DROP_ID,
+            data: { current: {} },
+            disabled: false,
+            node: { current: null },
+            rect: { current: null },
+          },
+          {
+            id: "node-1",
+            key: "node-1",
+            data: { current: {} },
+            disabled: false,
+            node: { current: null },
+            rect: { current: null },
+          },
+        ] as any,
+        droppableRects: droppableRects as any,
+        pointerCoordinates: { x: 50, y: 10 },
       });
 
       expect(collisions).toHaveLength(1);

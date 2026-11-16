@@ -35,6 +35,7 @@ function setup() {
     get: (id: string) => (id === "a" ? node : null),
     hover: jest.fn(),
     cancelHover: jest.fn(),
+    clearHover: jest.fn(),
     hideCursor: jest.fn(),
     redrawList: jest.fn(),
     canDrop: jest.fn(() => true),
@@ -97,8 +98,34 @@ test("measures against the pointer, not activator + delta", () => {
   );
 });
 
+/* The click that ends a drag carries a delta that includes the distance the
+   list scrolled, so reading the pointer after teardown measures the drop from
+   the wrong place. Here the pointer sits on the row's bottom half while
+   activator + delta points above the row; the two resolve differently. */
+test("onDragEnd measures the drop from the pointer, not the scroll-adjusted delta", () => {
+  const { api, handlers, over } = setup();
+
+  act(() => {
+    handlers.onDragStart(startEvent());
+    document.dispatchEvent(new MouseEvent("pointermove", { clientX: 0, clientY: 15 }));
+  });
+  act(() => {
+    handlers.onDragEnd({
+      over,
+      activatorEvent: { clientX: 0, clientY: 0 },
+      delta: { x: 0, y: -10 },
+    } as unknown as DragEndEvent);
+  });
+
+  expect(api.hover).toHaveBeenLastCalledWith(
+    { parentId: "root", index: 1 },
+    { type: "line", index: 1, level: 0 },
+  );
+  expect(api.drop).toHaveBeenCalled();
+});
+
 test("clears the hover when the pointer leaves every droppable", () => {
-  const { api, store, handlers, over } = setup();
+  const { api, handlers, over } = setup();
 
   act(() => handlers.onDragStart(startEvent()));
   act(() => {
@@ -107,10 +134,9 @@ test("clears the hover when the pointer leaves every droppable", () => {
     handlers.onDragMove(moveEvent(null, { x: 0, y: 0 }));
   });
 
-  expect(api.cancelHover).toHaveBeenCalled();
-  expect(store.dispatch).toHaveBeenCalledWith(
-    expect.objectContaining({ type: "DND_HOVERING", parentId: null, index: null }),
-  );
+  /* clearHover() resets the target, the destination and the cursor together,
+     so a folder can't stay highlighted after the pointer leaves the tree. */
+  expect(api.clearHover).toHaveBeenCalled();
 });
 
 test("does not drop when the drag ends over nothing", () => {
