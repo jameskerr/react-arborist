@@ -17,8 +17,8 @@ function isEditableTarget(target: EventTarget | null, currentTarget: EventTarget
    tree.get() returns null because the node is not in idToIndex. Walk up to the
    nearest ancestor that is currently visible. */
 function visibleAnchor<T>(tree: TreeApi<T>, id: string | null): NodeApi<T> | null {
-  let node = id ? (dfs(tree.root, id) as NodeApi<T> | null) : null;
-  while (node && !(node.id in tree.idToIndex)) node = node.parent as NodeApi<T> | null;
+  let node = id ? dfs(tree.root, id) : null;
+  while (node && !(node.id in tree.idToIndex)) node = node.parent;
   return node && !node.isRoot ? node : null;
 }
 
