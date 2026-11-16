@@ -16,8 +16,8 @@ describe("Budget Tree Demo", () => {
   });
 
   it("updates folder totals when an expense moves between folders", () => {
-    // Dropping just above a row inside the folder moves the expense into it.
-    dragAndDrop(cy.get("@item").contains("Internet"), cy.get("@item").contains("Streaming"));
+    // Dropping on the middle of a folder row moves the expense into it.
+    dragAndDrop(cy.get("@item").contains("Internet"), cy.get("@item").contains("Entertainment"));
 
     cy.contains("[role=treeitem]", "Entertainment").should("contain.text", "$60");
     cy.contains("[role=treeitem]", "Utilities").should("contain.text", "$135");
@@ -29,7 +29,15 @@ describe("Budget Tree Demo", () => {
 function dragAndDrop(src, dst) {
   const dataTransfer = new DataTransfer();
   src.trigger("dragstart", { dataTransfer });
-  dst.trigger("dragover", { dataTransfer });
-  dst.trigger("drop", { dataTransfer });
+  /* A real drag sends dragenter before dragover; without it react-dnd never
+     registers the row as a drop target. Send the pointer at the middle of the
+     target row so computeDrop takes its folder branch. */
+  dst.then(($dst) => {
+    const rect = $dst[0].getBoundingClientRect();
+    const pointer = { clientX: rect.x + rect.width / 2, clientY: rect.y + rect.height / 2 };
+    dst.trigger("dragenter", { dataTransfer, ...pointer });
+    dst.trigger("dragover", { dataTransfer, ...pointer });
+    dst.trigger("drop", { dataTransfer, ...pointer });
+  });
   dst.trigger("dragend", { dataTransfer });
 }
