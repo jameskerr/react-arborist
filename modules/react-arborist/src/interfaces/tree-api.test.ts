@@ -357,12 +357,14 @@ describe("scrollTo stops waiting for an id that never appears (#403)", () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
-  test("leaves no timer running after it gives up", async () => {
-    const api = setupApi({ data: rowData });
+  test("gives up without scrolling and leaves no timer running", async () => {
+    const store = createStore(rootReducer);
+    const list = { current: { scrollToItem: jest.fn() } as any };
+    const api = new TreeApi(store, { data: rowData }, list, { current: null });
     const done = api.scrollTo("missing");
-    jest.advanceTimersByTime(2000);
+    jest.runAllTimers();
     await done;
-    expect(jest.getTimerCount()).toBe(0);
+    expect(list.current.scrollToItem).not.toHaveBeenCalled();
   });
 });
 
