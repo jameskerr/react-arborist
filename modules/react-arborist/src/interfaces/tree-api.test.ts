@@ -545,3 +545,24 @@ describe("tree.hover() reaches the store once per animation frame", () => {
     expect(api.state.dnd.parentId).toBe(null);
   });
 });
+
+describe("ids like toString aren't mistaken for nodes in the tree", () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  test("indexOf finds no row for them", () => {
+    const api = setupApi({ data: rowData });
+    expect(api.indexOf("toString")).toBeUndefined();
+    expect(api.indexOf("constructor")).toBeUndefined();
+  });
+
+  test("scrollTo does not scroll to them", async () => {
+    const store = createStore(rootReducer);
+    const list = { current: { scrollToItem: jest.fn() } as any };
+    const api = new TreeApi(store, { data: rowData }, list, { current: null });
+    api.scrollTo("toString");
+    // Lets a waitFor that resolved immediately run its .then.
+    await Promise.resolve();
+    expect(list.current.scrollToItem).not.toHaveBeenCalled();
+  });
+});
