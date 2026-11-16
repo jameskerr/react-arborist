@@ -1,21 +1,7 @@
 import type React from "react";
 import type { NodeApi } from "../interfaces/node-api.js";
 import type { TreeApi } from "../interfaces/tree-api.js";
-import { focusNextElement, focusPrevElement } from "../utils.js";
-
-/* The type-to-find buffer belongs to one tree. Keeping it module-level meant
-   two trees on the same page typed into one shared search term. */
-type Search = { term: string; timeout: ReturnType<typeof setTimeout> | null };
-const searches = new WeakMap<object, Search>();
-
-function searchFor(tree: object): Search {
-  let search = searches.get(tree);
-  if (!search) {
-    search = { term: "", timeout: null };
-    searches.set(tree, search);
-  }
-  return search;
-}
+import { dfs, focusNextElement, focusPrevElement } from "../utils.js";
 
 function isEditableTarget(target: EventTarget | null, currentTarget: EventTarget | null): boolean {
   return (
@@ -25,6 +11,15 @@ function isEditableTarget(target: EventTarget | null, currentTarget: EventTarget
       target.closest("input, textarea, select, [contenteditable]:not([contenteditable='false'])"),
     )
   );
+}
+
+/* The raw selection/focus ids can point inside a collapsed folder, where
+   tree.get() returns null because the node is not in idToIndex. Walk up to the
+   nearest ancestor that is currently visible. */
+function visibleAnchor<T>(tree: TreeApi<T>, id: string | null): NodeApi<T> | null {
+  let node = id ? (dfs(tree.root, id) as NodeApi<T> | null) : null;
+  while (node && !(node.id in tree.idToIndex)) node = node.parent as NodeApi<T> | null;
+  return node && !node.isRoot ? node : null;
 }
 
 /* Focus the nearest visible row that survives deleting `ids`. A selected folder
@@ -41,11 +36,13 @@ function nextFocusAfterDelete<T>(tree: TreeApi<T>, ids: string[]): NodeApi<T> | 
   };
 
   /* The most recently selected row is the one under the cursor. When it sits
-     inside a collapsed folder, the focused row (that folder) is the anchor. */
-  const anchor = tree.mostRecentNode ?? tree.focusedNode;
-  const start = anchor ? nodes.indexOf(anchor) : 0;
+     inside a collapsed folder, the raw id is not visible; walk up to the
+     folder itself, or fall back to the focused row. */
+  const selection = tree.state.nodes.selection.mostRecent;
+  const anchor = visibleAnchor(tree, selection) ?? visibleAnchor(tree, tree.state.nodes.focus.id);
+  const start = Math.max(anchor?.rowIndex ?? 0, 0);
 
-  for (let i = Math.max(start, 0); i < nodes.length; i++) {
+  for (let i = start; i < nodes.length; i++) {
     if (survives(nodes[i])) return nodes[i];
   }
   for (let i = Math.min(start - 1, nodes.length - 1); i >= 0; i--) {
@@ -56,21 +53,19 @@ function nextFocusAfterDelete<T>(tree: TreeApi<T>, ids: string[]): NodeApi<T> | 
 
 function handleBackspace<T>(_e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T>) {
   if (!tree.props.onDelete) return;
-  const ids = Array.from(tree.selectedIds);
-  if (ids.length > 1) {
-    const nextFocus = nextFocusAfterDelete(tree, ids);
-    if (nextFocus) tree.focus(nextFocus, { scroll: false });
-    tree.delete(ids);
-    return;
-  }
+  /* Delete what is selected, not merely what is focused: arrow keys move focus
+     without selecting, and Backspace must not delete that row. A focus with no
+     selection still deletes the focused row, as before. */
+  const ids = tree.selectedIds.size
+    ? Array.from(tree.selectedIds)
+    : tree.focusedNode
+      ? [tree.focusedNode.id]
+      : [];
+  if (ids.length === 0) return;
 
-  const node = tree.focusedNode;
-  if (!node) return;
-  const sib = node.nextSibling;
-  const parent = node.parent && !node.parent.isRoot ? node.parent : null;
-  const next = sib || parent || node.prev;
-  if (next) tree.focus(next, { scroll: false });
-  tree.delete(node);
+  const nextFocus = nextFocusAfterDelete(tree, ids);
+  if (nextFocus) tree.focus(nextFocus, { scroll: false });
+  tree.delete(ids);
 }
 
 function handleArrowDown<T>(e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T>) {
@@ -141,6 +136,12 @@ function handleArrowLeft<T>(_e: React.KeyboardEvent<HTMLDivElement>, tree: TreeA
 
 function handleSpace<T>(e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T>) {
   e.preventDefault();
+  /* While a type-to-find term is pending, Space extends the search so names
+     with spaces can be typed, the way native listboxes behave. */
+  if (tree.isSearching) {
+    tree.typeahead(" ");
+    return;
+  }
   const node = tree.focusedNode;
   if (!node) return;
   if (node.isLeaf) {
@@ -159,25 +160,6 @@ function handleEnter<T>(_e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T
   });
 }
 
-function handleTypeahead<T>(key: string, tree: TreeApi<T>) {
-  const search = searchFor(tree);
-  if (search.timeout) clearTimeout(search.timeout);
-  search.term += key.toLowerCase();
-  search.timeout = setTimeout(() => {
-    search.term = "";
-  }, 600);
-
-  const node = tree.visibleNodes.find((n) => {
-    const data = n.data;
-    if (data && typeof data === "object" && "name" in data && typeof data.name === "string") {
-      return data.name.toLowerCase().startsWith(search.term);
-    }
-    return false;
-  });
-
-  if (node) tree.focus(node.id);
-}
-
 function handleTab<T>(e: React.KeyboardEvent<HTMLDivElement>, _tree: TreeApi<T>) {
   e.preventDefault();
   if (e.shiftKey) {
@@ -189,13 +171,15 @@ function handleTab<T>(e: React.KeyboardEvent<HTMLDivElement>, _tree: TreeApi<T>)
 
 function handleCreateWithKey<T>(e: React.KeyboardEvent<HTMLDivElement>, tree: TreeApi<T>) {
   if (e.metaKey || e.ctrlKey) {
-    if (tree.props.disableMultiSelection) return;
+    /* Take the shortcut even when multi-selection is off; otherwise the
+       browser selects the whole page instead. */
     e.preventDefault();
+    if (tree.props.disableMultiSelection) return;
     tree.selectAll();
   } else if (tree.props.onCreate) {
     tree.createLeaf();
   } else {
-    handleTypeahead(e.key, tree);
+    tree.typeahead(e.key);
   }
 }
 
@@ -204,7 +188,7 @@ function handleCreateFolder<T>(e: React.KeyboardEvent<HTMLDivElement>, tree: Tre
   if (tree.props.onCreate) {
     tree.createInternal();
   } else {
-    handleTypeahead(e.key, tree);
+    tree.typeahead(e.key);
   }
 }
 
@@ -267,9 +251,11 @@ export function handleTreeKeyDown<T>(e: React.KeyboardEvent<HTMLDivElement>, tre
 
   /* Non-character keys (Escape, F5) and shortcuts (Cmd+C, Ctrl+V) must not
      reach the typeahead. AltGr reports ctrlKey+altKey and macOS Option-composed
-     letters report altKey, so those still count as characters. */
+     letters report altKey, so those still count as characters. A plain
+     Alt+letter on Windows/Linux (Alt+D focuses the address bar) does not. */
   if (e.key.length !== 1) return;
   if (e.metaKey || (e.ctrlKey && !e.altKey)) return;
+  if (e.altKey && !e.getModifierState("AltGraph") && /^[a-z0-9]$/i.test(e.key)) return;
 
-  handleTypeahead(e.key, tree);
+  tree.typeahead(e.key);
 }

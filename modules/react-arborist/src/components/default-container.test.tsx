@@ -283,6 +283,50 @@ test("non-character keys and modifiers do not corrupt type-to-find", async () =>
   expect(ref.current!.focusedNode?.id).toBe("4");
 });
 
+test("Space extends a pending type-to-find term instead of selecting", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(
+    <Tree<Datum>
+      data={[
+        { id: "a", name: "mine" },
+        { id: "b", name: "my file" },
+      ]}
+      ref={ref}
+    />,
+  );
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    fireEvent.keyDown(tree, { key: "m" });
+    fireEvent.keyDown(tree, { key: "y" });
+    fireEvent.keyDown(tree, { key: " " });
+  });
+
+  expect(ref.current!.focusedNode?.id).toBe("b");
+  expect(ref.current!.selectedIds.size).toBe(0);
+});
+
+test("a plain Alt+letter does not reach type-to-find", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(
+    <Tree<Datum>
+      data={[
+        { id: "a", name: "alpha" },
+        { id: "d", name: "delta" },
+      ]}
+      ref={ref}
+    />,
+  );
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    ref.current!.focus("a", { scroll: false });
+    fireEvent.keyDown(tree, { key: "d", altKey: true });
+  });
+
+  expect(ref.current!.focusedNode?.id).toBe("a");
+});
+
 test("Backspace deletes the focused node through onDelete", async () => {
   const ref = createRef<TreeApi<Datum> | undefined>();
   const onDelete = jest.fn();
@@ -396,6 +440,8 @@ test("Backspace focuses the collapsed parent when every selected node is hidden"
   render(
     <Tree<Datum>
       data={[
+        { id: "a", name: "a" },
+        { id: "b", name: "b" },
         {
           id: "f",
           name: "f",
@@ -404,6 +450,7 @@ test("Backspace focuses the collapsed parent when every selected node is hidden"
             { id: "c2", name: "c2" },
           ],
         },
+        { id: "g", name: "g" },
       ]}
       openByDefault
       ref={ref}
@@ -423,6 +470,46 @@ test("Backspace focuses the collapsed parent when every selected node is hidden"
   });
 
   expect(ref.current!.focusedNode?.id).toBe("f");
+});
+
+test("Backspace deletes the selected row, not the row that has focus", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  const onDelete = jest.fn();
+  render(
+    <Tree<Datum>
+      data={[
+        { id: "a", name: "A" },
+        { id: "b", name: "B" },
+      ]}
+      openByDefault
+      ref={ref}
+      onDelete={onDelete}
+    />,
+  );
+  const tree = screen.getByRole("tree");
+
+  await act(async () => {
+    ref.current!.select("a");
+    ref.current!.focus("b", { scroll: false });
+    fireEvent.keyDown(tree, { key: "Backspace" });
+  });
+
+  expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ ids: ["a"] }));
+  expect(ref.current!.focusedNode?.id).toBe("b");
+});
+
+test("Ctrl+A is still swallowed when multi-selection is disabled", async () => {
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  render(<Tree<Datum> data={[{ id: "a", name: "A" }]} disableMultiSelection ref={ref} />);
+  const tree = screen.getByRole("tree");
+
+  let notPrevented = true;
+  await act(async () => {
+    notPrevented = fireEvent.keyDown(tree, { key: "a", ctrlKey: true });
+  });
+
+  expect(notPrevented).toBe(false);
+  expect(ref.current!.selectedIds.size).toBe(0);
 });
 
 /* AltGr reports ctrlKey+altKey and macOS Option-composed letters report
