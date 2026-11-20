@@ -544,4 +544,20 @@ describe("tree.hover() reaches the store once per animation frame", () => {
     expect(api.state.dnd.cursor).toEqual({ type: "none" });
     expect(api.state.dnd.parentId).toBe(null);
   });
+
+  test("clearHover() resets the target, destination and cursor together", async () => {
+    const api = setupApi({ data });
+    api.dispatch(dnd.dragStart("box", ["box"]));
+    api.hover({ parentId: "folder2", index: null }, { type: "highlight", id: "folder2" });
+    await nextFrame();
+    expect(api.willReceiveDrop("folder2")).toBe(true);
+
+    api.clearHover();
+
+    expect(api.state.dnd.parentId).toBe(null);
+    expect(api.state.dnd.destinationParentId).toBe(null);
+    expect(api.state.dnd.destinationIndex).toBe(null);
+    expect(api.state.dnd.cursor).toEqual({ type: "none" });
+    expect(api.willReceiveDrop("folder2")).toBe(false);
+  });
 });

@@ -6,7 +6,7 @@ Orientation for AI coding agents working in this repo.
 
 `react-arborist` is a React tree-view component: virtualized, drag-and-drop reorderable, multi-selectable, filterable. Published to npm as [`react-arborist`](https://www.npmjs.com/package/react-arborist). Canonical repo: <https://github.com/jameskerr/react-arborist>.
 
-The library wraps `react-window` for virtualization, `react-dnd` (HTML5 backend by default) for DnD, and a small `redux` store for internal state.
+The library wraps `react-window` for virtualization, `@dnd-kit` for DnD, and a small `redux` store for internal state.
 
 ## Repo layout
 

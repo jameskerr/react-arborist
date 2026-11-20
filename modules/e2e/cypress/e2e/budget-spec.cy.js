@@ -2,6 +2,8 @@
    their descendants' amounts. Moving an expense must update every affected
    folder total while the grand total stays put. */
 
+import { dragAndDrop } from "../support/drag.js";
+
 describe("Budget Tree Demo", () => {
   beforeEach(() => {
     cy.visit("http://localhost:3000/budget");
@@ -17,7 +19,9 @@ describe("Budget Tree Demo", () => {
 
   it("updates folder totals when an expense moves between folders", () => {
     // Dropping on the middle of a folder row moves the expense into it.
-    dragAndDrop(cy.get("@item").contains("Internet"), cy.get("@item").contains("Entertainment"));
+    dragAndDrop(cy.get("@item").contains("Internet"), cy.get("@item").contains("Entertainment"), {
+      yRatio: 0.5,
+    });
 
     cy.contains("[role=treeitem]", "Entertainment").should("contain.text", "$60");
     cy.contains("[role=treeitem]", "Utilities").should("contain.text", "$135");
@@ -25,11 +29,3 @@ describe("Budget Tree Demo", () => {
     cy.get("[data-testid=grand-total]").should("have.text", "$3,175");
   });
 });
-
-function dragAndDrop(src, dst) {
-  const dataTransfer = new DataTransfer();
-  src.trigger("dragstart", { dataTransfer });
-  dst.trigger("dragover", { dataTransfer });
-  dst.trigger("drop", { dataTransfer });
-  dst.trigger("dragend", { dataTransfer });
-}
