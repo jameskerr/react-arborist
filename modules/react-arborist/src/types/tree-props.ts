@@ -3,7 +3,7 @@ import * as handlers from "./handlers.js";
 import * as renderers from "./renderers.js";
 import { ElementType, MouseEventHandler } from "react";
 import { ListOnScrollProps, CommonProps as ReactWindowCommonProps } from "react-window";
-import { NodeApi } from "../interfaces/node-api.js";
+import type { NodeApi } from "../interfaces/node-api.js";
 import { OpenMap } from "../state/open-slice.js";
 import { useDragDropManager, DndProviderProps } from "react-dnd";
 

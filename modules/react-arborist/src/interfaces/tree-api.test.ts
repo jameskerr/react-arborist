@@ -23,6 +23,17 @@ test("tree.canDrop()", () => {
 
 const rowData = [{ id: "a" }, { id: "b" }, { id: "c" }];
 
+test("a captured selectedIds Set stays stable after a later selectMulti", () => {
+  const api = setupApi({ data: rowData });
+  api.select("a");
+  const captured = api.selectedIds;
+  api.selectMulti("b");
+  expect(captured.has("a")).toBe(true);
+  expect(captured.has("b")).toBe(false);
+  expect(api.selectedIds.has("a")).toBe(true);
+  expect(api.selectedIds.has("b")).toBe(true);
+});
+
 describe("tree.drop() fires onMove (#313)", () => {
   test("reports the hovered parent and index, mapping the root id to null", () => {
     const onMove = jest.fn();
