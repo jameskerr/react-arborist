@@ -136,14 +136,16 @@ export function safeRun<T extends (...args: any[]) => any>(
   if (fn) return fn(...args);
 }
 
+export const WAIT_FOR_TRIES = 100;
+export const WAIT_FOR_INTERVAL_MS = 10;
+
 export function waitFor(fn: () => boolean) {
   return new Promise<void>((resolve, reject) => {
     let tries = 0;
     function check() {
-      tries += 1;
-      if (tries === 100) reject();
-      if (fn()) resolve();
-      else setTimeout(check, 10);
+      if (fn()) return resolve();
+      if (++tries >= WAIT_FOR_TRIES) return reject();
+      setTimeout(check, WAIT_FOR_INTERVAL_MS);
     }
     check();
   });

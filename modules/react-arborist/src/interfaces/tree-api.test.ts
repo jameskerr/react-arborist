@@ -353,6 +353,21 @@ describe("scrollTo brings a deeply nested node into view horizontally (#220)", (
   });
 });
 
+describe("scrollTo stops waiting for an id that never appears (#403)", () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  test("gives up without scrolling and leaves no timer running", async () => {
+    const store = createStore(rootReducer);
+    const list = { current: { scrollToItem: jest.fn() } as any };
+    const api = new TreeApi(store, { data: rowData }, list, { current: null });
+    const done = api.scrollTo("missing");
+    jest.runAllTimers();
+    await done;
+    expect(list.current.scrollToItem).not.toHaveBeenCalled();
+  });
+});
+
 describe("scrollToOffset / scrollOffset set and read the vertical position (#194)", () => {
   const data = [{ id: "a" }, { id: "b" }, { id: "c" }];
 
