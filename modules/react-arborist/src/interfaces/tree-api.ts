@@ -631,9 +631,7 @@ export class TreeApi<T> {
   private applyHover() {
     const pending = this.pendingHover;
     this.pendingHover = null;
-    /* No dragId check here: a tree receiving a drag from another tree never
-       sees DND_DRAG_START, so its dragId stays null. A drag that ends before
-       the frame arrives is handled by cancelHover() instead. */
+    /* A drag that ends before the frame arrives is handled by cancelHover(). */
     if (!pending) return;
     const { drop, cursor } = pending;
     if (drop) this.dispatch(dnd.hovering(drop.parentId, drop.index));
@@ -651,6 +649,17 @@ export class TreeApi<T> {
   cancelHover() {
     this.hoverThrottle.cancel();
     this.pendingHover = null;
+  }
+
+  /* Reset every piece of hover state together: the pending frame, the target
+     canDrop() reads, the consumer-facing destination and the cursor. The drag
+     handlers used to reset these one by one from outside, which let a folder
+     stay highlighted via willReceiveDrop after the pointer left the tree. */
+  clearHover() {
+    this.cancelHover();
+    this.dispatch(dnd.hovering(null, null));
+    this.dispatch(dnd.setDestination(null, null));
+    this.hideCursor();
   }
 
   drop() {
