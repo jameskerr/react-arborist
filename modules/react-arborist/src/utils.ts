@@ -36,7 +36,7 @@ export const indexOf = (node: NodeApi<any>) => {
 
 export function noop() {}
 
-export function dfs(node: NodeApi<any>, id: string): NodeApi<any> | null {
+export function dfs<T>(node: NodeApi<T>, id: string): NodeApi<T> | null {
   if (!node) return null;
   if (node.id === id) return node;
   if (node.children) {

@@ -43,6 +43,10 @@ export class TreeApi<T> {
    * the last hover of a frame wins, whichever row produced it. */
   private pendingHover: { drop: DropResult | null; cursor: Cursor | null } | null = null;
   private hoverThrottle = createAnimationFrameThrottle();
+  /** Type-to-find buffer. It resets 600ms after the last key and is cleared
+   * when the tree unmounts, so the timer doesn't outlive the instance. */
+  private typeaheadTerm = "";
+  private typeaheadTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     public store: Store<RootState, Actions>,
@@ -339,8 +343,12 @@ export class TreeApi<T> {
     const idents = Array.isArray(node) ? node : [node];
     const ids = idents.map((i) => this.identify(i));
     const nodes = ids.map((id) => this.get(id)!).filter((n) => !!n);
-    /* Guard against Math.min(...[]) === Infinity when no ids resolve to nodes. */
-    const fromIndex = nodes.length ? Math.min(...nodes.map((n) => n.rowIndex ?? 0)) : 0;
+    /* Reduce instead of spreading one argument per selected node, which
+       overflows the call stack when a very large tree is select-all deleted. */
+    const fromIndex = nodes.reduce(
+      (min, n) => Math.min(min, n.rowIndex ?? 0),
+      nodes[0]?.rowIndex ?? 0,
+    );
     await safeRun(this.props.onDelete, { nodes, ids });
     this.redrawList(fromIndex);
   }
@@ -651,6 +659,42 @@ export class TreeApi<T> {
   cancelHover() {
     this.hoverThrottle.cancel();
     this.pendingHover = null;
+  }
+
+  /** True while a type-to-find term is accumulating. */
+  get isSearching() {
+    return this.typeaheadTerm !== "";
+  }
+
+  /** Append a character to the type-to-find term and focus the first visible
+   * node whose name starts with it. A term expires 600ms after the last key. */
+  typeahead(key: string) {
+    if (this.typeaheadTimeout) clearTimeout(this.typeaheadTimeout);
+    this.typeaheadTerm += key.toLowerCase();
+    this.typeaheadTimeout = setTimeout(() => {
+      this.typeaheadTerm = "";
+      this.typeaheadTimeout = null;
+    }, 600);
+
+    const term = this.typeaheadTerm;
+    const node = this.visibleNodes.find((n) => {
+      const data = n.data;
+      return (
+        data &&
+        typeof data === "object" &&
+        "name" in data &&
+        typeof data.name === "string" &&
+        data.name.toLowerCase().startsWith(term)
+      );
+    });
+
+    if (node) this.focus(node.id);
+  }
+
+  clearTypeahead() {
+    if (this.typeaheadTimeout) clearTimeout(this.typeaheadTimeout);
+    this.typeaheadTimeout = null;
+    this.typeaheadTerm = "";
   }
 
   drop() {
