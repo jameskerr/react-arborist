@@ -33,11 +33,13 @@ function dragAndDrop(src, dst) {
      registers the row as a drop target. Send the pointer at the middle of the
      target row so computeDrop takes its folder branch. */
   dst.then(($dst) => {
+    $dst[0].scrollIntoView({ block: "center" });
     const rect = $dst[0].getBoundingClientRect();
     const pointer = { clientX: rect.x + rect.width / 2, clientY: rect.y + rect.height / 2 };
-    dst.trigger("dragenter", { dataTransfer, ...pointer });
-    dst.trigger("dragover", { dataTransfer, ...pointer });
-    dst.trigger("drop", { dataTransfer, ...pointer });
+    cy.wrap($dst)
+      .trigger("dragenter", { dataTransfer, scrollBehavior: false, ...pointer })
+      .trigger("dragover", { dataTransfer, scrollBehavior: false, ...pointer })
+      .trigger("drop", { dataTransfer, scrollBehavior: false, ...pointer });
   });
-  dst.trigger("dragend", { dataTransfer });
+  src.trigger("dragend", { dataTransfer });
 }

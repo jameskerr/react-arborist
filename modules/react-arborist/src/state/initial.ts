@@ -10,7 +10,7 @@ import { initialSelectionState } from "./selection-slice.js";
 export const initialState = (props?: TreeProps<any>): RootState => ({
   nodes: {
     // Changes together
-    open: initialOpenState(props?.initialOpenState),
+    open: initialOpenState(props?.initialOpenState ?? {}),
     focus: initialFocusState(),
     edit: initialEditState(),
     drag: initialDragState(),
