@@ -23,8 +23,6 @@ type Props<T> = {
   children: ReactNode;
 };
 
-const SERVER_STATE = initialState();
-
 export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props<T>) {
   const list = useRef<FixedSizeList | VariableSizeList | null>(null);
   const listEl = useRef<HTMLDivElement | null>(null);
@@ -35,7 +33,7 @@ export function TreeProvider<T>({ treeProps, imperativeHandle, children }: Props
   const state = useSyncExternalStore<RootState>(
     store.current.subscribe,
     store.current.getState,
-    () => SERVER_STATE,
+    store.current.getState,
   );
 
   /* The tree api object is stable. */
