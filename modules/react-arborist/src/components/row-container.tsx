@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { useDataUpdates, useNodesContext, useTreeApi } from "../context.js";
-import { DragHandleRef, useDragHook } from "../dnd/drag-hook.js";
+import { canDragNode, DragHandleRef, useDragHook } from "../dnd/drag-hook.js";
 import type { DraggableAttributes } from "@dnd-kit/core";
 import { useDropHook } from "../dnd/drop-hook.js";
 import { useDestinationUpdates } from "../hooks/use-destination-updates.js";
@@ -100,12 +100,11 @@ function RowViewInner<T>({ style, node, dragRef, dragAttributes, innerRef }: Row
     "aria-level": node.level + 1,
     "aria-selected": node.isSelected,
     "aria-expanded": node.isOpen,
-    /* dnd-kit's descriptive attributes go on the row because the row, not the
-       handle, is the element that takes focus. role and tabIndex are left out:
-       the row already has treeitem semantics and the tree owns focus. */
-    "aria-describedby": dragAttributes["aria-describedby"],
-    "aria-roledescription": dragAttributes["aria-roledescription"],
-    "aria-disabled": dragAttributes["aria-disabled"] || undefined,
+    /* dnd-kit's aria-describedby goes on the row (the element that takes focus)
+       only when the row can drag. role, tabIndex, aria-roledescription, and
+       aria-disabled are left out: the row already has treeitem semantics, the
+       tree owns focus, and a non-draggable row is still interactive. */
+    "aria-describedby": canDragNode(node) ? dragAttributes["aria-describedby"] : undefined,
     style: rowStyle,
     tabIndex: -1,
     className: tree.props.rowClassName,

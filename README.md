@@ -433,9 +433,21 @@ function MyTree() {
 }
 ```
 
+### Node, TypeScript, and ESM
+
+react-arborist requires **React 18+** and **@dnd-kit/core ^6.3.1**.
+
+react-arborist ships a single ESM build. `import` and `require` both resolve to it, so an app never loads two copies of react-arborist with separate React contexts. `require("react-arborist")` from CommonJS relies on `require(esm)`, unflagged from **Node.js 22.12**, which is what `engines.node` declares. Only the `require` path actually needs that Node version, but `engines` is checked at install time: package managers that enforce it (Yarn Classic by default, pnpm with `engine-strict`) will refuse to install on older Node even for bundler and browser consumers.
+
+CommonJS TypeScript projects that use Node module resolution need a `module` setting that understands `require(esm)`: `"nodenext"` (**TypeScript ≥ 5.8**) or `"node20"` (**TypeScript ≥ 5.9**). `"node16"` and `"node18"` report error TS1479 on `import ... from "react-arborist"`. Projects using `moduleResolution: "bundler"` or `"node10"` are unaffected.
+
 ### Jest and Testing
 
-react-arborist and its dependencies ship ESM builds. Add a `transformIgnorePatterns` entry so ts-jest (or babel-jest) transpiles them:
+react-arborist and its dependencies ship ESM builds. Jest's default CJS runtime can't load them directly. Add a `transformIgnorePatterns` entry so ts-jest (or babel-jest) transpiles them to CJS. Transpile-only mode is required — ts-jest's type-checking path won't emit for files outside your TS program. Set `isolatedModules: true` in the transformer's `tsconfig` block. Jest stopped bundling `jest-environment-jsdom` in v28, so install it too:
+
+```bash
+yarn add -D jest-environment-jsdom
+```
 
 ```js
 // jest.config.js
@@ -453,6 +465,14 @@ module.exports = {
 };
 ```
 
+Three details in that config are easy to get wrong:
+
+- `testEnvironment: "jsdom"` is required, not optional, once you restate `customExportConditions`. Jest's default environment is `jest-environment-node`, whose own conditions are `["node"]` — and `customExportConditions` *replaces* rather than extends them. Drop `jsdom` while keeping `["browser", "require", "default"]` and dependencies still resolve their **browser** builds, but now run them in plain Node without the DOM globals those builds expect. A browser build that touches `window` or `document` then fails with errors like `ReferenceError: window is not defined`.
+- The lookahead scans the rest of the path (`.*`) instead of just the next segment. Under pnpm these packages live at `node_modules/.pnpm/react-arborist@.../node_modules/react-arborist/...`; a next-segment-only pattern sees `.pnpm`, excludes them from transformation, and you get back the exact `SyntaxError` this is meant to prevent.
+- `customExportConditions` **replaces** the test environment's conditions rather than adding to them, so `"browser"` has to be restated — without it, a dependency whose exports map lists `"browser"` before `"node"` resolves its Node build under jsdom, and your tests pass while exercising code that never ships. Do not add `"node"`: `exports` maps match in the package's own key order, so including `"node"` makes a package that lists `"node"` first resolve its Node build.
+
+> **Why not `--experimental-vm-modules`?** Node 22.12+ supports `require()` of ESM modules natively at the runtime level, but Jest intercepts `require` with its own CJS module system regardless of Node version. The `transformIgnorePatterns` approach works on all Jest versions without experimental flags.
+
 ### Migrating from v4
 
 In v4, `react-dnd` and `react-dnd-html5-backend` were required peer dependencies. In v5, react-arborist has migrated to `@dnd-kit`:
@@ -467,7 +487,7 @@ npm install react-arborist @dnd-kit/core
 
 `dndBackend`, `dndManager`, and `dndRootElement` are removed in v5; TypeScript flags existing uses. For custom sensors, pass the `sensors` prop instead.
 
-Drag previews are positioned by `@dnd-kit`'s `<DragOverlay>`, so `DragPreviewProps` no longer carries `offset` or `mouse`. A custom `renderDragPreview` that positioned itself with `offset` should stop; `id`, `dragIds` and `isDragging` are unchanged.
+Drag previews are positioned by `@dnd-kit`'s `<DragOverlay>`, so `DragPreviewProps` no longer carries `offset` or `mouse` (neither prop is passed). A custom `renderDragPreview` that positioned itself with `offset` should stop. `id` and `dragIds` are unchanged; `isDragging` is still passed, but the preview now mounts only while a drag is active and always receives `true` (so a preview that previously animated out on `isDragging === false` will not get that render).
 
 v5 also drops the native HTML5 drag-and-drop capabilities that depended on `react-dnd`:
 
@@ -518,7 +538,7 @@ type DragPreviewProps = {
 };
 ```
 
-`@dnd-kit`'s `<DragOverlay>` positions the preview, so preview components no longer receive an `offset` or `mouse` coordinate. A custom preview that positioned itself with `offset` should stop doing so and let the overlay place it.
+`@dnd-kit`'s `<DragOverlay>` positions the preview, so preview components are no longer passed `offset` or `mouse`. A custom preview that positioned itself with `offset` should stop doing so and let the overlay place it. The preview mounts only during an active drag and always receives `isDragging: true`.
 
 ## Cursor Component Props
 

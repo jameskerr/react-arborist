@@ -1,6 +1,7 @@
 import { createRef } from "react";
-import { act, render } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { Tree } from "./tree.js";
+import { useSimpleTree } from "../hooks/use-simple-tree.js";
 import { TreeApi } from "../interfaces/tree-api.js";
 import { actions as dnd } from "../state/dnd-slice.js";
 import { NodeRendererProps } from "../types/renderers.js";
@@ -138,4 +139,33 @@ test('a root-level destination and a node with id "null" are different destinati
     api.dispatch(dnd.setDestination("null", 1));
   });
   expect(renders).toEqual({ null: before.null + 1, x: before.x + 1 });
+});
+
+test("useSimpleTree rename of a child refreshes the folder's node.children", () => {
+  function FolderChildNames({ node, dragHandle }: NodeRendererProps<Datum>) {
+    const kids = node.children?.map((c) => c.data.name).join(",") ?? "";
+    return (
+      <div ref={dragHandle} data-testid={node.id}>
+        {node.data.name}|{kids}
+      </div>
+    );
+  }
+
+  const ref = createRef<TreeApi<Datum> | undefined>();
+  function App() {
+    const [treeData, handlers] = useSimpleTree<Datum>([
+      { id: "f", name: "folder", children: [{ id: "c", name: "child" }] },
+    ]);
+    return (
+      <Tree<Datum> ref={ref} data={treeData} {...handlers} openByDefault>
+        {FolderChildNames}
+      </Tree>
+    );
+  }
+
+  render(<App />);
+  act(() => {
+    ref.current!.props.onRename!({ id: "c", name: "renamed", node: ref.current!.get("c")! });
+  });
+  expect(screen.getByTestId("f").textContent).toBe("folder|renamed");
 });

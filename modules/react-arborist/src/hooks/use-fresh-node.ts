@@ -24,6 +24,7 @@ export function useFreshNode<T>(index: number) {
     original.level,
     original.isDraggable,
     original.parent?.id ?? null,
+    original.children,
     original.children?.length ?? -1,
   ]);
 }

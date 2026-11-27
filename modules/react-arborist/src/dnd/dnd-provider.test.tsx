@@ -282,9 +282,9 @@ describe("DndProvider / DndContext integration", () => {
     expect(screen.getAllByText("Root")).toHaveLength(1);
   });
 
-  test("puts dnd-kit's descriptive attributes on the focusable row", () => {
-    render(
-      <Tree<Datum> data={data} rowHeight={24}>
+  test("puts dnd-kit's aria-describedby on draggable rows without overriding treeitem semantics", () => {
+    const { rerender } = render(
+      <Tree<Datum> data={data} rowHeight={24} disableDrag={false}>
         {Node}
       </Tree>,
     );
@@ -295,13 +295,26 @@ describe("DndProvider / DndContext integration", () => {
     const describedBy = row.getAttribute("aria-describedby");
     expect(describedBy).toBeTruthy();
     expect(document.getElementById(describedBy!)).not.toBeNull();
-    expect(row.getAttribute("aria-roledescription")).toBe("draggable");
 
-    /* The row keeps its own role and roving tabindex; dnd-kit's button role and
-       tabIndex=0 would pull focus off the treeitem. */
+    /* The row keeps its own role and roving tabindex; dnd-kit's button role,
+       tabIndex=0, aria-roledescription, and aria-disabled would override
+       treeitem semantics or announce non-draggable rows as disabled. */
     expect(row.getAttribute("role")).toBe("treeitem");
     expect(row.getAttribute("tabindex")).toBe("-1");
+    expect(row.hasAttribute("aria-roledescription")).toBe(false);
+    expect(row.hasAttribute("aria-disabled")).toBe(false);
     expect(screen.getByText("Root").hasAttribute("role")).toBe(false);
+
+    /* When a row can't drag, omit aria-describedby and keep aria-disabled off
+       so the treeitem stays announced as an active item. */
+    rerender(
+      <Tree<Datum> data={data} rowHeight={24} disableDrag>
+        {Node}
+      </Tree>,
+    );
+    expect(row.hasAttribute("aria-describedby")).toBe(false);
+    expect(row.hasAttribute("aria-roledescription")).toBe(false);
+    expect(row.hasAttribute("aria-disabled")).toBe(false);
   });
 
   test("sets touch-action only on rows that can drag", () => {
