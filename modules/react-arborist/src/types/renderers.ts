@@ -1,6 +1,6 @@
 import { CSSProperties, HTMLAttributes, ReactElement } from "react";
-import { NodeApi } from "../interfaces/node-api.js";
-import { TreeApi } from "../interfaces/tree-api.js";
+import type { NodeApi } from "../interfaces/node-api.js";
+import type { TreeApi } from "../interfaces/tree-api.js";
 import { XYCoord } from "react-dnd";
 
 export type NodeRendererProps<T> = {

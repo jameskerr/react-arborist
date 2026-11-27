@@ -1,5 +1,4 @@
 import { ActionTypes } from "../types/utils.js";
-import { initialState } from "./initial.js";
 
 /* Types */
 export type SelectionState = {
@@ -7,6 +6,13 @@ export type SelectionState = {
   anchor: string | null;
   mostRecent: string | null;
 };
+
+/* A factory, not a constant: every store needs its own Set. */
+export const initialSelectionState = (): SelectionState => ({
+  ids: new Set(),
+  anchor: null,
+  mostRecent: null,
+});
 
 /* Actions. These take ids already resolved to strings: callers go through
    TreeApi.identify(), which honors a custom idAccessor. Keeping the slice
@@ -48,23 +54,26 @@ export const actions = {
 
 /* Reducer */
 export function reducer(
-  state: SelectionState = initialState()["nodes"]["selection"],
+  state: SelectionState = initialSelectionState(),
   action: ActionTypes<typeof actions>,
 ): SelectionState {
-  const ids = state.ids;
   switch (action.type) {
     case "SELECTION_CLEAR":
       return { ...state, ids: new Set() };
     case "SELECTION_ONLY":
       return { ...state, ids: new Set([action.id]) };
-    case "SELECTION_ADD":
+    case "SELECTION_ADD": {
       if (action.ids.length === 0) return state;
+      const ids = new Set(state.ids);
       action.ids.forEach((id) => ids.add(id));
-      return { ...state, ids: new Set(ids) };
-    case "SELECTION_REMOVE":
+      return { ...state, ids };
+    }
+    case "SELECTION_REMOVE": {
       if (action.ids.length === 0) return state;
+      const ids = new Set(state.ids);
       action.ids.forEach((id) => ids.delete(id));
-      return { ...state, ids: new Set(ids) };
+      return { ...state, ids };
+    }
     case "SELECTION_SET":
       return {
         ...state,

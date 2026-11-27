@@ -1,6 +1,6 @@
 import { createStore } from "redux";
 import { rootReducer } from "../state/root-reducer.js";
-import { ROOT_ID } from "../data/create-root.js";
+import { ROOT_ID } from "../data/root-id.js";
 import { TreeProps } from "../types/tree-props.js";
 import { TreeApi } from "../interfaces/tree-api.js";
 import { computeDrop } from "./compute-drop.js";

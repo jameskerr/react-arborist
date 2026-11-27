@@ -11,13 +11,14 @@ import { NodeApi } from "./node-api.js";
 import { edit } from "../state/edit-slice.js";
 import { Actions, RootState } from "../state/root-reducer.js";
 import { focus, treeBlur } from "../state/focus-slice.js";
-import { createRoot, ROOT_ID } from "../data/create-root.js";
+import { createRoot } from "../data/create-root.js";
+import { ROOT_ID } from "../data/root-id.js";
 import { actions as visibility } from "../state/open-slice.js";
 import { actions as selection } from "../state/selection-slice.js";
 import { actions as dnd } from "../state/dnd-slice.js";
 import { DefaultDragPreview } from "../components/default-drag-preview.js";
 import { DefaultContainer } from "../components/default-container.js";
-import { Cursor } from "../dnd/compute-drop.js";
+import type { Cursor } from "../dnd/compute-drop.js";
 import type { DropResult } from "../dnd/drop-hook.js";
 import { createAnimationFrameThrottle } from "../dnd/animation-frame-throttle.js";
 import { Store } from "redux";
@@ -556,7 +557,9 @@ export class TreeApi<T> {
   }
 
   get dragNodes() {
-    return this.state.dnd.dragIds.map((id) => this.get(id)).filter((n) => !!n) as NodeApi<T>[];
+    return this.state.dnd.dragIds
+      .map((id) => this.get(id))
+      .filter((n): n is NodeApi<T> => n !== null);
   }
 
   get dragNode() {

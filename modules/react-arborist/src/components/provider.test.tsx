@@ -1,7 +1,9 @@
 import { createRef } from "react";
 import { act, render, screen } from "@testing-library/react";
 import { FixedSizeList, VariableSizeList } from "react-window";
+import { useNodesContext } from "../context.js";
 import { Tree } from "./tree.js";
+import { TreeProvider } from "./provider.js";
 import { TreeApi } from "../interfaces/tree-api.js";
 import { NodeApi } from "../interfaces/node-api.js";
 
@@ -117,4 +119,30 @@ test("function rowHeight renders a VariableSizeList (#238)", () => {
   const ref = createRef<TreeApi<Datum> | undefined>();
   render(<Tree<Datum> data={data} ref={ref} rowHeight={() => 24} openByDefault />);
   expect(ref.current!.list.current!).toBeInstanceOf(VariableSizeList);
+});
+
+test("each TreeProvider gets its own server snapshot", () => {
+  const hydrateSnapshot = () => {
+    let first: Set<string> | null = null;
+    function Probe() {
+      const { selection } = useNodesContext();
+      if (!first) first = selection.ids;
+      return <div />;
+    }
+    const container = document.createElement("div");
+    container.innerHTML = "<div></div>";
+    render(
+      <TreeProvider treeProps={{ data }} imperativeHandle={null}>
+        <Probe />
+      </TreeProvider>,
+      { container, hydrate: true },
+    );
+    return first;
+  };
+
+  const first = hydrateSnapshot();
+  const second = hydrateSnapshot();
+  expect(first).toBeInstanceOf(Set);
+  expect(second).toBeInstanceOf(Set);
+  expect(first).not.toBe(second);
 });
